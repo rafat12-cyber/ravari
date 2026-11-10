@@ -10,9 +10,9 @@
 
 var POLICIES = { terms: "Terms & conditions", privacy: "Privacy policy", refund: "Return & refund policy", delivery: "Delivery policy" };
 var LISTS = {
-  shop: { title: "Shop all", text: "Every Ravelle piece: oversized T-shirts, boxy shirts and baggy trousers." },
-  "new-in": { title: "New in", text: "The latest Ravelle drops." },
-  "on-sale": { title: "On sale", text: "Ravelle pieces marked down." }
+  shop: { title: "Shop all", text: "Every Ravari piece: oversized T-shirts, boxy shirts and baggy trousers." },
+  "new-in": { title: "New in", text: "The latest Ravari drops." },
+  "on-sale": { title: "On sale", text: "Ravari pieces marked down." }
 };
 var PAGES = { about: "About", contact: "Contact", "store-locations": "Store locations", franchise: "Franchise" };
 // Pages people (and Google) shouldn't land on from search
@@ -33,7 +33,7 @@ function clip(s, n) {
   return s.slice(0, Math.max(s.lastIndexOf(" "), n - 20)).replace(/[\s,.;:–-]+$/, "") + "…";
 }
 function money(n) { return Math.round(Number(n) || 0).toLocaleString("en-IN"); }
-function storeName(db) { return ((db.settings || {}).store || {}).name || "Ravelle"; }
+function storeName(db) { return ((db.settings || {}).store || {}).name || "Ravari"; }
 function abs(base, u) {
   if (!u || /^data:/.test(u)) return "";
   if (/^https?:\/\//.test(u)) return u;

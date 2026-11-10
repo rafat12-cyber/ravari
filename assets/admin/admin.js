@@ -1,4 +1,4 @@
-// Ravelle admin panel: a small single-page app over the store API (client.js).
+// Ravari admin panel: a small single-page app over the store API (client.js).
 // Each view fetches what it needs, renders plain HTML and wires its own events.
 (function () {
   "use strict";
@@ -23,7 +23,7 @@
   const optText = (o) => Object.keys(o || {}).map((k) => o[k]).join(" / ");
   const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
-  const TOKEN_KEY = "ravelle:admin-token";
+  const TOKEN_KEY = "ravari:admin-token";
   // Shop colour-filter groups (same names and colours as COLOR_GROUPS in assets/js/store.js)
   const FILTER_COLORS = [["Black", "#1f2022"], ["White", "#f2f1ec"], ["Grey", "#8a8d91"], ["Blue", "#3b6279"], ["Green", "#3f8a68"], ["Yellow", "#c3ae62"],
     ["Cream", "#d8ccb0"], ["Brown", "#5f4535"], ["Red", "#a8342b"], ["Pink", "#d0607a"], ["Orange", "#d27c3c"], ["Purple", "#6c4f8c"]];
@@ -33,7 +33,7 @@
   let view = $("#view");
 
   function api(method, path, body) {
-    return window.Ravelle.call(method, path, body, token).catch((err) => {
+    return window.Ravari.call(method, path, body, token).catch((err) => {
       if (err && err.status === 401 && me) { signOut(true); }
       throw err;
     });
@@ -141,7 +141,7 @@
     });
   }
   async function uploadFiles(files) {
-    const max = window.Ravelle.mode === "demo" ? 1200 : 2000;
+    const max = window.Ravari.mode === "demo" ? 1200 : 2000;
     const out = [];
     for (const f of Array.from(files)) {
       try {
@@ -437,7 +437,7 @@
       if (sortKey === th.dataset.k) dir = -dir; else { sortKey = th.dataset.k; dir = th.dataset.k === "name" ? 1 : -1; }
       drawProd();
     });
-    $("#prodCsv").onclick = () => download(`ravelle-products-${dashDays}d.csv`, csv([cols.map((c) => c[1]).concat(["SKU"])].concat(d.products.map((p) => [p.name, p.views, p.carts, p.orders, p.units, p.revenue, p.conversion, p.stock, p.sku]))));
+    $("#prodCsv").onclick = () => download(`ravari-products-${dashDays}d.csv`, csv([cols.map((c) => c[1]).concat(["SKU"])].concat(d.products.map((p) => [p.name, p.views, p.carts, p.orders, p.units, p.revenue, p.conversion, p.stock, p.sku]))));
   }
   function ordersTable(list) {
     if (!list.length) return `<p class="empty">No orders yet.</p>`;
@@ -489,7 +489,7 @@
       const rows = [["Order", "Date", "Status", "Payment status", "Payment method", "Customer", "Phone", "Email", "Address", "City", "Delivery area", "Items", "Subtotal", "Discount", "Coupon", "Delivery", "Total", "Tracking", "Note"]];
       r.orders.filter((o) => !state.status || o.status === state.status).forEach((o) => rows.push([o.number, new Date(o.createdAt).toISOString(), o.status, o.paymentStatus, o.paymentMethod, o.customer.name, o.customer.phone, o.customer.email, o.customer.address, o.customer.city,
         o.shippingZone ? o.shippingZone.name : "", o.items.map((i) => `${i.qty}× ${i.name} ${optText(i.options)} (${i.sku})`).join("; "), o.subtotal, o.discount, o.coupon, o.shipping, o.total, o.tracking || "", o.note || ""]));
-      download("ravelle-orders.csv", csv(rows));
+      download("ravari-orders.csv", csv(rows));
     };
     load();
   }
@@ -562,12 +562,12 @@
     const st = (store.settings && store.settings.store) || {};
     view.innerHTML = `<div class="head no-print"><a class="btn btn--link" href="#/orders/${esc(o.number)}">← Order ${esc(o.number)}</a><button class="btn btn--dark" data-print>Print invoice</button></div>
       <div class="card" style="max-width:820px;padding:36px">
-        <div class="flex flex--between" style="align-items:flex-start"><div><img src="assets/img/logo.webp" alt="Ravelle" style="height:40px;width:auto"><p class="small muted">${esc(st.legalName || "")}<br>${esc(st.address || "")}<br>${esc(st.phone || "")} · ${esc(st.email || "")}${st.tradeLicense ? "<br>Trade license: " + esc(st.tradeLicense) : ""}${st.bin ? " · BIN: " + esc(st.bin) : ""}</p></div>
+        <div class="flex flex--between" style="align-items:flex-start"><div><img src="assets/img/logo.webp" alt="Ravari" style="height:26px;width:auto"><p class="small muted">${esc(st.legalName || "")}<br>${esc(st.address || "")}<br>${esc(st.phone || "")} · ${esc(st.email || "")}${st.tradeLicense ? "<br>Trade license: " + esc(st.tradeLicense) : ""}${st.bin ? " · BIN: " + esc(st.bin) : ""}</p></div>
           <div class="right"><h1 class="h1">Invoice</h1><p class="muted">${esc(o.number)}<br>${date(o.createdAt)}<br>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)} · ${esc(human(o.paymentStatus))}</p></div></div>
         <div><p class="h3">Bill to</p><p style="margin:0">${esc(o.customer.name)}<br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p></div>
         <table class="t"><thead><tr><th>Item</th><th>SKU</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${o.items.map((it) => `<tr><td>${esc(it.name)}<br><small class="muted">${esc(optText(it.options))}</small></td><td class="mono">${esc(it.sku)}</td><td class="right">${it.qty}</td><td class="right">${taka(it.price)}</td><td class="right">${taka(it.lineTotal)}</td></tr>`).join("")}</tbody></table>
         <div class="totals" style="margin-left:auto;width:min(300px,100%)"><div><span>Subtotal</span><span>${taka(o.subtotal)}</span></div>${o.discount ? `<div><span>Discount</span><span>−${taka(o.discount)}</span></div>` : ""}<div><span>Delivery</span><span>${taka(o.shipping)}</span></div><div class="grand"><span>Total</span><span>${taka(o.total)}</span></div></div>
-        <p class="small muted">Thank you for shopping with ${esc(st.name || "Ravelle")}. Exchanges and returns within 7 days of delivery: ${esc((st.website || "").replace(/^https?:\/\//, ""))}/refund</p>
+        <p class="small muted">Thank you for shopping with ${esc(st.name || "Ravari")}. Exchanges and returns within 7 days of delivery: ${esc((st.website || "").replace(/^https?:\/\//, ""))}/refund</p>
       </div>`;
     view.querySelector("[data-print]").onclick = () => window.print();
   }
@@ -592,7 +592,7 @@
     };
     let t = null;
     $("#subQ").oninput = (e) => { clearTimeout(t); t = setTimeout(() => load(e.target.value), 250); };
-    $("#subCsv").onclick = () => download("ravelle-subscribers.csv", csv([["Email", "Phone", "Name", "Signed up from", "Date"]].concat(list.map((s) => [s.email, s.phone, s.name || "", (s.sources || [s.source]).join(" "), new Date(s.createdAt).toISOString().slice(0, 10)]))));
+    $("#subCsv").onclick = () => download("ravari-subscribers.csv", csv([["Email", "Phone", "Name", "Signed up from", "Date"]].concat(list.map((s) => [s.email, s.phone, s.name || "", (s.sources || [s.source]).join(" "), new Date(s.createdAt).toISOString().slice(0, 10)]))));
     view.addEventListener("click", async (e) => {
       const d = e.target.closest("[data-del]");
       if (d) {
@@ -608,7 +608,7 @@
       const rows = a.dataset.aud === "meta"
         ? [["email", "phone", "fn", "ln", "ct", "country", "value"]].concat(r.rows.map((x) => [x.email, x.phone, x.fn, x.ln, x.ct, x.country, x.value]))
         : [["Email", "Phone", "First Name", "Last Name", "Country", "Zip"]].concat(r.rows.map((x) => [x.email, x.phone, x.fn, x.ln, x.country, ""]));
-      download(`ravelle-${a.dataset.who}-${a.dataset.aud}-audience.csv`, csv(rows));
+      download(`ravari-${a.dataset.who}-${a.dataset.aud}-audience.csv`, csv(rows));
       toast(r.rows.length + " people in the file");
     });
     load();
@@ -625,7 +625,7 @@
         <td class="right num">${c.orders}</td><td class="right num"><b>${taka(c.spent)}</b></td><td>${date(c.lastOrder)}</td><td>${date(c.createdAt)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="empty">No customers found.</p>`;
     };
     $("#cusQ").oninput = debounce((e) => load(e.target.value.trim()), 250);
-    $("#cusCsv").onclick = () => download("ravelle-customers.csv", csv([["Name", "Phone", "Email", "Address", "City", "Orders", "Spent", "Last order", "Customer since", "Tags", "Note"]].concat(list.map((c) => [c.name, c.phone, c.email, c.address, c.city, c.orders, c.spent, c.lastOrder ? new Date(c.lastOrder).toISOString().slice(0, 10) : "", new Date(c.createdAt).toISOString().slice(0, 10), (c.tags || []).join(" "), c.note || ""]))));
+    $("#cusCsv").onclick = () => download("ravari-customers.csv", csv([["Name", "Phone", "Email", "Address", "City", "Orders", "Spent", "Last order", "Customer since", "Tags", "Note"]].concat(list.map((c) => [c.name, c.phone, c.email, c.address, c.city, c.orders, c.spent, c.lastOrder ? new Date(c.lastOrder).toISOString().slice(0, 10) : "", new Date(c.createdAt).toISOString().slice(0, 10), (c.tags || []).join(" "), c.note || ""]))));
     load("");
   }
   async function viewCustomer(id) {
@@ -721,7 +721,7 @@
         if (!p.variants.length) rows.push([p.name, p.sku, "", "", p.price, p.comparePrice, p.stock, p.status, p.slug]);
         p.variants.forEach((v) => rows.push([p.name, p.sku, v.sku, optText(v.options), v.price == null ? p.price : v.price, p.comparePrice, v.stock, p.status, p.slug]));
       });
-      download("ravelle-products.csv", csv(rows));
+      download("ravari-products.csv", csv(rows));
     };
     load();
   }
@@ -777,7 +777,7 @@
               <small>The colour this product is listed under in the shop's colour filter. Auto picks it from the colour name.</small></div></div>
           <div class="card"><h2 class="h2">Web address</h2><label class="field"><span>Slug</span><input class="input" name="slug" value="${esc(draft.slug || "")}" placeholder="Made from the name"><small>ravaribd.com/product/<b>${esc(draft.slug || "…")}</b></small></label></div>
           <div class="card"><h2 class="h2">Search engines</h2>
-            <label class="field"><span>Title in Google</span><input class="input" name="seoTitle" maxlength="80" value="${esc(draft.seoTitle || "")}" placeholder="${esc(draft.name || "Product name")}"><small>Leave empty to use the product name. " | Ravelle" is added.</small></label>
+            <label class="field"><span>Title in Google</span><input class="input" name="seoTitle" maxlength="80" value="${esc(draft.seoTitle || "")}" placeholder="${esc(draft.name || "Product name")}"><small>Leave empty to use the product name. " | Ravari" is added.</small></label>
             <label class="field"><span>Description in Google</span><textarea class="input" name="seoDescription" rows="2" maxlength="200" placeholder="Made from the description and price">${esc(draft.seoDescription || "")}</textarea><small>About 150 characters. Also shown when the link is shared on Facebook or WhatsApp.</small></label></div>
         </div>
         <div class="sticky-save" style="grid-column:1/-1"><span class="small">${isNew ? "New product" : "Editing " + esc(p.name)}</span>
@@ -1170,7 +1170,7 @@
         if (p.variants.length) p.variants.forEach((v) => rows.push([v.sku, c.name, optText(v.options), c.regular, c.sale, c.trackStock ? c.vstock[v.id] : "", c.status]));
         else rows.push([p.sku, c.name, "", c.regular, c.sale, c.trackStock ? c.stock : "", c.status]);
       });
-      download("ravelle-bulk-edit.csv", csv(rows));
+      download("ravari-bulk-edit.csv", csv(rows));
     };
     $("#bkUp").onchange = async (e) => {
       const file = e.target.files[0]; e.target.value = "";
@@ -1362,7 +1362,7 @@
         (rep.codes.length ? `<h3 class="small mono" style="margin:14px 0 6px">Every code and offer</h3><div class="table-wrap"><table class="t"><thead><tr><th>Code</th><th>Influencer</th><th class="right">Orders</th><th class="right">Pieces</th><th class="right">Revenue</th><th class="right">Discount</th><th class="right">Delivered</th><th class="right">Returned</th></tr></thead><tbody>${rep.codes.map((r) => `<tr><td class="mono"><b>${esc(r.code)}</b>${r.auto ? ` <span class="tag">Automatic</span>` : ""}</td><td>${esc(r.owner || "—")}</td><td class="num">${r.orders}</td><td class="num">${r.units}</td><td class="num">${taka(r.revenue)}</td><td class="num">${taka(r.discount)}</td><td class="num">${r.delivered}</td><td class="num">${r.returned}</td></tr>`).join("")}</tbody></table></div>` : `<p class="empty">No orders used a code or offer in this period.</p>`);
     };
     $("#cpDays").onchange = drawRep;
-    $("#cpRepCsv").onclick = () => rep && download(`ravelle-coupon-sales-${$("#cpDays").value}d.csv`, csv([["Code", "Influencer", "Commission %", "Orders", "Pieces", "Revenue", "Discount", "Delivered", "Returned", "Payout"]].concat(rep.codes.map((r) => [r.code, r.owner, r.commission, r.orders, r.units, r.revenue, r.discount, r.delivered, r.returned, r.payout]))));
+    $("#cpRepCsv").onclick = () => rep && download(`ravari-coupon-sales-${$("#cpDays").value}d.csv`, csv([["Code", "Influencer", "Commission %", "Orders", "Pieces", "Revenue", "Discount", "Delivered", "Returned", "Payout"]].concat(rep.codes.map((r) => [r.code, r.owner, r.commission, r.orders, r.units, r.revenue, r.discount, r.delivered, r.returned, r.payout]))));
     drawRep();
     view.addEventListener("click", (e) => { const b = e.target.closest("[data-edit]"); if (b) edit(list.find((c) => c.id === b.dataset.edit)); });
   }
@@ -1389,11 +1389,11 @@
   // Pages with cards you can add, edit, move and remove
   const CARDS = {
     stores: { list: "shops", label: "Shops", add: "Add shop", skip: ["shops", "districtOrder"],
-      help: "Each shop needs a name and a district. Mark it as a Ravelle own shop or a franchise shop; the page shows which one it is.",
+      help: "Each shop needs a name and a district. Mark it as a Ravari own shop or a franchise shop; the page shows which one it is.",
       empty: "No shops. The page shows the “no shops yet” message.",
-      title: (s) => s.name, sub: (s) => [s.district || "No district", s.type === "franchise" ? "Franchise" : "Ravelle own shop"].join(" · "),
+      title: (s) => s.name, sub: (s) => [s.district || "No district", s.type === "franchise" ? "Franchise" : "Ravari own shop"].join(" · "),
       blank: () => ({ name: "", type: "own", district: "", image: "", address: "", phone: "", email: "", hours: "", map: "" }),
-      fields: [["name", "Shop name", "text", "Ravelle Banani"], ["type", "Shop type", "select", [["own", "Ravelle own shop"], ["franchise", "Franchise shop"]]], ["district", "District", "district"],
+      fields: [["name", "Shop name", "text", "Ravari Banani"], ["type", "Shop type", "select", [["own", "Ravari own shop"], ["franchise", "Franchise shop"]]], ["district", "District", "district"],
         ["image", "Shop photo", "image"], ["address", "Shop address", "textarea"], ["phone", "Shop number", "text", "01XXX-XXXXXX"], ["email", "Shop email", "text", "shop@ravaribd.com"],
         ["hours", "Opening hours (optional)", "text", "Every day, 11am – 10pm"], ["map", "Google Maps link (optional)", "text", "Leave empty to search the address"]] },
     franchise: { list: "stories", label: "Franchise partner cards", add: "Add partner card", skip: ["stories", "pdf"],
@@ -1401,7 +1401,7 @@
       empty: "No cards. The partner section is hidden on the page.",
       title: (s) => s.ownerName, sub: (s) => s.storeName || "",
       blank: () => ({ storeName: "", storeImage: "", address: "", ownerName: "", ownerImage: "", opinion: "", experience: "" }),
-      fields: [["storeName", "Store name", "text", "Ravelle GEC Circle"], ["storeImage", "Store photo", "image"], ["address", "Store address", "textarea"], ["ownerName", "Owner name", "text"],
+      fields: [["storeName", "Store name", "text", "Ravari GEC Circle"], ["storeImage", "Store photo", "image"], ["address", "Store address", "textarea"], ["ownerName", "Owner name", "text"],
         ["ownerImage", "Owner photo", "image"], ["opinion", "Owner's opinion (short quote)", "textarea"], ["experience", "Owner's experience", "textarea"]] }
   };
   const isImageKey = (k, v) => /(^|[a-z])(image|Image|avatars?|logo)/.test(k) || (typeof v === "string" && /\.(png|jpe?g|webp|gif|avif)(\?|$)|^data:image\//i.test(v));
@@ -1420,7 +1420,7 @@
     let page;
     try { page = (await api("GET", "/api/pages/" + key)).page; } catch (err) { return fail(err); }
     let draft = clone(page), dirty = false;
-    const demo = window.Ravelle.mode === "demo";
+    const demo = window.Ravari.mode === "demo";
     view.innerHTML = `<div class="pe">
       <aside class="pe__side"><div class="flex flex--between"><a class="btn btn--link" href="#/pages">← Pages</a><button class="btn btn--dark btn--sm" id="peSave" disabled>Saved</button></div>
         <div><h1 class="h1" style="font-size:22px">${esc(meta.title)}</h1><p class="muted small">Click any text in the preview to type over it, or click a picture to change it. Changes show live; press Save to publish.</p></div>
@@ -1429,7 +1429,7 @@
         <a class="btn btn--ghost btn--sm" href="./#${meta.route}" target="_blank" rel="noopener">Open page ↗</a></div>
         <div class="pe__frame" id="peFrame"><iframe id="peIframe" title="Page preview" src="./?edit${demo ? "&demo" : ""}#${meta.route}"></iframe></div></div></div>`;
     const frame = $("#peIframe");
-    const post = (focus) => { try { frame.contentWindow.postMessage({ type: "ravelle:page", key, page: draft, focus }, "*"); } catch (e) {} };
+    const post = (focus) => { try { frame.contentWindow.postMessage({ type: "ravari:page", key, page: draft, focus }, "*"); } catch (e) {} };
     const setDirty = () => { dirty = true; $("#peSave").disabled = false; $("#peSave").textContent = "Save changes"; };
     const setPath = (path, value) => {
       const parts = path.split(".");
@@ -1558,12 +1558,12 @@
     const onMsg = (e) => {
       const m = e.data || {};
       if (e.source !== frame.contentWindow) return;
-      if (m.type === "ravelle:edit" && (m.key === key || (!m.key && key === "home"))) {
+      if (m.type === "ravari:edit" && (m.key === key || (!m.key && key === "home"))) {
         setPath(m.path, m.value);
         const inp = $(`[data-p="${CSS.escape(m.path)}"]`, $("#peForm"));
         if (inp) inp.value = m.value;
         setDirty();
-      } else if (m.type === "ravelle:focus" && (m.key === key || (!m.key && key === "home"))) {
+      } else if (m.type === "ravari:focus" && (m.key === key || (!m.key && key === "home"))) {
         const f = $(`[data-path="${CSS.escape(m.path)}"], [data-imgfield="${CSS.escape(m.path)}"]`, $("#peForm"));
         if (!f) return;
         let d = f.closest("details");
@@ -1793,14 +1793,14 @@
     const list = ((await api("GET", "/api/messages").catch(fail)) || {}).messages || [];
     view.innerHTML = `<div class="head"><div><h1 class="h1">Messages</h1><p class="muted">From the contact form and drop-alert sign-ups.</p></div><button class="btn btn--ghost" id="msCsv">Export CSV</button></div>
       <div class="stack">${list.map((m) => `<div class="card" style="${m.read ? "" : "box-shadow:inset 3px 0 0 var(--accent)"}"><div class="card__head"><div><b>${esc(m.subject || "Message")}</b><br><small class="muted">${esc(m.name)}${m.email ? " · " + esc(m.email) : ""}${m.phone ? " · " + esc(m.phone) : ""} · ${dateTime(m.createdAt)}</small></div>
-        <div class="flex">${m.email ? `<a class="btn btn--ghost btn--sm" href="mailto:${esc(m.email)}?subject=${encodeURIComponent("Re: " + (m.subject || "Your message to Ravelle"))}">Reply by email</a>` : ""}${m.phone ? `<a class="btn btn--ghost btn--sm" href="tel:${esc(m.phone)}">Call</a>` : ""}
+        <div class="flex">${m.email ? `<a class="btn btn--ghost btn--sm" href="mailto:${esc(m.email)}?subject=${encodeURIComponent("Re: " + (m.subject || "Your message to Ravari"))}">Reply by email</a>` : ""}${m.phone ? `<a class="btn btn--ghost btn--sm" href="tel:${esc(m.phone)}">Call</a>` : ""}
         <button class="btn btn--ghost btn--sm" data-read="${m.id}" data-v="${m.read ? 0 : 1}">${m.read ? "Mark unread" : "Mark read"}</button><button class="btn btn--danger btn--sm" data-del="${m.id}">Delete</button></div></div><p style="margin:0;white-space:pre-wrap">${esc(m.message)}</p></div>`).join("") || `<div class="card"><p class="empty">No messages yet.</p></div>`}</div>`;
     view.onclick = async (e) => {
       const r = e.target.closest("[data-read]"), d = e.target.closest("[data-del]");
       if (r) { await api("PATCH", "/api/messages/" + r.dataset.read, { read: r.dataset.v === "1" }).catch(fail); refreshCounts(); viewMessages(); }
       if (d && (await confirmBox("Delete this message?", "This can't be undone.", "Delete", true))) { await api("DELETE", "/api/messages/" + d.dataset.del).catch(fail); refreshCounts(); viewMessages(); }
     };
-    $("#msCsv").onclick = () => download("ravelle-messages.csv", csv([["Date", "Name", "Email", "Phone", "Subject", "Message"]].concat(list.map((m) => [new Date(m.createdAt).toISOString(), m.name, m.email, m.phone, m.subject, m.message]))));
+    $("#msCsv").onclick = () => download("ravari-messages.csv", csv([["Date", "Name", "Email", "Phone", "Subject", "Message"]].concat(list.map((m) => [new Date(m.createdAt).toISOString(), m.name, m.email, m.phone, m.subject, m.message]))));
   }
 
   // ---------------------------------------------------------------------------
@@ -1823,7 +1823,7 @@
       const list = r.carts.filter((x) => tab === "all" || (tab === "open" ? x.status === "open" : x.status === tab));
       view.innerHTML = `<div class="head"><div><h1 class="h1">Abandoned carts</h1><p class="muted">People who typed their phone or email at checkout but didn't place the order. Reminder emails go out ${cs.delay1} minutes and ${cs.delay2} hours later${cs.enabled ? "" : " (reminders are off)"}.</p></div>
           <div class="flex"><a class="btn btn--ghost" href="#/email">Reminder settings</a><button class="btn btn--ghost" id="caCsv">Export CSV</button></div></div>
-        ${r.emailReady ? "" : `<div class="card" style="background:var(--warn-bg)"><p class="small" style="margin:0">Reminder emails can't go out yet. ${window.Ravelle.mode === "demo" ? "The demo has no email server; on the live store, " : ""}connect your company Gmail in <a href="#/email">Email & reminders</a>. You can still call or WhatsApp people from here.</p></div>`}
+        ${r.emailReady ? "" : `<div class="card" style="background:var(--warn-bg)"><p class="small" style="margin:0">Reminder emails can't go out yet. ${window.Ravari.mode === "demo" ? "The demo has no email server; on the live store, " : ""}connect your company Gmail in <a href="#/email">Email & reminders</a>. You can still call or WhatsApp people from here.</p></div>`}
         <div class="kpis"><div class="kpi"><span class="kpi__label">Abandoned now</span><span class="kpi__value">${r.stats.open}</span><span class="kpi__delta">${taka(r.stats.openValue)} in bags</span></div>
           <div class="kpi"><span class="kpi__label">Reminders sent</span><span class="kpi__value">${r.stats.reminders}</span><span class="kpi__delta">emails and calls</span></div>
           <div class="kpi"><span class="kpi__label">Recovered</span><span class="kpi__value">${r.stats.recovered}</span><span class="kpi__delta">${taka(r.stats.recoveredValue)} in orders</span></div></div>
@@ -1834,7 +1834,7 @@
           <td><small>${x.items.map((i) => `${i.qty} × ${esc(i.name)}${Object.keys(i.options || {}).length ? " (" + esc(Object.values(i.options).join(", ")) + ")" : ""}`).join("<br>")}</small></td>
           <td>${taka(x.total)}</td><td>${remState(x)}</td><td>${statusPill(x)}</td><td class="right"><button class="btn btn--ghost btn--sm" data-open="${x.id}">Open</button></td></tr>`).join("") || `<tr><td colspan="7"><p class="empty">${tab === "open" ? "No abandoned carts right now." : "Nothing here."}</p></td></tr>`}</tbody></table></div></div>`;
       $("#caTabs").onclick = (e) => { const b = e.target.closest("[data-t]"); if (b) { tab = b.dataset.t; draw(); } };
-      $("#caCsv").onclick = () => download("ravelle-abandoned-carts.csv", csv([["Last active", "Name", "Phone", "Email", "Address", "City", "Items", "Value", "Reminders", "Status", "Order"]]
+      $("#caCsv").onclick = () => download("ravari-abandoned-carts.csv", csv([["Last active", "Name", "Phone", "Email", "Address", "City", "Items", "Value", "Reminders", "Status", "Order"]]
         .concat(r.carts.map((x) => [new Date(x.updatedAt).toISOString(), x.customer.name, x.customer.phone, x.customer.email, x.customer.address, x.customer.city, x.items.map((i) => i.qty + " x " + i.name).join("; "), x.total, x.reminders.length, x.status, x.orderNumber || ""]))));
     };
     draw();
@@ -1844,7 +1844,7 @@
       const x = r.carts.find((y) => y.id === b.dataset.open);
       const first = (x.customer.name || "").split(" ")[0];
       const wa = x.customer.phone ? x.customer.phone.replace(/^0/, "880") : "";
-      const msg = `Hi${first ? " " + first : ""}, this is Ravelle. You left ${x.items.map((i) => i.name).join(", ")} in your bag. Complete your order here: ${x.link}`;
+      const msg = `Hi${first ? " " + first : ""}, this is Ravari. You left ${x.items.map((i) => i.name).join(", ")} in your bag. Complete your order here: ${x.link}`;
       const body = modal(x.customer.name || "Abandoned cart", `<div class="stack">
         <div class="flex">${x.customer.phone ? `<a class="btn btn--dark btn--sm" href="tel:${esc(x.customer.phone)}" data-contact="phone">Call ${esc(x.customer.phone)}</a><a class="btn btn--ghost btn--sm" href="https://wa.me/${esc(wa)}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" data-contact="whatsapp">WhatsApp</a>` : ""}
           ${x.customer.email ? `<button class="btn btn--ghost btn--sm" type="button" id="caRemind">Send reminder email now</button>` : ""}</div>
@@ -1872,7 +1872,7 @@
     setTitle("Email & reminders");
     let r;
     try { r = await api("GET", "/api/email-settings"); } catch (err) { return fail(err); }
-    const e = r.email, c = r.carts, demo = window.Ravelle.mode === "demo";
+    const e = r.email, c = r.carts, demo = window.Ravari.mode === "demo";
     const steps = (list) => `<ol class="trk__steps">${list.map((x) => `<li>${x}</li>`).join("")}</ol>`;
     view.innerHTML = `<div class="head"><div><h1 class="h1">Email & reminders</h1><p class="muted">Send order invoices and abandoned-cart reminders from your company Gmail, automatically.</p></div></div>
       <form class="stack" id="emForm">
@@ -1888,7 +1888,7 @@
           <details class="trk__guide"><summary>How to get a Gmail app password</summary>${steps([
             `Sign in to the Gmail account you want to send from, then open <a href="https://myaccount.google.com/security" target="_blank" rel="noopener">Google Account › Security</a>.`,
             `Turn on <b>2-Step Verification</b> if it's off. Google only gives app passwords to accounts with it on.`,
-            `Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">App passwords</a>, type the name "Ravelle store" and press <b>Create</b>.`,
+            `Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">App passwords</a>, type the name "Ravari store" and press <b>Create</b>.`,
             `Copy the 16-letter password into <b>App password</b> above, tick <b>Send emails from this address</b> and press Save.`,
             `Press <b>Send test email</b>. It should arrive within a minute. Check Spam the first time and mark it "Not spam".`])}
             <p class="muted small">A free Gmail account can send about 500 emails a day; Google Workspace about 2,000. Some hosting companies block outgoing mail ports (465/587) on new servers. If the test fails with a timeout, ask your host to open them.</p></details></div>
@@ -1953,7 +1953,7 @@
     setTitle("Popup banner");
     let p;
     try { p = (await api("GET", "/api/pages/popup")).page; } catch (err) { return fail(err); }
-    const demo = window.Ravelle.mode === "demo";
+    const demo = window.Ravari.mode === "demo";
     view.innerHTML = `<div class="head"><div><h1 class="h1">Popup banner</h1><p class="muted">A banner that pops up on the home page for offers, events or news. It opens a moment after someone lands on the home page, shows once per visit, and closes with the ✕ in the corner.</p></div>
         <a class="btn btn--ghost" href="./?popup${demo ? "&demo" : ""}#home" target="_blank" rel="noopener">Preview ↗</a></div>
       <form class="stack" id="ppForm">
@@ -2009,7 +2009,7 @@
           <td>${esc(q.district)}${q.area ? `<br><small class="muted">${esc(q.area)}</small>` : ""}</td><td>${esc(q.investment || "–")}</td><td>${esc(meet(q))}<br><small class="muted">${esc(q.meetingType || "")}</small></td>
           <td><span class="pill pill--fr-${q.status}">${FR_LABEL[q.status] || q.status}</span></td><td class="right"><button class="btn btn--ghost btn--sm" data-open="${q.id}">Open</button></td></tr>`).join("") || `<tr><td colspan="8"><p class="empty">${r.requests.length ? "No requests with this status." : "No franchise requests yet. They appear here when someone sends the form on the Franchise page."}</p></td></tr>`}</tbody></table></div></div>`;
       $("#frTabs").onclick = (e) => { const b = e.target.closest("[data-f]"); if (b) { filter = b.dataset.f; draw(); } };
-      $("#frCsv").onclick = () => download("ravelle-franchise-requests.csv", csv([["Date", "Name", "Phone", "Email", "District", "Area", "Shop space", "Investment", "Experience", "Meeting type", "Meeting date", "Meeting time", "Message", "Status", "Notes"]]
+      $("#frCsv").onclick = () => download("ravari-franchise-requests.csv", csv([["Date", "Name", "Phone", "Email", "District", "Area", "Shop space", "Investment", "Experience", "Meeting type", "Meeting date", "Meeting time", "Message", "Status", "Notes"]]
         .concat(r.requests.map((q) => [new Date(q.createdAt).toISOString(), q.name, q.phone, q.email, q.district, q.area, q.space, q.investment, q.experience, q.meetingType, q.meetingDate, q.meetingTime, q.message, FR_LABEL[q.status], q.note]))));
     };
     draw();
@@ -2020,7 +2020,7 @@
       if (!q.read) { q.read = true; api("PATCH", "/api/franchise/" + q.id, { read: true }).then(refreshCounts, () => {}); }
       const row = (l, v) => v ? `<div><dt class="mono muted small">${l}</dt><dd style="margin:2px 0 0;white-space:pre-wrap">${esc(v)}</dd></div>` : "";
       const wa = q.phone.replace(/^0/, "880");
-      const body = modal(q.name, `<div class="stack"><div class="flex"><a class="btn btn--dark btn--sm" href="tel:${esc(q.phone)}">Call ${esc(q.phone)}</a><a class="btn btn--ghost btn--sm" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>${q.email ? `<a class="btn btn--ghost btn--sm" href="mailto:${esc(q.email)}?subject=${encodeURIComponent("Your Ravelle franchise request")}">Email</a>` : ""}</div>
+      const body = modal(q.name, `<div class="stack"><div class="flex"><a class="btn btn--dark btn--sm" href="tel:${esc(q.phone)}">Call ${esc(q.phone)}</a><a class="btn btn--ghost btn--sm" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>${q.email ? `<a class="btn btn--ghost btn--sm" href="mailto:${esc(q.email)}?subject=${encodeURIComponent("Your Ravari franchise request")}">Email</a>` : ""}</div>
         <dl class="row row--2" style="margin:0;gap:12px 20px">${row("District", q.district)}${row("Area or market", q.area)}${row("Shop space", q.space)}${row("Planned investment", q.investment)}${row("Meeting", q.meetingType)}${row("Preferred date and time", meet(q))}${row("Received", dateTime(q.createdAt))}${row("Email", q.email)}</dl>
         ${row("Business experience", q.experience)}${row("Message", q.message)}
         <form class="stack" id="frEdit"><label class="field"><span>Status</span><select class="input" name="status">${r.statuses.map((s) => `<option value="${s}"${s === q.status ? " selected" : ""}>${FR_LABEL[s]}</option>`).join("")}</select></label>
@@ -2121,7 +2121,7 @@
           <label class="switch"><input type="checkbox" id="paySsl" ${ssl.enabled ? "checked" : ""}> Online payment with SSLCOMMERZ (cards, bKash, Nagad, Rocket, banks)</label>
           <div class="row row--2"><label class="field"><span>SSLCOMMERZ Store ID</span><input class="input" id="sslId" value="${esc(ssl.storeId || "")}" placeholder="From your SSLCOMMERZ merchant panel"></label>
           <label class="field"><span>Mode</span><select class="input" id="sslSandbox"><option value="1">Sandbox (testing)</option><option value="0"${ssl.sandbox ? "" : " selected"}>Live payments</option></select></label></div>
-          <p class="small ${ssl.serverReady ? "" : "muted"}" style="margin:0">${window.Ravelle.mode === "demo" ? "In this demo, online payments are simulated." : ssl.serverReady ? "✓ The server has your SSLCOMMERZ store password." : "The store password stays secret on the server: set SSLC_STORE_PASSWORD in the server's .env file, then restart. See the README."}</p></div>
+          <p class="small ${ssl.serverReady ? "" : "muted"}" style="margin:0">${window.Ravari.mode === "demo" ? "In this demo, online payments are simulated." : ssl.serverReady ? "✓ The server has your SSLCOMMERZ store password." : "The store password stays secret on the server: set SSLC_STORE_PASSWORD in the server's .env file, then restart. See the README."}</p></div>
         <div class="card"><h2 class="h2">Live chat</h2>
           <label class="switch"><input type="checkbox" data-g="chat" name="enabled" ${s.chat.enabled ? "checked" : ""}> Show the chat bubble on the store</label>
           <div class="row row--2">${f("chat", "title", "Chat name", "Shown at the top of the chat.")}${f("chat", "greeting", "Greeting")}</div>
@@ -2190,7 +2190,7 @@
           <div class="row row--3">${color("announceBg", "Background colour", H.announceBg)}${color("announceColor", "Text colour", H.announceColor)}
             <div class="field"><span>Preview</span><div id="annPrev" style="padding:9px 12px;border-radius:8px;font:500 12px/1.3 ui-monospace,monospace;text-align:center;letter-spacing:.04em"></div></div></div></div>
         <div class="card"><h2 class="h2">Header</h2>
-          ${imgField("logo", H.logo, "Logo", "Leave empty to use the Ravelle logo.")}
+          ${imgField("logo", H.logo, "Logo", "Leave empty to use the Ravari logo.")}
           <div class="row row--3"><label class="field"><span>Logo height (px)</span><input class="input" type="number" min="20" max="80" data-l="header" name="logoHeight" value="${esc(H.logoHeight)}"><small>20 to 80. The default is 40.</small></label></div>
           ${sw("header", "sticky", "Show the slim header bar when people scroll down", H.sticky)}
           ${sw("header", "showSearch", "Show the search icon", H.showSearch)}
@@ -2205,10 +2205,10 @@
           ${sw("footer", "showPayments", "Show the payment methods row", F.showPayments)}
           ${sw("footer", "showLegal", "Show trade license, TIN and DBID", F.showLegal)}
           ${sw("footer", "showWordmark", "Show the big name at the bottom", F.showWordmark)}
-          <div class="row row--2">${txt('data-l="footer"', "wordmark", "Big name text", F.wordmark, "", "RAVELLE")}${txt('data-l="footer"', "copyright", "Copyright line", F.copyright, "Leave empty for the default. Write {year} for the current year.", "© {year} Ravelle · Prices in BDT (৳)")}</div>
+          <div class="row row--2">${txt('data-l="footer"', "wordmark", "Big name text", F.wordmark, "", "RAVARI")}${txt('data-l="footer"', "copyright", "Copyright line", F.copyright, "Leave empty for the default. Write {year} for the current year.", "© {year} Ravari · Prices in BDT (৳)")}</div>
           <p class="muted small" style="margin:0">Footer link columns are in <a href="#/menus">Menus</a>. Address, phone and legal numbers are in <a href="#/settings">Settings</a>.</p></div>
         <div class="card"><h2 class="h2">Social links</h2><div class="row row--2">
-          ${["facebook", "instagram", "tiktok", "youtube"].map((k) => txt('data-s="social"', k, k === "tiktok" ? "TikTok" : k === "youtube" ? "YouTube" : k.charAt(0).toUpperCase() + k.slice(1), (s.social || {})[k], "", `https://www.${k}.com/ravellebd`)).join("")}
+          ${["facebook", "instagram", "tiktok", "youtube"].map((k) => txt('data-s="social"', k, k === "tiktok" ? "TikTok" : k === "youtube" ? "YouTube" : k.charAt(0).toUpperCase() + k.slice(1), (s.social || {})[k], "", `https://www.${k}.com/ravaribd`)).join("")}
           ${txt('data-s="store"', "whatsapp", "WhatsApp number", (s.store || {}).whatsapp, "Turns on the WhatsApp button.", "+880 17XX-XXXXXX")}</div></div>
         <div class="sticky-save"><span class="small">Changes show on the store right away.</span><button class="btn btn--dark" type="submit">Save</button></div>
       </form>`;
@@ -2251,7 +2251,7 @@
     setTitle("Pixel & Analytics");
     let s;
     try { s = (await api("GET", "/api/settings")).settings; } catch (err) { return fail(err); }
-    const c = s.code || {}, demo = window.Ravelle.mode === "demo";
+    const c = s.code || {}, demo = window.Ravari.mode === "demo";
     const dot = (on, label) => `<span class="trk__state ${on ? "is-on" : ""}">${on ? "●" : "○"} ${label}</span>`;
     const status = (x, none) => x ? `<p class="small" style="margin:0;color:${x.ok ? "var(--ok, #1e7d4f)" : "var(--danger)"}">Last server event: <b>${esc(x.event)}</b> · ${esc(x.message)} · ${dateTime(x.at)}</p>` : `<p class="muted small" style="margin:0">${demo ? "The demo has no server, so server events can't be sent from here. This works on the live store." : none}</p>`;
     const steps = (list) => `<ol class="trk__steps">${list.map((x) => `<li>${x}</li>`).join("")}</ol>`;
@@ -2269,7 +2269,7 @@
           <details class="trk__guide"><summary>Step-by-step: set up the Pixel and Conversions API</summary>
             <h3>1. Create the Pixel</h3>${steps([
               `Open <a href="https://business.facebook.com/events_manager2" target="_blank" rel="noopener">Meta Events Manager</a> with the Business account that runs your ads.`,
-              `Click <b>Connect data sources › Web › Meta Pixel</b>. Name it "Ravelle website" and enter <b>ravaribd.com</b>.`,
+              `Click <b>Connect data sources › Web › Meta Pixel</b>. Name it "Ravari website" and enter <b>ravaribd.com</b>.`,
               `When it asks how to install, close that window. You don't need to paste Meta's code; this store adds it.`,
               `Copy the <b>Pixel ID</b> (the number under the pixel's name) into the box above and press Save.`])}
             <h3>2. Turn on the Conversions API</h3>${steps([
@@ -2296,12 +2296,12 @@
           <div class="field"><span>Check the connection</span><div class="flex"><button class="btn btn--ghost btn--sm" type="button" data-test="ga">Check with Google</button></div><div id="gaStatus">${status(c.gaStatus, c.gaSecretSet ? "Nothing sent yet. It sends when an order is placed." : "Add the API secret to send purchases from the server.")}</div></div>
           <details class="trk__guide"><summary>Step-by-step: set up Google Analytics</summary>
             <h3>1. Create the property</h3>${steps([
-              `Go to <a href="https://analytics.google.com" target="_blank" rel="noopener">analytics.google.com</a> › <b>Admin › Create › Property</b>. Name it "Ravelle", time zone <b>Bangladesh</b>, currency <b>Bangladeshi Taka (BDT)</b>.`,
+              `Go to <a href="https://analytics.google.com" target="_blank" rel="noopener">analytics.google.com</a> › <b>Admin › Create › Property</b>. Name it "Ravari", time zone <b>Bangladesh</b>, currency <b>Bangladeshi Taka (BDT)</b>.`,
               `Choose <b>Web</b> as the platform, enter <b>https://ravaribd.com</b>, and create the stream.`,
               `Copy the <b>Measurement ID</b> (G-…) into the box above and press Save. Skip Google's "install manually" code; the store adds it.`])}
             <h3>2. Send purchases from the server</h3>${steps([
               `In the same web stream page, open <b>Measurement Protocol API secrets › Create</b>. Accept the terms if asked.`,
-              `Name it "Ravelle server", copy the <b>Secret value</b>, paste it above and Save.`,
+              `Name it "Ravari server", copy the <b>Secret value</b>, paste it above and Save.`,
               `Press <b>Check with Google</b>. Google checks the event and the result shows under the button.`])}
             <h3>3. Check it works</h3>${steps([
               `Open <b>Reports › Realtime</b> in Google Analytics, then open your store in another tab. You should appear within a minute.`,
@@ -2400,7 +2400,7 @@
     setTitle("Acore");
     let s;
     try { s = (await api("GET", "/api/settings")).settings; } catch (err) { return fail(err); }
-    const a = s.acore || {}, demo = window.Ravelle.mode === "demo";
+    const a = s.acore || {}, demo = window.Ravari.mode === "demo";
     const hookUrl = a.webhookUrl || (location.origin + "/api/acore/webhook");
     const last = (x, none) => x ? `<span style="color:${x.ok ? "var(--ok, #1e7d4f)" : "var(--danger)"}">${esc(x.message)}</span> <small class="muted">${dateTime(x.at)}</small>` : `<span class="muted">${none}</span>`;
     view.innerHTML = `<div class="head"><div><h1 class="h1">Acore</h1><p class="muted">Every website order goes to Acore by itself. When you hold, cancel or send an order to the courier in Acore, the order here updates by itself, and customers see it on Track order.</p></div></div>
@@ -2589,7 +2589,7 @@
       add("Search", d.searches); add("Search with no results", d.noResults);
       add("Revenue by city (BDT)", d.revenueByCity); add("Size sold", d.sizes); add("Colour sold", d.colours);
       d.products.forEach((x) => out.push(["Product", x.name, `${x.views} views; ${x.carts} add to bag; ${x.orders} orders; ${x.units} units; ${x.revenue} BDT`]));
-      download(`ravelle-analytics-${anDays}d.csv`, csv(out));
+      download(`ravari-analytics-${anDays}d.csv`, csv(out));
     };
   }
 
@@ -2599,12 +2599,12 @@
   async function viewIntegrations() {
     setTitle("Integrations");
     const [k, w, lg] = await Promise.all([api("GET", "/api/keys"), api("GET", "/api/webhooks"), api("GET", "/api/webhooks-log")]).catch((err) => { fail(err); return [{ keys: [] }, { webhooks: [], events: [] }, { log: [] }]; });
-    const base = window.Ravelle.mode === "demo" ? "https://your-domain.com" : location.origin + location.pathname.replace(/admin(\.html)?\/?$/, "").replace(/\/$/, "");
+    const base = window.Ravari.mode === "demo" ? "https://your-domain.com" : location.origin + location.pathname.replace(/admin(\.html)?\/?$/, "").replace(/\/$/, "");
     view.innerHTML = `<div class="head"><div><h1 class="h1">Integrations</h1><p class="muted">Connect other software to your store: AI chat replies, courier and accounting tools, Google Sheets, Zapier or your own apps.</p></div><a class="btn btn--ghost" href="docs/API.md" target="_blank" rel="noopener">Full API guide ↗</a></div>
-      ${window.Ravelle.mode === "demo" ? `<div class="demo-hint">This is the browser demo. Keys and webhooks you make here only work once the store runs on your Node server.</div>` : ""}
+      ${window.Ravari.mode === "demo" ? `<div class="demo-hint">This is the browser demo. Keys and webhooks you make here only work once the store runs on your Node server.</div>` : ""}
       <div class="card"><div class="card__head"><div><h2 class="h2">API keys</h2><p class="muted small" style="margin:0">Send a key as <span class="code">Authorization: Bearer rk_…</span>. Read keys can only look; write keys can also change orders, stock, products and reply to chats.</p></div><button class="btn btn--dark btn--sm" id="kAdd">Create key</button></div>
         ${k.keys.length ? `<div class="table-wrap"><table class="t"><thead><tr><th>Name</th><th>Key</th><th>Access</th><th>Created</th><th>Last used</th><th></th></tr></thead><tbody>${k.keys.map((x) => `<tr><td><b>${esc(x.name)}</b></td><td class="mono">${esc(x.prefix)}…</td><td>${x.scope === "write" ? "Read and write" : "Read only"}</td><td>${date(x.createdAt)}</td><td>${ago(x.lastUsed)}</td><td class="right"><button class="btn btn--danger btn--sm" data-revoke="${x.id}">Revoke</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No keys yet.</p>`}</div>
-      <div class="card"><div class="card__head"><div><h2 class="h2">Webhooks</h2><p class="muted small" style="margin:0">We POST JSON to your address when something happens, signed with <span class="code">X-Ravelle-Signature: sha256=…</span> (HMAC of the body with the secret). Failed deliveries retry 3 times.</p></div><button class="btn btn--dark btn--sm" id="wAdd">Add webhook</button></div>
+      <div class="card"><div class="card__head"><div><h2 class="h2">Webhooks</h2><p class="muted small" style="margin:0">We POST JSON to your address when something happens, signed with <span class="code">X-Ravari-Signature: sha256=…</span> (HMAC of the body with the secret). Failed deliveries retry 3 times.</p></div><button class="btn btn--dark btn--sm" id="wAdd">Add webhook</button></div>
         ${w.webhooks.length ? `<div class="stack">${w.webhooks.map((h) => `<div class="attr"><div class="flex flex--between"><div><b>${esc(h.name || h.url)}</b> ${pill(h.active ? "active" : "inactive")}<br><small class="muted mono">${esc(h.url)}</small></div>
           <div class="flex"><button class="btn btn--ghost btn--sm" data-test="${h.id}">Send test</button><button class="btn btn--ghost btn--sm" data-hedit="${h.id}">Edit</button><button class="btn btn--danger btn--sm" data-hdel="${h.id}">Delete</button></div></div>
           <div class="chips">${h.events.map((e) => `<span class="tag">${esc(e)}</span>`).join("")}</div><div class="small muted">Secret: <span class="code" data-secret="${esc(h.secret)}">whsec_••••••••</span> <button class="btn btn--link" type="button" data-reveal>Show</button></div></div>`).join("")}</div>` : `<p class="muted">No webhooks yet.</p>`}
@@ -2717,7 +2717,7 @@
     // Admin views need drafts and every category too.
     return store;
   }
-  function setTitle(t) { $("#topTitle").textContent = t; document.title = t + " · Ravelle admin"; }
+  function setTitle(t) { $("#topTitle").textContent = t; document.title = t + " · Ravari admin"; }
   function notFound() { view.innerHTML = `<p class="empty">That page doesn't exist. <a href="#/dashboard">Go to the dashboard</a></p>`; }
 
   const ROUTES = [
@@ -2770,10 +2770,10 @@
   function showLogin(msg) {
     $("#app").hidden = true;
     $("#login").hidden = false;
-    if (window.Ravelle.mode === "demo") {
-      $("#loginNote").innerHTML = `<span class="demo-hint" style="display:block">Demo mode: this admin runs on a copy of the store saved in your browser.<br>Email <b>${esc(window.Ravelle.demoLogin.email)}</b> · Password <b>${esc(window.Ravelle.demoLogin.password)}</b></span>`;
-      $("#loginForm").email.value = window.Ravelle.demoLogin.email;
-      $("#loginForm").password.value = window.Ravelle.demoLogin.password;
+    if (window.Ravari.mode === "demo") {
+      $("#loginNote").innerHTML = `<span class="demo-hint" style="display:block">Demo mode: this admin runs on a copy of the store saved in your browser.<br>Email <b>${esc(window.Ravari.demoLogin.email)}</b> · Password <b>${esc(window.Ravari.demoLogin.password)}</b></span>`;
+      $("#loginForm").email.value = window.Ravari.demoLogin.email;
+      $("#loginForm").password.value = window.Ravari.demoLogin.password;
     }
     if (msg) { $("#loginErr").textContent = msg; $("#loginErr").hidden = false; }
   }
@@ -2786,7 +2786,7 @@
   async function start() {
     $("#login").hidden = true;
     $("#app").hidden = false;
-    $("#demoBadge").hidden = window.Ravelle.mode !== "demo";
+    $("#demoBadge").hidden = window.Ravari.mode !== "demo";
     drawSide();
     route();
     refreshCounts();
@@ -2798,7 +2798,7 @@
     $("#loginErr").hidden = true;
     busy(btn, true);
     try {
-      const r = await window.Ravelle.call("POST", "/api/auth/login", b);
+      const r = await window.Ravari.call("POST", "/api/auth/login", b);
       token = r.token; me = r.user; areas = r.areas;
       try { localStorage.setItem(TOKEN_KEY, token); } catch (err) {}
       await start();
@@ -2815,7 +2815,7 @@
     const btn = $("button[type=submit]", e.target);
     $("#forgotErr").hidden = true; busy(btn, true);
     try {
-      const r = await window.Ravelle.call("POST", "/api/auth/forgot", { email: e.target.email.value.trim() });
+      const r = await window.Ravari.call("POST", "/api/auth/forgot", { email: e.target.email.value.trim() });
       $("#forgotNote").innerHTML = esc(r.message) + (r.demoLink ? ` <a href="${esc(r.demoLink)}${demoQs() ? "&demo" : ""}" id="demoResetLink">Open the reset link</a>` : "");
       $("#forgotNote").classList.remove("muted");
     } catch (err) { $("#forgotErr").textContent = err.message; $("#forgotErr").hidden = false; }
@@ -2826,7 +2826,7 @@
     $("#app").hidden = true; $("#login").hidden = false; loginCard("resetForm");
     const f = $("#resetForm");
     try {
-      const r = await window.Ravelle.call("GET", "/api/auth/reset/" + encodeURIComponent(resetToken));
+      const r = await window.Ravari.call("GET", "/api/auth/reset/" + encodeURIComponent(resetToken));
       $("#resetNote").textContent = `Choose a new password for ${r.email}. At least 8 characters.`;
       f.password.focus();
     } catch (err) { $("#resetNote").textContent = err.message; $$("input, button", f).forEach((x) => { x.disabled = true; }); }
@@ -2836,7 +2836,7 @@
       if (f.password.value !== f.password2.value) { $("#resetErr").textContent = "The two passwords don't match."; $("#resetErr").hidden = false; return; }
       const btn = $("button[type=submit]", f); busy(btn, true);
       try {
-        const r = await window.Ravelle.call("POST", "/api/auth/reset", { token: resetToken, password: f.password.value });
+        const r = await window.Ravari.call("POST", "/api/auth/reset", { token: resetToken, password: f.password.value });
         history.replaceState(null, "", location.pathname + demoQs());
         loginCard("loginForm");
         $("#loginForm").email.value = r.email; $("#loginForm").password.value = "";
@@ -2849,13 +2849,13 @@
   $("#logout").onclick = () => signOut();
   $("#menuBtn").onclick = () => { $("#side").classList.add("is-open"); $("#sideScrim").hidden = false; };
   $("#sideScrim").onclick = () => { $("#side").classList.remove("is-open"); $("#sideScrim").hidden = true; };
-  $("#resetDemo").onclick = async () => { if (await confirmBox("Reset the demo?", "This puts back the sample products, orders and pages and removes your changes in this browser.", "Reset demo", true)) window.Ravelle.resetDemo(); };
+  $("#resetDemo").onclick = async () => { if (await confirmBox("Reset the demo?", "This puts back the sample products, orders and pages and removes your changes in this browser.", "Reset demo", true)) window.Ravari.resetDemo(); };
 
-  window.Ravelle.ready.then(async () => {
+  window.Ravari.ready.then(async () => {
     if (resetToken) return showReset();
     if (!token) return showLogin();
     try {
-      const r = await window.Ravelle.call("GET", "/api/auth/me", null, token);
+      const r = await window.Ravari.call("GET", "/api/auth/me", null, token);
       if (!r.user) throw new Error();
       me = r.user; areas = r.areas;
       start();

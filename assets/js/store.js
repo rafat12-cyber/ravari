@@ -1,4 +1,4 @@
-// Ravelle storefront: hash-routed pages over the store API (client.js), the
+// Ravari storefront: hash-routed pages over the store API (client.js), the
 // bag and checkout, chat, and the scroll effects from the reference design
 // (slat reveals, scrambled words, drifting type).
 (function () {
@@ -18,11 +18,11 @@
   };
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var EDIT = /[?&]edit\b/.test(location.search);
-  var api = window.Ravelle.call;
+  var api = window.Ravari.call;
 
   var store = {
-    get: function (k, d) { try { var v = localStorage.getItem("ravelle:" + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-    set: function (k, v) { try { localStorage.setItem("ravelle:" + k, JSON.stringify(v)); } catch (e) {} }
+    get: function (k, d) { try { var v = localStorage.getItem("ravari:" + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem("ravari:" + k, JSON.stringify(v)); } catch (e) {} }
   };
 
   // Catalogue, filled from GET /api/store
@@ -364,7 +364,7 @@
         '<button class="icon-btn icon-btn--line nav__burger" type="button" data-open-menu aria-label="Open menu">' + ICON.menu + "</button>" +
         '<ul class="nav__group nav__menu">' + items.map(menuItem).join("") + "</ul>" +
       "</div>" +
-      '<a class="nav__brand" href="#home" aria-label="' + esc(S.settings.store ? S.settings.store.name : "Ravelle") + ' home"><img src="' + esc(LAY().header.logo || "assets/img/logo.webp") + '" alt="Ravelle" width="100" height="54"></a>' +
+      '<a class="nav__brand" href="#home" aria-label="' + esc(S.settings.store ? S.settings.store.name : "Ravari") + ' home"><img src="' + esc(LAY().header.logo || "assets/img/logo.webp") + '" alt="Ravari" width="100" height="54"></a>' +
       '<div class="nav__group nav__group--end">' +
         (LAY().header.showSearch ? '<button class="icon-btn icon-btn--line" type="button" data-open-search aria-label="Search">' + ICON.search + "</button>" : "") +
         (LAY().header.showAccount ? '<a class="icon-btn icon-btn--line nav__track" href="#track" aria-label="Track your order">' + ICON.user + "</a>" : "") +
@@ -400,7 +400,7 @@
     ann.textContent = S.settings.announcement || "";
     if (lay.header.announceBg) ann.style.background = lay.header.announceBg;
     if (lay.header.announceColor) ann.style.color = lay.header.announceColor;
-    document.documentElement.style.setProperty("--logo-h", (lay.header.logoHeight || 40) + "px");
+    document.documentElement.style.setProperty("--logo-h", (lay.header.logoHeight || 24) + "px");
     document.body.classList.toggle("no-sticky", lay.header.sticky === false);
     if (lay.header.logo) $$(".menu__logo img, .poster__logo").forEach(function (im) { im.src = lay.header.logo; });
     // Footer parts
@@ -451,7 +451,7 @@
     var legal = [["Trade license", st.tradeLicense], ["TIN", st.tin], ["DBID", st.dbid], ["BIN", st.bin]].filter(function (x) { return x[1]; });
     $("#footerLegal").innerHTML = legal.map(function (x) { return "<span>" + x[0] + ": " + esc(x[1]) + "</span>"; }).join("");
     $("#footerCopy").innerHTML = LAY().footer.copyright ? esc(LAY().footer.copyright).replace(/\{year\}/g, new Date().getFullYear())
-      : "© " + new Date().getFullYear() + " " + esc(st.legalName || "Ravelle") + " · Prices in BDT (৳)";
+      : "© " + new Date().getFullYear() + " " + esc(st.legalName || "Ravari") + " · Prices in BDT (৳)";
     var payments = S.settings.payments || {};
     $("#payBadges").innerHTML = (payments.sslcommerz ? ["VISA", "Mastercard", "AMEX", "bKash", "Nagad", "Rocket", "Upay", "DBBL Nexus", "Internet banking"] : []).concat(payments.cod ? ["Cash on delivery"] : [])
       .map(function (b) { return '<span class="pay-badge">' + esc(b) + "</span>"; }).join("");
@@ -941,7 +941,7 @@
     var n = productsIn(c).length;
     return '<a class="drop drop--sm reveal slat dark" href="#category/' + c.slug + '">' +
       '<img src="' + esc(c.image) + '" alt="" loading="lazy">' +
-      '<span class="drop__meta mono">0' + (i + 1) + " / " + esc((CAT_BY_ID[c.parentId] || {}).name || "Ravelle") + "</span>" +
+      '<span class="drop__meta mono">0' + (i + 1) + " / " + esc((CAT_BY_ID[c.parentId] || {}).name || "Ravari") + "</span>" +
       '<span class="drop__title"><span data-scramble>' + esc(c.name) + '</span><span class="fade drop__mood">' + esc(c.description || "") + "</span></span>" +
       '<span class="chip chip--ghost">● ' + (n ? n + " pieces" : "First drop soon") + "</span></a>";
   }
@@ -961,7 +961,7 @@
     page.innerHTML =
       '<section class="soon">' +
         '<div class="soon__card reveal slat dark"><img src="' + esc(cat.image || (parent && parent.image) || "assets/img/c-black.webp") + '" alt="" loading="lazy">' +
-          '<span class="drop__meta mono">' + esc(parent ? parent.name : "Ravelle") + " / " + esc(cat.name) + "</span>" +
+          '<span class="drop__meta mono">' + esc(parent ? parent.name : "Ravari") + " / " + esc(cat.name) + "</span>" +
           '<p class="soon__big" aria-hidden="true">' + esc(cat.name.split(" ")[0]) + "</p></div>" +
         '<div class="soon__copy"><p class="eyebrow">Coming soon</p><h2 class="h2">' + esc(cat.name) + ' is <em class="alt" data-scramble>next</em></h2>' +
           "<p>" + esc(cat.description || "We're still working on this line.") + " Leave your email and we'll tell you the day it goes live.</p>" + notify("n-" + cat.slug, cat.name) +
@@ -1276,7 +1276,7 @@
     var map = s.map || "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(s.name + ", " + (s.address || s.district));
     return '<article class="shopcard reveal">' +
       '<div class="shopcard__img">' + (s.image ? '<img src="' + esc(s.image) + '" alt="' + esc(s.name) + '" loading="lazy">' : "") +
-        '<span class="shopcard__type' + (s.type === "franchise" ? " is-fr" : "") + '">' + (s.type === "franchise" ? "Franchise store" : "Ravelle store") + "</span></div>" +
+        '<span class="shopcard__type' + (s.type === "franchise" ? " is-fr" : "") + '">' + (s.type === "franchise" ? "Franchise store" : "Ravari store") + "</span></div>" +
       '<div class="shopcard__body"><p class="mono shopcard__district">' + esc(s.district) + "</p><h3>" + esc(s.name) + "</h3>" +
         (s.address ? '<p class="shopcard__addr">' + esc(s.address) + "</p>" : "") +
         (s.hours ? '<p class="shopcard__hours mono">' + esc(s.hours) + "</p>" : "") +
@@ -1348,7 +1348,7 @@
             field("fr-investment", "Planned investment", '<select id="fr-investment" name="investment">' + opt(["Under ৳10 lakh", "৳10 – 20 lakh", "৳20 – 40 lakh", "Over ৳40 lakh"], "Choose a range") + "</select>") + "</div>" +
             field("fr-experience", "Business or retail experience", '<textarea id="fr-experience" name="experience" rows="3" placeholder="Tell us about any shop or business you have run."></textarea>') +
             '<p class="fr__label mono">Meeting</p>' +
-            field("fr-mtype", "How would you like to meet?", '<select id="fr-mtype" name="meetingType">' + opt(["At the Ravelle office", "Video call", "Phone call"]) + "</select>") +
+            field("fr-mtype", "How would you like to meet?", '<select id="fr-mtype" name="meetingType">' + opt(["At the Ravari office", "Video call", "Phone call"]) + "</select>") +
             '<div class="field-row">' + field("fr-date", "Preferred date", '<input id="fr-date" name="meetingDate" type="date" min="' + tomorrow + '">') +
             field("fr-time", "Preferred time", '<select id="fr-time" name="meetingTime">' + opt(["11am – 1pm", "2pm – 4pm", "4pm – 6pm", "6pm – 8pm"], "Any time") + "</select>") + "</div>" +
             field("fr-message", "Anything else? (optional)", '<textarea id="fr-message" name="message" rows="3"></textarea>') +
@@ -1370,7 +1370,7 @@
                 "<div><b>" + esc(s.ownerName) + '</b><span class="mono">Owner' + (s.storeName ? ", " + esc(s.storeName) : "") + "</span></div></div>" +
             "</div></article>";
         }).join("") + "</div></div>" : "";
-      $("#frPdf").innerHTML = d.pdf ? '<a class="pill pill--dark pill--arrow" href="' + esc(safe(d.pdf)) + '" download="Ravelle-franchise-guide.pdf" target="_blank" rel="noopener">Download PDF <span class="pill__arrow" aria-hidden="true">↓</span></a>'
+      $("#frPdf").innerHTML = d.pdf ? '<a class="pill pill--dark pill--arrow" href="' + esc(safe(d.pdf)) + '" download="Ravari-franchise-guide.pdf" target="_blank" rel="noopener">Download PDF <span class="pill__arrow" aria-hidden="true">↓</span></a>'
         : '<span class="pill fr__soon" aria-disabled="true">PDF coming soon</span>';
       bind(page, d);
       activate($("#frStories"));
@@ -1630,7 +1630,7 @@
           '<label class="agree"><input type="checkbox" name="agree" id="co-agree" required checked><span>I have read and agree to the website\'s <a href="#terms" data-policy="terms">Terms &amp; conditions</a>, <a href="#privacy" data-policy="privacy">Privacy policy</a> and <a href="#refund" data-policy="refund">Return &amp; refund policy</a>.</span></label>' +
           '<em class="field__err" data-err="agree" hidden></em>' +
           '<button class="pill pill--dark checkout__submit" type="submit" id="placeOrder">Place order · <span data-total></span></button>' +
-          '<p class="checkout__note mono">' + (window.Ravelle.mode === "demo" ? "Demo store: orders are saved in this browser and shown in the admin panel." : "We'll confirm by phone before we ship.") + "</p>" +
+          '<p class="checkout__note mono">' + (window.Ravari.mode === "demo" ? "Demo store: orders are saved in this browser and shown in the admin panel." : "We'll confirm by phone before we ship.") + "</p>" +
         "</form>" +
         '<aside class="summary panel"><h2 class="panel__title">Order summary</h2><div id="summaryLines"></div>' +
           '<form class="coupon" id="couponForm"><label class="sr" for="co-coupon">Coupon code</label><input id="co-coupon" placeholder="Coupon code" autocomplete="off" value="' + esc(checkoutState.coupon ? checkoutState.coupon.code : "") + '">' +
@@ -1737,7 +1737,7 @@
   // Home page popup banner: 2 seconds after the home page opens, once per visit (browser tab session)
   // ---------------------------------------------------------------------------
   var popupTimer = null;
-  function popupSeen() { try { return sessionStorage.getItem("ravelle:popup") === popupKey(); } catch (e) { return false; } }
+  function popupSeen() { try { return sessionStorage.getItem("ravari:popup") === popupKey(); } catch (e) { return false; } }
   function popupKey() { var p = S.pages.popup || {}; return String(p.version || "") + "|" + (p.title || "") + "|" + (p.image || "").slice(-40); }
   function schedulePopup(isHome) {
     clearTimeout(popupTimer);
@@ -1770,7 +1770,7 @@
     return m && !/-m$/.test(m[1]) ? m[1] + "-m.webp" : "";
   }
   function showPopup(p) {
-    try { sessionStorage.setItem("ravelle:popup", popupKey()); } catch (e) {}
+    try { sessionStorage.setItem("ravari:popup", popupKey()); } catch (e) {}
     // A mobile image set in Admin is used on phones; otherwise the site photo's smaller "-m" copy is offered to any screen that doesn't need more
     var small = !p.mobileImage && popupMobile(p);
     var img = p.image ? '<picture class="popup__img">' + (p.mobileImage ? '<source media="(max-width: 640px)" srcset="' + esc(p.mobileImage) + '">' : "") + '<img src="' + esc(p.image) + '"' +
@@ -1917,7 +1917,7 @@
     }
   }
   function setPageTitle(t) {
-    var name = (S.settings.store && S.settings.store.name) || "Ravelle";
+    var name = (S.settings.store && S.settings.store.name) || "Ravari";
     document.title = t ? t + " | " + name : (S.settings.seo && S.settings.seo.title) || name;
     var can = document.querySelector('link[rel="canonical"]');
     if (can && PATHS) can.href = location.origin + location.pathname;
@@ -2103,7 +2103,7 @@
     box.innerHTML = list.map(function (m) {
       var pic = m.image ? '<a class="msg__img" href="' + esc(safe(m.image)) + '" target="_blank" rel="noopener"><img src="' + esc(m.image) + '" alt="Photo"></a>' : "";
       return '<div class="msg msg--' + (m.from === "customer" ? "me" : "them") + (m.image ? " msg--img" : "") + '">' + pic + (m.text ? "<p>" + br(m.text) + "</p>" : "") + '<span class="mono">' +
-        (m.from === "customer" ? "You" : esc(m.author || (S.settings.chat || {}).title || "Ravelle")) + " · " + new Date(m.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + "</span></div>";
+        (m.from === "customer" ? "You" : esc(m.author || (S.settings.chat || {}).title || "Ravari")) + " · " + new Date(m.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + "</span></div>";
     }).join("");
     box.scrollTop = box.scrollHeight;
     $("#chatIntro").hidden = !!chat.session;
@@ -2225,7 +2225,7 @@
   // Where this visit came from: a utm_source tag, an ad click id, or the site that linked here
   function trafficSource() {
     var saved = null;
-    try { saved = sessionStorage.getItem("ravelle:src"); } catch (e) {}
+    try { saved = sessionStorage.getItem("ravari:src"); } catch (e) {}
     if (saved) return saved;
     var q = location.search, utm = (q.match(/[?&]utm_source=([^&#]+)/) || [])[1], src = "Direct";
     var ref = "";
@@ -2239,7 +2239,7 @@
     else if (/[?&]gclid=/.test(q)) src = "Google Ads";
     else if (ref) src = name(ref) || ref;
     src = src.slice(0, 40);
-    try { sessionStorage.setItem("ravelle:src", src); } catch (e) {}
+    try { sessionStorage.setItem("ravari:src", src); } catch (e) {}
     return src;
   }
   function deviceInfo() {
@@ -2472,7 +2472,7 @@
       var el = e.target.closest && e.target.closest("[data-c]");
       if (!el) return;
       var key = pageKeyOf(el);
-      parent.postMessage({ type: "ravelle:edit", key: key, path: el.dataset.c, value: plainText(el) }, "*");
+      parent.postMessage({ type: "ravari:edit", key: key, path: el.dataset.c, value: plainText(el) }, "*");
     });
     document.addEventListener("click", function (e) {
       var el = e.target.closest("[data-ci], [data-md], [data-lines], [data-marquee], [data-c]");
@@ -2480,11 +2480,11 @@
       var key = pageKeyOf(el);
       var path = el.dataset.ci || el.dataset.md || el.dataset.lines || el.dataset.marquee || el.dataset.c;
       var kind = el.dataset.ci ? "image" : "field";
-      parent.postMessage({ type: "ravelle:focus", key: key, path: path, kind: kind }, "*");
+      parent.postMessage({ type: "ravari:focus", key: key, path: path, kind: kind }, "*");
     }, true);
     window.addEventListener("message", function (e) {
       var m = e.data || {};
-      if (m.type === "ravelle:page" && m.key && m.page) {
+      if (m.type === "ravari:page" && m.key && m.page) {
         S.pages[m.key] = m.page;
         if (m.key === "home") { bind(homeView, m.page); bind($("#footer"), m.page); drawLook(current); editable(homeView); }
         else {
@@ -2493,9 +2493,9 @@
           if (root.length) Array.prototype.forEach.call(root, function (r) { bind(r, m.page); editable(r); });
         }
         if (m.focus) flash(m.focus);
-      } else if (m.type === "ravelle:goto") {
+      } else if (m.type === "ravari:goto") {
         go(m.hash);
-      } else if (m.type === "ravelle:reload") {
+      } else if (m.type === "ravari:reload") {
         reloadStore();
       }
     });
@@ -2520,7 +2520,7 @@
       syncBag();
     });
   }
-  window.Ravelle.ready.then(reloadStore).then(function () {
+  window.Ravari.ready.then(reloadStore).then(function () {
     document.documentElement.classList.add("is-ready");
     var heroWord = $(".hero [data-scramble]");
     setTimeout(function () { document.documentElement.classList.remove("js-intro"); }, 3600);
@@ -2529,12 +2529,12 @@
     route();
     if (chatEnabled()) {
       $("#chat").hidden = false;
-      $("#chatTitle").textContent = (S.settings.chat && S.settings.chat.title) || "Ravelle";
+      $("#chatTitle").textContent = (S.settings.chat && S.settings.chat.title) || "Ravari";
       if (chat.session) pollChat();
       drawChat();
     }
     if (!store.get("cookies", 0) && !EDIT) $("#cookies").hidden = false;
-    if (window.Ravelle.mode === "demo" && !EDIT) $("#demoBar").hidden = false;
+    if (window.Ravari.mode === "demo" && !EDIT) $("#demoBar").hidden = false;
     var di = deviceInfo();
     track("visit", "", { src: trafficSource(), dev: di.dev, br: di.br, os: di.os, nv: sidNew, path: pagePath() });
   }, function (err) {

@@ -9,7 +9,7 @@ var crypto = require("crypto");
 var spawn = require("child_process").spawn;
 var assert = require("assert");
 
-var dir = fs.mkdtempSync(path.join(os.tmpdir(), "ravelle-test-"));
+var dir = fs.mkdtempSync(path.join(os.tmpdir(), "ravari-test-"));
 var PORT = 3900 + Math.floor(Math.random() * 90);
 var HOOK_PORT = PORT + 100;
 var received = [];
@@ -198,12 +198,12 @@ async function main() {
   console.log("✓ fast loading: small photo copies, fallbacks, caching, local fonts");
 
   await wait(600);
-  var events = received.map(function (x) { return x.headers["x-ravelle-event"]; });
+  var events = received.map(function (x) { return x.headers["x-ravari-event"]; });
   assert.ok(events.indexOf("order.created") > -1, "order.created webhook");
   assert.ok(events.indexOf("chat.message.created") > -1, "chat webhook");
   var one = received[0];
   var sig = "sha256=" + crypto.createHmac("sha256", secret).update(one.body).digest("hex");
-  assert.equal(one.headers["x-ravelle-signature"], sig);
+  assert.equal(one.headers["x-ravari-signature"], sig);
   console.log("✓ webhooks delivered and signed:", events.join(", "));
   console.log("\nAll checks passed.");
 }

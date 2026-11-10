@@ -1,4 +1,4 @@
-/* Ravelle admin: the storefront's paper, ink and type, laid out as a working
+/* Ravari admin: the storefront's paper, ink and type, laid out as a working
    tool. Sidebar, then one view at a time. */
 :root {
   --ground: #eceef0;
@@ -91,14 +91,14 @@ textarea.input--md { font-family: var(--f-mono); font-size: 12.5px; min-height: 
 /* Login */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
 .login__card { width: min(380px, 100%); background: var(--paper); border-radius: 22px; padding: 30px; display: grid; gap: 14px; box-shadow: 0 30px 60px -40px rgba(17,18,20,.5); }
-.login__card img { height: 40px; width: auto; }
+.login__card img { height: 24px; width: auto; justify-self: start; }
 .demo-hint { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; }
 
 /* Layout */
 .app { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); min-height: 100vh; }
 .side { position: sticky; top: 0; height: 100vh; display: grid; grid-template-rows: auto 1fr auto; background: var(--ink); color: #e7e9eb; padding: 16px 12px; overflow-y: auto; }
 .side__brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 16px; text-decoration: none; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 13px; }
-.side__brand img { filter: invert(1); height: 22px; width: auto; }
+.side__brand img { height: 18px; width: auto; }
 .side__nav { display: grid; gap: 1px; align-content: start; }
 .side__group { margin: 14px 10px 4px; color: #7d8288; }
 .side__nav a { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 9px; text-decoration: none; font-size: 13.5px; color: #c9ccd0; }

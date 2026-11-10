@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Ravelle store server. No dependencies: Node 18 or newer.
+// Ravari store server. No dependencies: Node 18 or newer.
 //
 //   node server/server.js
 //
@@ -111,7 +111,7 @@ function deliver(job, attempt) {
   var body = JSON.stringify({ id: job.id, event: job.event, createdAt: job.at, data: job.data });
   var sig = crypto.createHmac("sha256", job.hook.secret).update(body).digest("hex");
   postJson(job.hook.url, body, {
-    "X-Ravelle-Event": job.event, "X-Ravelle-Delivery": job.id, "X-Ravelle-Signature": "sha256=" + sig
+    "X-Ravari-Event": job.event, "X-Ravari-Delivery": job.id, "X-Ravari-Signature": "sha256=" + sig
   }, function (err, status) {
     var ok = !err && status >= 200 && status < 300;
     db.webhookLog = (db.webhookLog || []).concat({ id: job.id + "_" + attempt, hookId: job.hook.id, url: job.hook.url, event: job.event, at: Date.now(),
@@ -210,7 +210,7 @@ function acoreSend(job) {
     var u;
     try { u = new URL(url); } catch (e) { return acoreDone(job, false, "", "The Acore address isn't valid."); }
     var req = (u.protocol === "https:" ? https : http).request(u, { method: "POST", timeout: 10000, headers: {
-      "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "Authorization": "Bearer " + job.apiKey, "User-Agent": "Ravelle-Website/1.0" } }, function (res) {
+      "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "Authorization": "Bearer " + job.apiKey, "User-Agent": "Ravari-Website/1.0" } }, function (res) {
       var text = "";
       res.on("data", function (d) { if (text.length < 4000) text += d; });
       res.on("end", function () {
@@ -292,7 +292,7 @@ function postJson(url, body, headers, cb) {
   var u;
   try { u = new URL(url); } catch (e) { return cb(e); }
   var lib = u.protocol === "https:" ? https : http;
-  var req = lib.request(u, { method: "POST", timeout: 8000, headers: Object.assign({ "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "User-Agent": "Ravelle-Webhooks/1.0" }, headers) }, function (res) {
+  var req = lib.request(u, { method: "POST", timeout: 8000, headers: Object.assign({ "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "User-Agent": "Ravari-Webhooks/1.0" }, headers) }, function (res) {
     res.resume();
     res.on("end", function () { cb(null, res.statusCode); });
   });
@@ -411,21 +411,21 @@ function smtpSend(job, cb) {
     { expect: [250], then: function () { send("QUIT"); finish(null); } }
   ];
   if (port === 465) {
-    steps = [{ expect: [220], then: function () { send("EHLO ravelle"); } }].concat(auth);
+    steps = [{ expect: [220], then: function () { send("EHLO ravari"); } }].concat(auth);
     attach(tls.connect({ host: cfg.host, port: port, servername: cfg.host }));
   } else {
     // 587: start plain, then switch to TLS with STARTTLS
     steps = [
-      { expect: [220], then: function () { send("EHLO ravelle"); } },
+      { expect: [220], then: function () { send("EHLO ravari"); } },
       { expect: [250], then: function (t) {
-        if (plainOk) { step = 1; steps = [null].concat(auth); send("EHLO ravelle"); return; }
+        if (plainOk) { step = 1; steps = [null].concat(auth); send("EHLO ravari"); return; }
         send("STARTTLS");
       } },
       { expect: [220], then: function () {
         var raw = sock; raw.removeAllListeners("data");
         buf = ""; step = 0;
         steps = [null].concat(auth); step = 1;
-        attach(tls.connect({ socket: raw, servername: cfg.host }, function () { send("EHLO ravelle"); }));
+        attach(tls.connect({ socket: raw, servername: cfg.host }, function () { send("EHLO ravari"); }));
       } }
     ];
     attach(net.connect(port, cfg.host));
@@ -845,7 +845,7 @@ function loadEnv(file) {
 }
 
 server.listen(PORT, function () {
-  console.log("Ravelle is running at " + PUBLIC_URL + "  (admin: " + PUBLIC_URL + "/admin)");
+  console.log("Ravari is running at " + PUBLIC_URL + "  (admin: " + PUBLIC_URL + "/admin)");
   var ssl = db.settings.payments.sslcommerz || {};
   if (ssl.enabled && ssl.sandbox && HTTPS_SITE) console.warn("\n  WARNING: SSLCOMMERZ is in sandbox (test) mode. Test cards will mark real orders as paid.\n  Turn sandbox off in Admin > Settings > Payments before taking real orders.\n");
   if (ADMIN_LOCK) console.log("  Admin sign-in only works at " + PUBLIC_URL + "/admin");

@@ -1,6 +1,6 @@
-# Ravelle BD website
+# Ravari BD website
 
-The online store for [Ravelle – A Life Style Brand](https://ravaribd.com/): storefront, checkout with SSLCOMMERZ, admin panel, live chat and an API for other software. It runs on Node.js with no other dependencies and keeps its data in one JSON file.
+The online store for [Ravari – A Life Style Brand](https://ravaribd.com/): storefront, checkout with SSLCOMMERZ, admin panel, live chat and an API for other software. It runs on Node.js with no other dependencies and keeps its data in one JSON file.
 
 ## What's in it
 
@@ -89,14 +89,14 @@ On the live site (`PUBLIC_URL=https://ravaribd.com`) the admin panel only signs 
 
 ### Hosting
 
-Any host that runs Node.js works: a VPS (DigitalOcean, Vultr, a Bangladeshi VPS), cPanel with "Setup Node.js App" (set the startup file to `server/server.js`, `TRUST_PROXY=1`, and `DATA_DIR` to a folder outside the app, like `/home/<user>/ravelle-data`), Render, Railway or Fly.io. Static-only hosting such as GitHub Pages or Netlify **can't** run the checkout, admin or API.
+Any host that runs Node.js works: a VPS (DigitalOcean, Vultr, a Bangladeshi VPS), cPanel with "Setup Node.js App" (set the startup file to `server/server.js`, `TRUST_PROXY=1`, and `DATA_DIR` to a folder outside the app, like `/home/<user>/ravari-data`), Render, Railway or Fly.io. Static-only hosting such as GitHub Pages or Netlify **can't** run the checkout, admin or API.
 
 On a VPS:
 
 ```sh
-git clone https://github.com/rafat12-cyber/ravelle_website.git && cd ravelle_website
+git clone https://github.com/rafat12-cyber/ravari.git && cd ravari
 cp .env.example .env && nano .env
-npm install -g pm2 && pm2 start server/server.js --name ravelle && pm2 save && pm2 startup
+npm install -g pm2 && pm2 start server/server.js --name ravari && pm2 save && pm2 startup
 ```
 
 Then put Nginx (or Caddy) in front for HTTPS and point your domain at it:
@@ -117,7 +117,7 @@ The checkout sends the customer to SSLCOMMERZ and back to `/api/payments/sslcomm
 
 ## Demo mode
 
-Open `index.html` straight from the folder, add `?demo` to the address (ignored on the live Node server), or host the files without the Node server, and the store runs entirely in your browser with the real products and pages and no orders or customers, so you can try the admin. Demo sign-in: `admin@ravaribd.com` / `ravelle-demo`. Nothing leaves the browser; **Reset** in the admin starts the demo over.
+Open `index.html` straight from the folder, add `?demo` to the address (ignored on the live Node server), or host the files without the Node server, and the store runs entirely in your browser with the real products and pages and no orders or customers, so you can try the admin. Demo sign-in: `admin@ravaribd.com` / `ravari-demo`. Nothing leaves the browser; **Reset** in the admin starts the demo over.
 
 ## Structure
 

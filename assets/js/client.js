@@ -9,8 +9,8 @@
     var s = document.currentScript && document.currentScript.src;
     return s ? s.replace(/assets\/js\/client\.js.*$/, "") : "";
   })();
-  var DB_KEY = "ravelle:demo-db:v29";
-  var DEMO_LOGIN = { email: "admin@ravaribd.com", password: "ravelle-demo" };
+  var DB_KEY = "ravari:demo-db:v29";
+  var DEMO_LOGIN = { email: "admin@ravaribd.com", password: "ravari-demo" };
 
   // The server stamps the current asset version on the page (cache busting); the demo uses the fixed one
   function assetV(fallback) { var m = document.querySelector('meta[name="rv-v"]'); return (m && m.content) || fallback; }
@@ -32,7 +32,7 @@
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 3000);
     return fetch(BASE + "api/health", { signal: ctl ? ctl.signal : undefined, cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { clearTimeout(timer); return j && j.ravelle ? "server" : "demo"; })
+      .then(function (j) { clearTimeout(timer); return j && j.ravari ? "server" : "demo"; })
       .catch(function () { clearTimeout(timer); return "demo"; });
   }
 
@@ -47,7 +47,7 @@
   }
   function demoHash(pw, salt) {
     var h = String(salt) + ":" + pw;
-    for (var i = 0; i < 300; i++) h = RavelleCore.sha256(h + salt);
+    for (var i = 0; i < 300; i++) h = RavariCore.sha256(h + salt);
     return "sha256$" + h;
   }
   function readDb() {
@@ -70,7 +70,7 @@
       saveMedia: function (name, dataUrl) { return { url: dataUrl, size: Math.round(dataUrl.length * 0.75) }; },
       describeSettings: function (s) { s.payments.sslcommerz.serverReady = false; s.demo = true; }
     };
-    var engine = RavelleCore.create(host);
+    var engine = RavariCore.create(host);
     if (!readDb()) writeDb(buildDemoDb());
     demo = {
       call: function (method, path, body, token) {
@@ -96,7 +96,7 @@
   // Demo database: products, pages and settings from the seed and one owner login.
   // No sample orders, customers, carts, analytics, chats or messages.
   function buildDemoDb() {
-    var db = RavelleCore.freshDb(window.RAVELLE_SEED);
+    var db = RavariCore.freshDb(window.RAVARI_SEED);
     db.demo = true;
     var salt = hex(8);
     db.users.push({ id: "usr_demo", name: "Rafat", email: DEMO_LOGIN.email, role: "owner", salt: salt, passwordHash: demoHash(DEMO_LOGIN.password, salt), createdAt: Date.now() });
@@ -110,8 +110,8 @@
   var ready = detect().then(function (m) {
     mode = m;
     if (m === "server") return m;
-    return (window.RavelleCore ? Promise.resolve() : loadScript("assets/js/core.js?v=" + assetV("1172")))
-      .then(function () { return window.RAVELLE_SEED ? null : loadScript("assets/js/seed.js?v=" + assetV("1168")); })
+    return (window.RavariCore ? Promise.resolve() : loadScript("assets/js/core.js?v=" + assetV("1172")))
+      .then(function () { return window.RAVARI_SEED ? null : loadScript("assets/js/seed.js?v=" + assetV("1168")); })
       .then(function () { startDemo(); return m; });
   });
 
@@ -141,7 +141,7 @@
     });
   }
 
-  window.Ravelle = {
+  window.Ravari = {
     ready: ready,
     call: call,
     get mode() { return mode; },

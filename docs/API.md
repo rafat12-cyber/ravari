@@ -1,4 +1,4 @@
-# Ravelle store API
+# Ravari store API
 
 Every part of the store (products, stock, orders, customers, chat and more) can be read and changed over HTTPS with JSON. Use it to connect an AI chat reply tool, a courier or accounting system, a warehouse or POS, Google Sheets, Zapier, Make or your own app.
 
@@ -138,7 +138,7 @@ Product fields: `name`, `slug`, `sku`, `status`, `price`, `comparePrice`, `descr
 |---|---|---|
 | GET | `/api/chats` | Conversations. Query: `status` (open, closed), `since` (ms, only chats updated after), `messages=1` to include messages, `wait=1` (with `since`) to hold the request up to 25 s until a chat changes |
 | GET | `/api/chats/:id` | One conversation with all messages |
-| POST | `/api/chats/:id/messages` | Reply: `{ "text": "…" }`. With an API key it shows as the bot; add `"author": "Ravelle AI"` to change the name |
+| POST | `/api/chats/:id/messages` | Reply: `{ "text": "…" }`. With an API key it shows as the bot; add `"author": "Ravari AI"` to change the name |
 | PATCH | `/api/chats/:id` | `{ "status": "closed" }`, `{ "read": true }` |
 
 How to wire an AI tool:
@@ -185,12 +185,12 @@ Add them in **Admin → API & webhooks**. When an event happens we POST this to 
 | `coupon.used` | `{ code, orderNumber, discount }` |
 | `subscriber.created` | The subscriber (`email`, `phone`, `source`) |
 
-Headers: `X-Ravelle-Event`, `X-Ravelle-Delivery` (unique id) and `X-Ravelle-Signature: sha256=<hex>`, the HMAC-SHA256 of the raw body using the webhook's secret. Check it before trusting the data:
+Headers: `X-Ravari-Event`, `X-Ravari-Delivery` (unique id) and `X-Ravari-Signature: sha256=<hex>`, the HMAC-SHA256 of the raw body using the webhook's secret. Check it before trusting the data:
 
 ```js
 const crypto = require("crypto");
-const expected = "sha256=" + crypto.createHmac("sha256", process.env.RAVELLE_WEBHOOK_SECRET).update(rawBody).digest("hex");
-const ok = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(req.headers["x-ravelle-signature"] || ""));
+const expected = "sha256=" + crypto.createHmac("sha256", process.env.RAVARI_WEBHOOK_SECRET).update(rawBody).digest("hex");
+const ok = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(req.headers["x-ravari-signature"] || ""));
 ```
 
 Answer with any 2xx status within 8 seconds. Failed deliveries are retried after 5 and 30 seconds; the last 300 attempts are listed in the admin.

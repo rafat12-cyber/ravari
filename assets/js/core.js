@@ -1,10 +1,10 @@
-// Ravelle store engine: every API route, shared by the Node server
+// Ravari store engine: every API route, shared by the Node server
 // (server/server.js) and the in-browser demo (assets/js/client.js).
 // Each host supplies storage, hashing, randomness, webhooks and media saving;
 // the routes, validation, stock, coupons, orders and analytics live here.
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
-  else root.RavelleCore = factory();
+  else root.RavariCore = factory();
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
@@ -142,8 +142,8 @@
   }
   // Header and footer options (Admin > Header & footer). Older databases get these defaults.
   var LAYOUT_DEFAULTS = {
-    header: { announce: true, announceBg: "#111214", announceColor: "#ffffff", logo: "", logoHeight: 40, sticky: true, showSearch: true, showAccount: true },
-    footer: { newsletter: true, newsletterButton: "Notify me", showPayments: true, showWordmark: true, wordmark: "RAVELLE", showContact: true,
+    header: { announce: true, announceBg: "#111214", announceColor: "#ffffff", logo: "", logoHeight: 24, sticky: true, showSearch: true, showAccount: true },
+    footer: { newsletter: true, newsletterButton: "Notify me", showPayments: true, showWordmark: true, wordmark: "RAVARI", showContact: true,
       showSocial: true, showLegal: true, copyright: "" }
   };
   function siteLayout(s) {
@@ -527,14 +527,14 @@
         if (!code.capiToken) fail(400, "Add the Conversions API access token first.");
         if (!host.metaEvent) fail(400, "Server events are sent from the live store. The demo has no server.");
         var cust = { name: "Test Customer", phone: "01700000000", city: "Dhaka" };
-        capi({ db: c.db, req: c.req, body: { meta: { url: (c.req.headers || {}).referer || "", sid: "admin-test" } } }, "PageView", "test." + now(), { content_name: "Ravelle admin test" }, cust);
+        capi({ db: c.db, req: c.req, body: { meta: { url: (c.req.headers || {}).referer || "", sid: "admin-test" } } }, "PageView", "test." + now(), { content_name: "Ravari admin test" }, cust);
         return { ok: true, message: "Sent a test PageView to Meta. " + (code.capiTest ? "Look for it in Events Manager › Test events (code " + code.capiTest + ")." : "Add a test event code to see it in Events Manager › Test events.") + " Meta's answer shows here after you reload." };
       }
       if (kind === "ga") {
         if (!code.gaId) fail(400, "Add the Measurement ID first.");
         if (!code.gaSecret) fail(400, "Add the API secret first.");
         if (!host.gaEvent) fail(400, "Server events are sent from the live store. The demo has no server.");
-        host.gaEvent({ measurementId: code.gaId, secret: code.gaSecret, debug: true, body: { client_id: "ravelle.admin.test", events: [{ name: "ravelle_test", params: { engagement_time_msec: 1 } }] } });
+        host.gaEvent({ measurementId: code.gaId, secret: code.gaSecret, debug: true, body: { client_id: "ravari.admin.test", events: [{ name: "ravari_test", params: { engagement_time_msec: 1 } }] } });
         return { ok: true, message: "Asked Google to check the ID and secret. The result shows here after you reload." };
       }
       fail(400, "Unknown test.");
@@ -808,7 +808,7 @@
     // =========================================================================
     // Routes
     // =========================================================================
-    route("GET", "/api/health", null, function () { return { ok: true, ravelle: true, version: 2 }; });
+    route("GET", "/api/health", null, function () { return { ok: true, ravari: true, version: 2 }; });
 
     // Storefront data in one request
     route("GET", "/api/store", null, function (c) {
@@ -1031,7 +1031,7 @@
     // =========================================================================
     // Email (company Gmail over SMTP) and abandoned carts
     // =========================================================================
-    var EMAIL_DEFAULTS = { enabled: false, host: "smtp.gmail.com", port: 465, user: "", password: "", fromName: "Ravelle", replyTo: "", invoice: true, copyTo: "",
+    var EMAIL_DEFAULTS = { enabled: false, host: "smtp.gmail.com", port: 465, user: "", password: "", fromName: "Ravari", replyTo: "", invoice: true, copyTo: "",
       notifyConfirmed: true, notifyShipped: true, notifyDelivered: true };
     var CART_DEFAULTS = { enabled: true, delay1: 20, delay2: 24, subject1: "You left something in your bag", text1: "Your pieces are still waiting. Sizes sell out fast, so finish your order while they're in stock.",
       subject2: "Still thinking it over?", text2: "Your bag is saved. Complete your order today with cash on delivery all over Bangladesh.", coupon: "" };
@@ -1051,7 +1051,7 @@
       if (!host.sendEmail) { entry.status = "Demo: not sent (the demo has no email server)"; entry.ok = false; return entry; }
       if (!es.enabled || !es.user || !es.password) { entry.status = "Not sent: turn on email in Admin › Email & reminders"; entry.ok = false; return entry; }
       host.sendEmail({ id: entry.id, smtp: { host: es.host, port: int(es.port, 465), user: es.user, password: es.password },
-        from: { name: es.fromName || (db.settings.store || {}).name || "Ravelle", email: es.user }, replyTo: es.replyTo || "", to: to, subject: subject, html: html, text: text });
+        from: { name: es.fromName || (db.settings.store || {}).name || "Ravari", email: es.user }, replyTo: es.replyTo || "", to: to, subject: subject, html: html, text: text });
       return entry;
     }
     function emailShell(db, title, body) {
@@ -1059,9 +1059,9 @@
       return '<!doctype html><html><body style="margin:0;background:#eef0f1;font-family:Arial,Helvetica,sans-serif;color:#111214">' +
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef0f1;padding:24px 12px"><tr><td align="center">' +
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">' +
-        '<tr><td style="background:#111214;padding:22px 28px;color:#ffffff;font-size:20px;letter-spacing:6px;font-weight:bold">' + h((st.name || "Ravelle").toUpperCase()) + "</td></tr>" +
+        '<tr><td style="background:#111214;padding:22px 28px;color:#ffffff;font-size:20px;letter-spacing:6px;font-weight:bold">' + h((st.name || "Ravari").toUpperCase()) + "</td></tr>" +
         '<tr><td style="padding:28px">' + (title ? '<h1 style="margin:0 0 14px;font-size:22px;text-transform:uppercase">' + h(title) + "</h1>" : "") + body + "</td></tr>" +
-        '<tr><td style="padding:18px 28px;background:#f6f7f8;font-size:12px;color:#5f6368;line-height:1.6">' + h(st.legalName || st.name || "Ravelle") +
+        '<tr><td style="padding:18px 28px;background:#f6f7f8;font-size:12px;color:#5f6368;line-height:1.6">' + h(st.legalName || st.name || "Ravari") +
           (st.address ? "<br>" + h(st.address) : "") + (st.phone ? "<br>Phone: " + h(st.phone) : "") + (st.email ? " · " + h(st.email) : "") + (site ? '<br><a href="' + h(site) + '" style="color:#5f6368">' + h(site.replace(/^https?:\/\//, "")) + "</a>" : "") +
         "</td></tr></table></td></tr></table></body></html>";
     }
@@ -1093,7 +1093,7 @@
         button(site ? site + "/track" : "", "Track your order");
       var text = "Thanks for your order " + o.number + ".\n\n" + o.items.map(function (it) { return it.qty + " × " + it.name + " – " + money(it.lineTotal); }).join("\n") +
         "\n\nTotal: " + money(o.total) + " (" + pay + ")\nDelivery to: " + o.customer.name + ", " + o.customer.address + (o.customer.city ? ", " + o.customer.city : "") + "\n" + (site ? "\nTrack your order: " + site + "/track\n" : "");
-      var subject = "Your order " + o.number + " · invoice from " + ((db.settings.store || {}).name || "Ravelle");
+      var subject = "Your order " + o.number + " · invoice from " + ((db.settings.store || {}).name || "Ravari");
       if (to.length) sendEmail(db, to[0], subject, emailShell(db, "Order received", body), text, "invoice", o.number);
       copy.forEach(function (e) { sendEmail(db, e, "New order " + o.number + " · " + money(o.total) + " · " + o.customer.name, emailShell(db, "New order", body), text, "invoice-copy", o.number); });
     }
@@ -1339,7 +1339,7 @@
       var ch = { id: newId("cht"), tokenHash: sha256(token), name: str(c.body.name, 80), phone: str(c.body.phone, 20), status: "open",
         createdAt: t, updatedAt: t, unreadAdmin: 0, page: str(c.body.page, 200), messages: [] };
       var greet = db.settings.chat.greeting;
-      if (greet) ch.messages.push({ id: newId("m"), from: "bot", author: db.settings.chat.title || "Ravelle", text: greet, at: t });
+      if (greet) ch.messages.push({ id: newId("m"), from: "bot", author: db.settings.chat.title || "Ravari", text: greet, at: t });
       db.chats.push(ch);
       return { id: ch.id, token: token, messages: visibleMessages(ch, 0), status: ch.status };
     }, { status: 201 });
@@ -1368,7 +1368,7 @@
       var cs = db.settings.chat || {};
       // Until an AI or a person replies, the first message gets the auto reply.
       if (custCount === 1 && cs.autoReply && cs.autoReplyText) {
-        ch.messages.push({ id: newId("m"), from: "bot", author: cs.title || "Ravelle", text: cs.autoReplyText, at: m.at + 1 });
+        ch.messages.push({ id: newId("m"), from: "bot", author: cs.title || "Ravari", text: cs.autoReplyText, at: m.at + 1 });
       }
       emit(db, "chat.message.created", { chatId: ch.id, message: m, chat: chatOut(ch) });
       return { message: m, messages: visibleMessages(ch, c.body.since) };
@@ -1430,7 +1430,7 @@
       u.resetHash = sha256(token); u.resetExpires = now() + 30 * 60e3; u.resetAt = now();
       var link = siteUrl(db) + "/admin?reset=" + token;
       var e = sendEmail(db, u.email, "Reset your admin password", emailShell(db, "Reset your password",
-        '<p style="margin:0 0 6px;font-size:15px;line-height:1.6">Hi ' + h(u.name.split(" ")[0]) + ", someone (hopefully you) asked to reset the password for the " + h((db.settings.store || {}).name || "Ravelle") + " admin panel.</p>" +
+        '<p style="margin:0 0 6px;font-size:15px;line-height:1.6">Hi ' + h(u.name.split(" ")[0]) + ", someone (hopefully you) asked to reset the password for the " + h((db.settings.store || {}).name || "Ravari") + " admin panel.</p>" +
         button(link, "Choose a new password") + '<p style="margin:14px 0 0;font-size:13px;color:#5f6368;line-height:1.6">The link works for 30 minutes and only once. If you didn&#39;t ask for this, ignore this email; your password stays the same.</p>'),
         "Reset your admin password: " + link + "\n\nThe link works for 30 minutes. If you didn't ask for this, ignore this email.", "password-reset", u.email);
       if (!host.sendEmail) { out.demoLink = "?reset=" + token; out.message = "Demo: there's no email server, so here is the reset link."; }
@@ -1751,7 +1751,7 @@
     // again on every change; Acore treats it as an upsert keyed on externalId.
     function acorePayload(db, o) {
       return {
-        source: "ravelle-website", externalId: o.id, number: o.number, createdAt: o.createdAt, status: o.status,
+        source: "ravari-website", externalId: o.id, number: o.number, createdAt: o.createdAt, status: o.status,
         paymentMethod: o.paymentMethod, paymentStatus: o.paymentStatus, codAmount: o.paymentStatus === "paid" ? 0 : o.total,
         customer: { name: o.customer.name, phone: o.customer.phone, email: o.customer.email || "", address: o.customer.address, city: o.customer.city || "" },
         shippingZone: o.shippingZone ? { id: o.shippingZone.id, name: o.shippingZone.name } : null,
@@ -2281,7 +2281,7 @@
     route("POST", "/api/webhooks/:id/test", "integrations", function (c) {
       var w = c.db.webhooks.filter(function (x) { return x.id === c.params.id; })[0];
       if (!w) fail(404, "Webhook not found.");
-      if (host.emit) host.emit("ping", { message: "Test from Ravelle admin", at: now() }, c.db, w.id);
+      if (host.emit) host.emit("ping", { message: "Test from Ravari admin", at: now() }, c.db, w.id);
       return { ok: true };
     });
     route("GET", "/api/webhooks-log", "integrations", function (c) {
@@ -2315,7 +2315,7 @@
       var ch = findChat(c.db, c.params.id), text = str(c.body.text, 4000);
       if (!text) fail(400, "Write a message.");
       var from = c.body.from === "bot" || (c.auth.kind === "key" && c.body.from !== "agent") ? "bot" : "agent";
-      var m = { id: newId("m"), from: from, author: str(c.body.author, 60) || (from === "bot" ? (c.db.settings.chat.title || "Ravelle") : c.auth.name), text: text, at: now(), internal: !!c.body.internal };
+      var m = { id: newId("m"), from: from, author: str(c.body.author, 60) || (from === "bot" ? (c.db.settings.chat.title || "Ravari") : c.auth.name), text: text, at: now(), internal: !!c.body.internal };
       ch.messages.push(m);
       ch.updatedAt = m.at;
       if (c.auth.kind === "user") ch.unreadAdmin = 0;

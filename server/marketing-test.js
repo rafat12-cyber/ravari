@@ -9,7 +9,7 @@ var zlib = require("zlib");
 var spawn = require("child_process").spawn;
 var assert = require("assert");
 
-var dir = fs.mkdtempSync(path.join(os.tmpdir(), "ravelle-mkt-"));
+var dir = fs.mkdtempSync(path.join(os.tmpdir(), "ravari-mkt-"));
 var PORT = 4100 + Math.floor(Math.random() * 90);
 // A stand-in for Meta's Graph API, to see what the store sends to the catalog
 var GRAPH_PORT = PORT + 200, graphCalls = [];
@@ -63,7 +63,7 @@ async function main() {
   // --- Page addresses and search engine tags -----------------------------------------------
   var r = await call("GET", "/product/" + tee.slug);
   assert.equal(r.status, 200);
-  assert.ok(r.body.indexOf("<title>" + tee.name.replace(/&/g, "&amp;") + " | Ravelle</title>") > -1, "product title");
+  assert.ok(r.body.indexOf("<title>" + tee.name.replace(/&/g, "&amp;") + " | Ravari</title>") > -1, "product title");
   assert.ok(r.body.indexOf('<link rel="canonical" href="https://shop.example/product/' + tee.slug + '">') > -1, "canonical uses PUBLIC_URL");
   assert.ok(/<meta property="og:image" content="https:\/\/shop\.example\/assets\/img\/products\//.test(r.body), "og:image is the product photo");
   assert.ok(r.body.indexOf('<base href="/">') > -1 && r.body.indexOf('name="rv-routes"') > -1, "base href and path routing");
@@ -80,7 +80,7 @@ async function main() {
   assert.equal(r.status, 301);
   r = await call("GET", "/product-category/t-shirt");
   assert.equal(r.status, 200);
-  assert.ok(r.body.indexOf("Oversized T-shirts in Bangladesh | Ravelle") > -1, "category SEO title");
+  assert.ok(r.body.indexOf("Oversized T-shirts in Bangladesh | Ravari") > -1, "category SEO title");
   assert.ok(r.body.indexOf('href="/product/' + tee.slug + '"') > -1, "category lists product links");
   r = await call("GET", "/refund_returns/");
   assert.equal(r.status, 301);

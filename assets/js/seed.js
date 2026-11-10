@@ -4,7 +4,7 @@
 // into the browser. Edit the live data from the admin panel, not here.
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
-  else root.RAVELLE_SEED = factory();
+  else root.RAVARI_SEED = factory();
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
@@ -24,7 +24,7 @@
     ["trouser", "Trouser", "men", 5, "", ""],
     ["denim-pant", "Denim pant", "men", 6, "", ""],
     ["women", "Women", null, 2, "assets/img/c-blue.webp", "The women's line is on its way."],
-    ["the-house", "The House", null, 3, "assets/img/home/h-collage-b.webp", "Five collections from Ravelle, each with its own mood."],
+    ["the-house", "The House", null, 3, "assets/img/home/h-collage-b.webp", "Five collections from Ravari, each with its own mood."],
     ["nior-division", "Nior Division", "the-house", 1, "assets/img/home/h-house-1.webp", "Dark washes for the after hours."],
     ["saint-sinners", "Saint & Sinners Hype", "the-house", 2, "assets/img/home/h-house-2.webp", "Loud graphics, quiet confidence."],
     ["essential", "Essential Collection", "the-house", 3, "assets/img/home/h-look-4.webp", "The everyday blanks, cut heavy."],
@@ -34,7 +34,7 @@
   // A short paragraph under each category's products, written for search engines (Admin › Categories)
   var SEO_TEXT = {
     "men": "Oversized T-shirts, boxy shirts and baggy trousers for men, designed in Dhaka. Cash on delivery all over Bangladesh and exchange within 7 days.",
-    "t-shirt": "Ravelle oversized T-shirts are cut heavy, with a dropped shoulder and a boxy, relaxed fit. Choose printed graphic tees or acid-washed tees, made in Bangladesh and delivered across the country with cash on delivery.",
+    "t-shirt": "Ravari oversized T-shirts are cut heavy, with a dropped shoulder and a boxy, relaxed fit. Choose printed graphic tees or acid-washed tees, made in Bangladesh and delivered across the country with cash on delivery.",
     "half-shirt": "Boxy fitted half-sleeve shirts with a straight hem and a relaxed shoulder. Wear one open over a tee or buttoned up on its own.",
     "trouser": "Baggy trousers with a wide, straight leg and an easy waist. They sit right with an oversized tee or a boxy shirt."
   };
@@ -148,13 +148,13 @@
   // ---------------------------------------------------------------------------
   var settings = {
     store: {
-      name: "Ravelle", legalName: "Ravelle – A Life Style Brand", tagline: "Designed for presence, not attention.",
+      name: "Ravari", legalName: "Ravari – A Life Style Brand", tagline: "Designed for presence, not attention.",
       email: "hello@ravaribd.com", phone: "+880 1XXX-XXXXXX", whatsapp: "",
       address: "Dhaka, Bangladesh", hours: "Saturday to Thursday, 10am to 8pm",
       tradeLicense: "TRAD/DNCC/XXXXXX/2026", tin: "XXXXXXXXXXXX", dbid: "XXXXXXXXXX", bin: "", website: "https://ravaribd.com"
     },
     social: { facebook: "https://www.facebook.com/profile.php?id=61590338530147", instagram: "https://www.instagram.com/ravellebd/", tiktok: "", youtube: "" },
-    seo: { title: "Ravelle – A Life Style Brand", description: "Heavyweight oversized tees, acid washes and baggy fits from Dhaka. Designed for presence, not attention." },
+    seo: { title: "Ravari – A Life Style Brand", description: "Heavyweight oversized tees, acid washes and baggy fits from Dhaka. Designed for presence, not attention." },
     shipping: {
       zones: [
         { id: "inside-dhaka", name: "Inside Dhaka", fee: 70, days: "1–3 days" },
@@ -163,7 +163,7 @@
       freeOver: 0, processing: "Orders are confirmed by phone and packed within 24 hours."
     },
     payments: { cod: true, sslcommerz: { enabled: true, sandbox: true, storeId: "" } },
-    chat: { enabled: true, title: "Ravelle", greeting: "Hi! Ask us anything about sizes, delivery or your order.",
+    chat: { enabled: true, title: "Ravari", greeting: "Hi! Ask us anything about sizes, delivery or your order.",
       autoReply: true, autoReplyText: "Thanks for your message. We usually reply within a few minutes during store hours." },
     lowStock: 5,
     announcement: "Free exchange within 7 days · Cash on delivery all over Bangladesh"
@@ -230,18 +230,18 @@
     },
     about: {
       eyebrow: "About us", title: "Own your style.", accent: "Define", titleEnd: "your identity.",
-      intro: "Ravelle is a lifestyle brand from Dhaka, built for people who dress for themselves.",
+      intro: "Ravari is a lifestyle brand from Dhaka, built for people who dress for themselves.",
       image: "assets/img/about.webp", imageAlt: "Two models in Fearless oversized T-shirts, black and blue, with black star baggy trousers",
       storyTitle: "Our story",
-      story: "Ravelle blends modern streetwear with classic polish. We make everyday staples and bolder statement pieces that feel good, last long and look like you.\n\nEvery piece starts with fabric. We cut heavyweight cotton into relaxed, oversized shapes, then finish them with washes and prints that age well. The result works for a long day in the city and still looks considered at night.\n\nOur goal is simple: make contemporary fashion more expressive, more accessible and more meaningful for people who want to stand out on their own terms.",
+      story: "Ravari blends modern streetwear with classic polish. We make everyday staples and bolder statement pieces that feel good, last long and look like you.\n\nEvery piece starts with fabric. We cut heavyweight cotton into relaxed, oversized shapes, then finish them with washes and prints that age well. The result works for a long day in the city and still looks considered at night.\n\nOur goal is simple: make contemporary fashion more expressive, more accessible and more meaningful for people who want to stand out on their own terms.",
       values: [
         { title: "Quality first", text: "Heavyweight fabrics, reinforced seams and washes tested to hold their colour." },
         { title: "Made to be worn", text: "Relaxed fits for real days in Dhaka heat, not just photos." },
         { title: "Honest service", text: "Cash on delivery, easy exchanges and real people on the other end of the chat." }
       ],
       companyTitle: "Company details",
-      companyText: "Ravelle is a registered business in Bangladesh. These are our official details.",
-      closing: "Welcome to Ravelle."
+      companyText: "Ravari is a registered business in Bangladesh. These are our official details.",
+      closing: "Welcome to Ravari."
     },
     contact: {
       eyebrow: "Contact us", title: "Talk to", accent: "us",
@@ -257,15 +257,15 @@
     },
     // Store locations: shops are grouped by district, in the order set in districtOrder (Admin › Pages › Store locations)
     stores: {
-      eyebrow: "Store locations", title: "Find a", accent: "Ravelle", titleEnd: "store.",
+      eyebrow: "Store locations", title: "Find a", accent: "Ravari", titleEnd: "store.",
       intro: "Try the fit in person. Every store carries the latest drops.",
       emptyText: "We have no shops yet, you can order online.",
       districtOrder: [],
       shops: []
     },
     franchise: {
-      eyebrow: "Franchise", title: "Open a", accent: "Ravelle", titleEnd: "store.",
-      intro: "Bring Ravelle to your city. We give you the brand, the stock and the support. You run the store.",
+      eyebrow: "Franchise", title: "Open a", accent: "Ravari", titleEnd: "store.",
+      intro: "Bring Ravari to your city. We give you the brand, the stock and the support. You run the store.",
       points: [
         { title: "Proven products", text: "Our best-selling oversized tees, shirts and trousers, restocked every month." },
         { title: "Full support", text: "Store design, staff training, launch marketing and our order system from day one." },
@@ -279,7 +279,7 @@
     terms: {
       title: "Terms & conditions", updated: "28 October 2026",
       intro: "Please read these terms carefully before using ravaribd.com. By using the website or placing an order, you agree to them.",
-      body: "## 1. Definitions\n- **\"Ravelle\", \"we\", \"us\"** means Ravelle – A Life Style Brand, Dhaka, Bangladesh, which operates this website.\n- **\"Customer\", \"you\"** means anyone who visits the website or places an order.\n- **\"Products\"** means the clothing and accessories sold on this website.\n\n## 2. Using the website\n- You must be at least 18 years old, or use the website with a parent or guardian's permission.\n- You agree to give true and complete information when you place an order.\n- You must not misuse the website, try to break its security, or copy its content for commercial use.\n\n## 3. Products and prices\n- We show product colours as accurately as we can. Screens differ, so the actual colour may vary slightly.\n- All prices are in Bangladeshi Taka (৳) and include VAT where it applies. Delivery charges are shown at checkout.\n- We may change prices or end offers at any time. The price you pay is the price shown when you place the order.\n\n## 4. Orders\n- After you place an order, we call or message you to confirm it. An order is accepted once we confirm it.\n- We may cancel an order if a product is out of stock, the price was shown wrongly, or we can't verify the order. If you paid online, we refund you in full.\n\n## 5. Payment\n- You can pay cash on delivery, or online by card, mobile banking or internet banking through SSLCOMMERZ.\n- Online payments are processed by SSLCOMMERZ. We never see or store your card details.\n\n## 6. Delivery\nDelivery times and charges are explained in our [Delivery policy](#delivery).\n\n## 7. Returns, exchanges and refunds\nYou can exchange or return products as explained in our [Return & refund policy](#refund).\n\n## 8. Intellectual property\nAll content on this website, including designs, logos, photos and text, belongs to Ravelle. You may not use it without our written permission.\n\n## 9. Limitation of liability\nWe are not responsible for indirect losses arising from the use of this website. Nothing in these terms limits your rights under the Consumer Rights Protection Act, 2009.\n\n## 10. Governing law\nThese terms are governed by the laws of Bangladesh. Disputes are handled by the courts of Dhaka.\n\n## 11. Changes\nWe may update these terms. The date at the top shows the latest version.\n\n## 12. Contact\nQuestions about these terms? Visit our [Contact page](#contact)."
+      body: "## 1. Definitions\n- **\"Ravari\", \"we\", \"us\"** means Ravari – A Life Style Brand, Dhaka, Bangladesh, which operates this website.\n- **\"Customer\", \"you\"** means anyone who visits the website or places an order.\n- **\"Products\"** means the clothing and accessories sold on this website.\n\n## 2. Using the website\n- You must be at least 18 years old, or use the website with a parent or guardian's permission.\n- You agree to give true and complete information when you place an order.\n- You must not misuse the website, try to break its security, or copy its content for commercial use.\n\n## 3. Products and prices\n- We show product colours as accurately as we can. Screens differ, so the actual colour may vary slightly.\n- All prices are in Bangladeshi Taka (৳) and include VAT where it applies. Delivery charges are shown at checkout.\n- We may change prices or end offers at any time. The price you pay is the price shown when you place the order.\n\n## 4. Orders\n- After you place an order, we call or message you to confirm it. An order is accepted once we confirm it.\n- We may cancel an order if a product is out of stock, the price was shown wrongly, or we can't verify the order. If you paid online, we refund you in full.\n\n## 5. Payment\n- You can pay cash on delivery, or online by card, mobile banking or internet banking through SSLCOMMERZ.\n- Online payments are processed by SSLCOMMERZ. We never see or store your card details.\n\n## 6. Delivery\nDelivery times and charges are explained in our [Delivery policy](#delivery).\n\n## 7. Returns, exchanges and refunds\nYou can exchange or return products as explained in our [Return & refund policy](#refund).\n\n## 8. Intellectual property\nAll content on this website, including designs, logos, photos and text, belongs to Ravari. You may not use it without our written permission.\n\n## 9. Limitation of liability\nWe are not responsible for indirect losses arising from the use of this website. Nothing in these terms limits your rights under the Consumer Rights Protection Act, 2009.\n\n## 10. Governing law\nThese terms are governed by the laws of Bangladesh. Disputes are handled by the courts of Dhaka.\n\n## 11. Changes\nWe may update these terms. The date at the top shows the latest version.\n\n## 12. Contact\nQuestions about these terms? Visit our [Contact page](#contact)."
     },
     privacy: {
       title: "Privacy policy", updated: "28 October 2026",
