@@ -330,12 +330,18 @@
   // Dropdown: links in columns of six (or the count set in Admin > Menus, 1-12), extra links start a new
   // column to the right, and the photo sits on the right.
   // A sub-link with its own photo swaps the panel photo on hover.
+  // The header item for the page being viewed gets aria-current (shown as the white pill)
+  function navOn(url) {
+    var m = /^#category\/([\w-]+)$/.exec(url || ""), h = location.hash, p = location.pathname;
+    if (!m) return url && url.length > 1 && h === url ? ' aria-current="page"' : "";
+    return h === url || new RegExp("/product-category/(?:[\\w-]+/)?" + m[1] + "/?$").test(p) ? ' aria-current="page"' : "";
+  }
   function menuItem(it) {
     var kids = it.children && it.children.length;
-    if (!kids) return '<li><a href="' + esc(safe(it.url || "#")) + '">' + esc(it.label) + "</a></li>";
+    if (!kids) return '<li><a href="' + esc(safe(it.url || "#")) + '"' + navOn(it.url) + ">" + esc(it.label) + "</a></li>";
     var img = it.image || "";
     var per = Math.min(12, Math.max(1, parseInt(it.perColumn, 10) || 6));
-    return '<li class="has-sub"><a href="' + esc(safe(it.url || "#")) + '">' + esc(it.label) + "</a>" +
+    return '<li class="has-sub"><a href="' + esc(safe(it.url || "#")) + '"' + navOn(it.url) + ">" + esc(it.label) + "</a>" +
       '<div class="nav__sub' + (img ? " has-img" : "") + '">' +
         '<ul class="nav__sub-list" style="--rows:' + Math.min(per, it.children.length) + '">' + it.children.map(function (c) {
           return '<li><a href="' + esc(safe(c.url)) + '"' + (c.image ? ' data-img="' + esc(c.image) + '"' : "") + ">" + esc(c.label) + "</a></li>";
@@ -400,7 +406,7 @@
     ann.textContent = S.settings.announcement || "";
     if (lay.header.announceBg) ann.style.background = lay.header.announceBg;
     if (lay.header.announceColor) ann.style.color = lay.header.announceColor;
-    document.documentElement.style.setProperty("--logo-h", (lay.header.logoHeight || 24) + "px");
+    document.documentElement.style.setProperty("--logo-h", (lay.header.logoHeight || 18) + "px");
     document.body.classList.toggle("no-sticky", lay.header.sticky === false);
     if (lay.header.logo) $$(".menu__logo img, .poster__logo").forEach(function (im) { im.src = lay.header.logo; });
     // Footer parts
@@ -468,78 +474,9 @@
   var page = $("#page");
   var pagehead = $("#pagehead");
 
-  // Hero product card (right of the model) and the thumbnail strip beside it.
-  // Admin > Pages > Home > Hero > products: comma-separated slugs; empty uses featured products in stock.
-  var HERO = { list: [], i: 0, size: {} };
-  function heroProducts() {
-    var want = String(((S.pages.home || {}).hero || {}).products || "").split(",").map(function (x) { return BY_SLUG[x.trim()]; }).filter(Boolean);
-    if (!want.length) want = S.products.filter(function (p) { return p.featured && inStockSizes(p).length; });
-    if (want.length < 4) want = want.concat(S.products.filter(function (p) { return inStockSizes(p).length && want.indexOf(p) < 0; })).slice(0, 6);
-    return want.slice(0, 6);
-  }
-  function drawHeroShop() {
-    var box = $("#heroShop"), strip = $("#heroThumbs");
-    if (!box) return;
-    HERO.list = heroProducts();
-    box.hidden = strip.hidden = !HERO.list.length;
-    if (!HERO.list.length) return;
-    var p = HERO.list[HERO.i % HERO.list.length], img = p.images[0] || "";
-    var sizes = (p.variants || []).filter(function (v) { return v.options && v.options.Size; });
-    var pick = HERO.size[p.id] || (sizes.filter(function (v) { return v.options.Size === "L" && maxQty(p, v) > 0; })[0] || sizes.filter(function (v) { return maxQty(p, v) > 0; })[0] || {}).id;
-    box.innerHTML =
-      '<a class="hero__shop-img" href="#product/' + p.slug + '" aria-label="' + esc(p.name) + '">' + (img ? '<img src="' + esc(img) + '"' + imgSet(img, 360, 690, "220px") + ' alt="" decoding="async">' : "") + "</a>" +
-      '<div class="hero__sizes" role="radiogroup" aria-label="Size">' + sizes.map(function (v) {
-        var out = maxQty(p, v) < 1;
-        return '<button type="button" role="radio" data-hsize="' + v.id + '" aria-checked="' + (v.id === pick) + '"' + (out ? " disabled" : "") + ">" + esc(v.options.Size) + "</button>";
-      }).join("") + "</div>" +
-      '<div class="hero__shop-info"><a href="#product/' + p.slug + '"><b>' + esc(shortName(p)) + "</b><span>" + esc(p.color || "") + "</span></a><em>" + taka(p.price) + "</em></div>" +
-      '<button class="hero__add" type="button" data-hadd' + (pick ? "" : " disabled") + '><span aria-hidden="true">+</span> ' + (pick ? "Add to cart" : "Sold out") + "</button>";
-    strip.innerHTML = HERO.list.map(function (q, i) {
-      return '<li><button type="button" data-hthumb="' + i + '" aria-label="' + esc(q.name) + '" aria-pressed="' + (q === p) + '">' + (q.images[0] ? '<img src="' + esc(thumb(q.images[0])) + '" alt="" loading="lazy">' : "") + "</button></li>";
-    }).join("");
-  }
-  document.addEventListener("click", function (e) {
-    var t = e.target.closest && e.target.closest("[data-hsize], [data-hadd], [data-hthumb]");
-    if (!t || !t.closest(".hero")) return;
-    var p = HERO.list[HERO.i % HERO.list.length];
-    if (t.dataset.hthumb != null) { HERO.i = +t.dataset.hthumb; drawHeroShop(); return; }
-    if (t.dataset.hsize) { HERO.size[p.id] = t.dataset.hsize; drawHeroShop(); return; }
-    var vid = HERO.size[p.id] || ($("[data-hsize][aria-checked=true]", $("#heroShop")) || {}).dataset;
-    vid = typeof vid === "string" ? vid : vid && vid.hsize;
-    var v = (p.variants || []).filter(function (x) { return x.id === vid; })[0];
-    if (v && addToBag(p, v, 1)) { drawBag(); }
-  });
-  // Hero models: the main photo plus pages.home.hero.slides fade in turn every 5 seconds
-  var heroTimer = null;
-  function drawHeroSlides() {
-    var fig = $(".hero--glass .hero__model"), ghost = $(".hero--glass .hero__ghost");
-    if (!fig) return;
-    var hero = (S.pages.home || {}).hero || {};
-    var slides = [{ image: hero.image, imageAlt: hero.imageAlt }].concat(hero.slides || []).filter(function (x) { return x && x.image; });
-    $$(".hero__slide", fig).forEach(function (el) { fig.removeChild(el); });
-    var first = $("img", fig);
-    slides.slice(1).forEach(function (sl) {
-      var im = document.createElement("img");
-      im.className = "hero__slide"; im.src = sl.image; im.alt = sl.imageAlt || ""; im.loading = "lazy"; im.decoding = "async";
-      fig.appendChild(im);
-    });
-    var all = $$("img", fig), i = 0;
-    all.forEach(function (im, k) { im.classList.toggle("is-on", k === 0); });
-    if (first) first.classList.add("hero__main");
-    clearInterval(heroTimer);
-    if (all.length < 2 || reduce) return;
-    heroTimer = setInterval(function () {
-      if (document.hidden) return;
-      i = (i + 1) % all.length;
-      all.forEach(function (im, k) { im.classList.toggle("is-on", k === i); });
-      if (ghost && slides[i]) ghost.src = slides[i].image.replace(/\.webp$/, "-m.webp");
-    }, 5000);
-  }
   function drawHome() {
     var home = S.pages.home;
     bind(homeView, home);
-    drawHeroSlides();
-    drawHeroShop();
     drawTry();
     current = 0;
     $$(".look__img", homeView).forEach(function (im, i) { im.classList.toggle("is-on", i === 0); });

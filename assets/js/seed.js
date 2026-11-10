@@ -155,17 +155,9 @@
       hero: {
         line1: "Bold, edge", lead: "&", accent: "classy.",
         cta1: "Shop now", cta1Link: "#shop", cta2: "Premium Panjabi", cta2Link: "#category/panjabi",
-        image: "assets/img/home/r-model-1.webp", imageAlt: "Model in a navy suede jacket and white tee",
+        image: "assets/img/home/r-hero-photo.webp", imageAlt: "Model in a tan suede jacket, white tee and sunglasses",
         text: "Premium shirts and panjabis, designed in Dhaka for men who like to look sharp.",
-        subscribe: "Subscribe", note: "New drops every month. Cash on delivery all over Bangladesh.",
-        // Product card on the right: the first slug is shown, the rest sit in the thumbnail strip (empty = featured products)
-        products: "",
-        // More model photos that fade in turn with the first one (cut-outs on a see-through background)
-        slides: [
-          { image: "assets/img/home/r-model-2.webp", imageAlt: "Model in a grey check zip jacket" },
-          { image: "assets/img/home/r-model-3.webp", imageAlt: "Model in a tan suede jacket" },
-          { image: "assets/img/home/r-model-4.webp", imageAlt: "Model in a tan suede jacket and sunglasses" }
-        ]
+        subscribe: "Subscribe", note: "New drops every month. Cash on delivery all over Bangladesh."
       },
       tryLook: {
         title: "Try the Look.", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",

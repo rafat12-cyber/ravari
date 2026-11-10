@@ -143,7 +143,7 @@ button { font: inherit; color: inherit; }
 .nav__group a:not(.pill):not(.icon-btn)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .35s var(--ease); }
 .nav__group a:not(.pill):not(.icon-btn):hover::after { transform: scaleX(1); transform-origin: left; }
 .nav__brand { display: flex; align-items: center; margin-top: -6px; }
-.nav__brand img { height: var(--logo-h, 24px); width: auto; }
+.nav__brand img { height: var(--logo-h, 18px); width: auto; }
 
 .hero__copy { position: relative; z-index: 2; display: grid; justify-items: center; gap: 22px; padding: 58px 16px 0; }
 .hero__ctas { display: flex; gap: 6px; }
@@ -883,7 +883,7 @@ body.is-locked { overflow: hidden; }
 }
 .topbar .nav { padding: 10px 12px 10px 26px; }
 .topbar .nav__brand { margin-top: 0; }
-.topbar .nav__brand img { height: var(--logo-h, 24px); }
+.topbar .nav__brand img { height: var(--logo-h, 18px); }
 .no-sticky .topbar { display: none; }
 .footer__pay[hidden], .footer__word[hidden], .footer__form[hidden] { display: none; }
 .topbar .nav__sub { top: calc(100% + 16px); }
@@ -1129,7 +1129,7 @@ a.contact__card:hover, button.contact__card:hover { transform: translateY(-2px);
   .zones, .contact__info, .company__list { grid-template-columns: 1fr; }
   .steps li { font-size: 9.5px; }
   .nav__track { display: none; }
-  .nav__brand img, .topbar .nav__brand img { height: min(var(--logo-h, 24px), 16px); }
+  .nav__brand img, .topbar .nav__brand img { height: min(var(--logo-h, 18px), 14px); }
   .cookies { width: calc(100vw - 32px); bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
   .pd__buy { grid-template-columns: auto 1fr auto; }
 }
@@ -1277,128 +1277,66 @@ a.contact__card:hover, button.contact__card:hover { transform: translateY(-2px);
 
 .checkout__hint { margin: -4px 0 0; color: var(--ink-2); font-size: 12px; }
 
-/* Home hero, glass version: grey studio card, blurred copy of the model behind,
-   frosted menu capsule, copy on the left, model in the middle, product card and
-   thumbnails on the right. Scoped to .hero--glass so page headers keep their frame. */
-.hero--glass .hero__panel {
-  --glass: rgba(255,255,255,.18); --glass-line: rgba(255,255,255,.34);
-  background: radial-gradient(60% 70% at 52% 60%, rgba(255,255,255,.28), rgba(255,255,255,0) 70%),
-              linear-gradient(135deg, #b9babd 0%, #9ea0a4 48%, #7a7c81 100%);
-  -webkit-mask-image: none; mask-image: none;
-  min-height: min(760px, calc(100vh - 20px));
-  color: #fff; isolation: isolate;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, .9fr) auto;
-  grid-template-rows: auto 1fr; column-gap: 18px;
-  padding: 14px 20px 0;
-}
-.hero--glass .hero__panel::before { display: none; }
-.hero--glass .hero__panel::after {
-  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit;
-  background: linear-gradient(115deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 38%);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
-}
-.hero__ghost {
-  position: absolute; left: -9%; bottom: -4%; height: 112%; width: auto; max-width: none; z-index: 0;
-  filter: blur(22px) saturate(1.1); opacity: .6; pointer-events: none; transition: opacity .9s ease;
-}
-.hero--glass .nav, .hero--glass .hero__copy, .hero--glass .hero__model, .hero--glass .hero__shop, .hero--glass .hero__thumbs { position: relative; z-index: 2; }
-.hero--glass .nav { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; padding: 0; gap: 16px; }
-.hero--glass .nav__brand { order: -1; margin: 0; justify-self: start; }
-.hero--glass .nav__brand img { content: url("../img/logo-light.webp"); }
-.hero--glass .nav__start { justify-self: center; }
-.hero--glass .nav__menu {
-  gap: 2px; padding: 5px; border-radius: 14px;
-  background: rgba(32,34,38,.28); border: 1px solid var(--glass-line);
+/* Site header, every page: logo on the left, the menu in a rounded capsule in
+   the middle, round icons on the right. On the home hero the capsule is frosted
+   glass over the photo; on light pages and the sticky bar it is a soft grey. */
+.nav { grid-template-columns: auto 1fr auto; gap: 16px; }
+.nav__brand { order: -1; justify-self: start; margin-top: 0; }
+.nav__start { justify-self: center; }
+.hero__panel::before { display: none; }
+.nav__menu {
+  --cap-bg: rgba(17,18,20,.06); --cap-line: rgba(17,18,20,.1); --cap-ink: var(--ink); --cap-on: #fff;
+  gap: 2px; padding: 4px; border-radius: 14px;
+  background: var(--cap-bg); border: 1px solid var(--cap-line);
   -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
 }
-.hero--glass .nav__menu > li > a { display: block; padding: 9px 18px !important; border-radius: 10px; color: rgba(255,255,255,.9); letter-spacing: .04em; transition: background .25s, color .25s; }
-.hero--glass .nav__menu > li > a::after { display: none; }
-.hero--glass .nav__menu > li:first-child > a, .hero--glass .nav__menu > li > a:hover { background: rgba(255,255,255,.88); color: var(--ink); }
-.hero--glass .nav__menu > li:first-child:hover > a { background: #fff; }
-.hero--glass .nav__group--end .icon-btn { background: var(--glass); border-color: var(--glass-line); color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-.hero--glass .nav__group--end .bag-btn { background: rgba(255,255,255,.9); color: var(--ink); }
-.hero--glass .nav__burger { background: var(--glass); border-color: var(--glass-line); color: #fff; }
+.nav__menu > li > a { display: block; padding: 8px 16px !important; border-radius: 10px; color: var(--cap-ink); transition: background .25s, color .25s; }
+.nav__menu > li > a::after { display: none; }
+.nav__menu > li > a:hover { background: var(--cap-on); color: var(--ink); }
+.nav__menu > li > a[aria-current] { background: var(--ink); color: #fff; }
+.hero--glass .nav__menu > li > a[aria-current] { background: var(--cap-on); color: var(--ink); }
 
-.hero--glass .hero__copy { grid-column: 1; grid-row: 2; align-self: center; justify-items: start; text-align: left; gap: 16px; padding: 0 0 60px 2%; max-width: 400px; }
-.hero--glass .display { justify-items: start; text-align: left; font-size: clamp(36px, 4.2vw, 60px); font-weight: 400; text-transform: none; letter-spacing: -.025em; line-height: 1.02; text-shadow: 0 2px 30px rgba(0,0,0,.12); }
+.hero--glass .hero__panel {
+  background: #151515; color: #fff; isolation: isolate;
+  -webkit-mask-image: none; mask-image: none;
+  min-height: min(780px, calc(100vh - 20px));
+  grid-template-rows: auto 1fr; padding: 14px 20px 0;
+}
+.hero__photo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: 64% 4%; }
+.hero--glass .nav, .hero--glass .hero__copy { position: relative; z-index: 2; }
+.hero--glass .nav { padding: 0; }
+.hero--glass .nav__brand img { content: url("../img/logo-light.webp"); }
+.hero--glass .nav__menu { --cap-bg: rgba(255,255,255,.12); --cap-line: rgba(255,255,255,.26); --cap-ink: rgba(255,255,255,.92); --cap-on: rgba(255,255,255,.9); }
+.hero--glass .nav__menu > li:first-child > a { background: var(--cap-on); color: var(--ink); }
+.hero--glass .icon-btn, .hero--glass .nav__burger { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.26); color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.hero--glass .bag-btn { background: rgba(255,255,255,.9); color: var(--ink); }
+
+.hero--glass .hero__copy { align-self: center; justify-items: start; text-align: left; gap: 16px; padding: 0 0 50px 3%; max-width: 420px; }
+.hero--glass .display { justify-items: start; text-align: left; font-size: clamp(38px, 4.4vw, 64px); font-weight: 400; text-transform: none; letter-spacing: -.025em; line-height: 1.02; }
 .hero--glass .display [data-c] { background: none; -webkit-text-fill-color: #fff; color: #fff; animation: none; }
 .hero--glass .display .alt { font-weight: 300; }
-.hero__text { margin: 0; max-width: 310px; font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.88); }
-.hero__sub { display: flex; width: min(330px, 100%); padding: 5px; border-radius: 14px; background: var(--glass); border: 1px solid var(--glass-line); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.hero__text { margin: 0; max-width: 320px; font-size: 13.5px; line-height: 1.55; color: rgba(255,255,255,.85); }
+.hero__sub { display: flex; width: min(340px, 100%); padding: 5px; border-radius: 14px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.26); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .hero__sub input { flex: 1; min-width: 0; border: 0; background: none; color: #fff; font: 400 12.5px var(--f-display); padding: 0 12px; outline: none; }
-.hero__sub input::placeholder { color: rgba(255,255,255,.85); }
+.hero__sub input::placeholder { color: rgba(255,255,255,.8); }
 .hero__sub button { border: 0; border-radius: 10px; background: #f4f4f4; color: var(--ink); font: 600 12px var(--f-display); padding: 11px 16px; cursor: pointer; transition: background .2s; }
 .hero__sub button:hover { background: #fff; }
-.hero__sub:focus-within { border-color: rgba(255,255,255,.7); }
+.hero__sub:focus-within { border-color: rgba(255,255,255,.6); }
 .hero__ok { margin: 0; font-size: 13px; }
-.hero__note { margin: 4px 0 0; max-width: 270px; font-size: 12px; line-height: 1.5; color: rgba(255,255,255,.8); }
+.hero__note { margin: 4px 0 0; max-width: 280px; font-size: 12px; line-height: 1.5; color: rgba(255,255,255,.75); }
 .hero--glass .hero__ctas { margin-top: 4px; }
-.hero--glass .hero__ctas .pill--light { background: var(--glass); color: #fff; border: 1px solid var(--glass-line); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.hero--glass .hero__ctas .pill::after, .hero--glass .hero__ctas .pill { animation: none; }
+.pill--glass { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.3); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.hero--glass button:focus-visible, .hero--glass a:focus-visible, .hero--glass input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
-.hero--glass .hero__model {
-  grid-column: 2; grid-row: 2; align-self: end; justify-self: center;
-  width: min(500px, 100%); margin: 0;
-  -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%), linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 78%, transparent 100%), linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
-  -webkit-mask-composite: source-in; mask-composite: intersect;
-}
-.hero--glass .hero__model img { transition: opacity .55s ease; }
-.hero--glass .hero__model img.is-on { transition-delay: .5s; }
-.hero--glass .hero__model img:not(.is-on) { opacity: 0; }
-.hero__slide { position: absolute; left: 0; bottom: 0; width: 100%; height: auto; }
-
-.hero__shop {
-  grid-column: 3; grid-row: 2; align-self: center; justify-self: end;
-  width: 262px; padding: 12px; margin-bottom: 40px; border-radius: 24px;
-  display: grid; grid-template-columns: minmax(0, 1fr) 34px; gap: 10px;
-  background: linear-gradient(180deg, rgba(255,255,255,.3), rgba(40,42,46,.3));
-  border: 1px solid var(--glass-line);
-  -webkit-backdrop-filter: blur(20px) saturate(1.25); backdrop-filter: blur(20px) saturate(1.25);
-  box-shadow: 0 30px 60px -30px rgba(0,0,0,.45);
-}
-.hero__shop-img { display: block; border-radius: 16px; overflow: hidden; }
-.hero__shop-img img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; transition: transform .6s var(--ease); }
-.hero__shop-img:hover img { transform: scale(1.04); }
-.hero__sizes { display: grid; gap: 6px; align-content: start; }
-.hero__sizes button { height: 28px; border-radius: 9px; border: 1px solid var(--glass-line); background: var(--glass); color: #fff; font: 500 10px var(--f-mono); cursor: pointer; padding: 0; }
-.hero__sizes button[aria-checked="true"] { background: #fff; color: var(--ink); }
-.hero__sizes button:disabled { opacity: .35; text-decoration: line-through; cursor: not-allowed; }
-.hero__shop-info { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: end; gap: 10px; padding: 0 2px; }
-.hero__shop-info a { min-width: 0; }
-.hero__shop-info b { display: block; font-size: 13px; font-weight: 600; line-height: 1.25; }
-.hero__shop-info span { display: block; font-size: 11px; color: rgba(255,255,255,.78); }
-.hero__shop-info em { font-style: normal; font-size: 13px; font-weight: 600; white-space: nowrap; }
-.hero__add { grid-column: 1 / -1; height: 42px; border-radius: 13px; border: 1px solid var(--glass-line); background: rgba(255,255,255,.2); color: #fff; font: 600 12px var(--f-display); cursor: pointer; transition: background .2s; }
-.hero__add:hover:not(:disabled) { background: rgba(255,255,255,.34); }
-.hero__add:disabled { opacity: .5; cursor: not-allowed; }
-.hero__thumbs { grid-column: 4; grid-row: 2; align-self: center; list-style: none; margin: 0 0 40px; padding: 0; display: grid; gap: 10px; }
-.hero__thumbs button { display: block; width: 44px; height: 44px; padding: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-line); background: var(--glass); cursor: pointer; opacity: .6; transition: opacity .25s, transform .25s; }
-.hero__thumbs button img { width: 100%; height: 100%; object-fit: cover; }
-.hero__thumbs button:hover { opacity: .9; }
-.hero__thumbs button[aria-pressed="true"] { opacity: 1; box-shadow: 0 0 0 2px #fff; transform: scale(1.06); }
-.hero--glass button:focus-visible, .hero--glass a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-
-@media (max-width: 1100px) {
-  .hero--glass .hero__panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
-  .hero--glass .hero__thumbs { display: none; }
-  .hero--glass .hero__model { grid-column: 2; }
-  .hero--glass .hero__shop { grid-column: 3; width: 230px; }
-}
 @media (max-width: 960px) {
-  .hero--glass .hero__panel { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; padding: 12px 12px 18px; min-height: 0; }
-  .hero--glass .hero__copy { grid-column: 1; grid-row: auto; justify-items: center; text-align: center; padding: 34px 6px 6px; max-width: none; }
+  .nav { grid-template-columns: 1fr auto 1fr; }
+  .nav__brand { order: 0; justify-self: center; }
+  .nav__start { justify-self: start; }
+  .hero--glass .hero__panel { min-height: min(720px, calc(100svh - 60px)); padding: 12px 12px 0; }
+  .hero__photo { object-position: 58% 18%; }
+  .hero--glass .hero__copy { align-self: end; justify-items: center; text-align: center; padding: 0 6px 34px; max-width: none; gap: 12px; }
   .hero--glass .display { justify-items: center; text-align: center; }
-  .hero--glass .hero__model { grid-column: 1; grid-row: auto; width: min(430px, 92%); }
-  .hero--glass .hero__shop { grid-column: 1; grid-row: auto; justify-self: center; width: min(320px, 100%); margin: -70px 0 6px; }
-  .hero__ghost { left: -30%; height: 80%; bottom: 10%; }
-  .hero--glass .nav { grid-template-columns: 1fr auto 1fr; }
-  .hero--glass .nav__brand { order: 0; justify-self: center; }
-  .hero--glass .nav__start { justify-self: start; }
-  .hero__shop { grid-template-columns: 104px minmax(0, 1fr); grid-template-rows: auto auto auto; align-items: center; column-gap: 12px; row-gap: 8px; }
-  .hero__shop-img { grid-row: 1 / 4; }
-  .hero__sizes { grid-auto-flow: column; justify-content: start; }
-  .hero__sizes button { width: 38px; }
-  .hero__shop-info, .hero__add { grid-column: 2; }
-  .hero__add { height: 38px; }
+  .hero--glass .hero__text, .hero--glass .hero__note { display: none; }
+  .hero--glass .hero__panel::after { content: ""; position: absolute; inset: 45% 0 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(10,10,10,0), rgba(10,10,10,.6)); }
 }
-@media (prefers-reduced-motion: reduce) { .hero--glass .hero__model img, .hero__ghost { transition: none; } }

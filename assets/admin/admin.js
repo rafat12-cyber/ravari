@@ -2191,7 +2191,7 @@
             <div class="field"><span>Preview</span><div id="annPrev" style="padding:9px 12px;border-radius:8px;font:500 12px/1.3 ui-monospace,monospace;text-align:center;letter-spacing:.04em"></div></div></div></div>
         <div class="card"><h2 class="h2">Header</h2>
           ${imgField("logo", H.logo, "Logo", "Leave empty to use the Ravari logo.")}
-          <div class="row row--3"><label class="field"><span>Logo height (px)</span><input class="input" type="number" min="20" max="80" data-l="header" name="logoHeight" value="${esc(H.logoHeight)}"><small>20 to 80. The default is 40.</small></label></div>
+          <div class="row row--3"><label class="field"><span>Logo height (px)</span><input class="input" type="number" min="12" max="80" data-l="header" name="logoHeight" value="${esc(H.logoHeight)}"><small>20 to 80. The default is 40.</small></label></div>
           ${sw("header", "sticky", "Show the slim header bar when people scroll down", H.sticky)}
           ${sw("header", "showSearch", "Show the search icon", H.showSearch)}
           ${sw("header", "showAccount", "Show the order tracking icon", H.showAccount)}
