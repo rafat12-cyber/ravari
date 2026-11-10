@@ -1297,12 +1297,16 @@ a.contact__card:hover, button.contact__card:hover { transform: translateY(-2px);
 .hero--glass .nav__menu > li > a[aria-current] { background: var(--cap-on); color: var(--ink); }
 
 .hero--glass .hero__panel {
-  background: #151515; color: #fff; isolation: isolate;
+  color: #fff; isolation: isolate; overflow: hidden;
+  background: radial-gradient(120% 90% at 58% 30%, #a3a3a3 0%, #7c7c7c 45%, #4f4f4f 100%);
   -webkit-mask-image: none; mask-image: none;
   min-height: min(780px, calc(100vh - 20px));
   grid-template-rows: auto 1fr; padding: 14px 20px 0;
 }
-.hero__photo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: 64% 4%; }
+/* Model cut-out standing in the middle, a big blurred copy behind the glass on the right */
+.hero__photo { position: absolute; bottom: 0; left: 50%; z-index: 1; height: 90%; width: auto; max-width: none; transform: translateX(-34%); -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 7%); mask-image: linear-gradient(180deg, transparent 0, #000 7%); }
+.hero__ghost { position: absolute; top: -8%; right: -9%; z-index: 0; height: 132%; width: auto; max-width: none; opacity: .6; filter: blur(22px) saturate(1.1); pointer-events: none; }
+.hero--glass .hero__panel::after { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 38%), linear-gradient(0deg, rgba(20,20,20,.28), rgba(20,20,20,0) 40%); }
 .hero--glass .nav, .hero--glass .hero__copy { position: relative; z-index: 2; }
 .hero--glass .nav { padding: 0; }
 .hero--glass .nav__brand img { content: url("../img/logo-light.webp"); }
@@ -1334,9 +1338,10 @@ a.contact__card:hover, button.contact__card:hover { transform: translateY(-2px);
   .nav__brand { order: 0; justify-self: center; }
   .nav__start { justify-self: start; }
   .hero--glass .hero__panel { min-height: min(720px, calc(100svh - 60px)); padding: 12px 12px 0; }
-  .hero__photo { object-position: 58% 18%; }
+  .hero__photo { height: auto; width: min(108%, 520px); max-height: 88%; object-fit: contain; object-position: bottom; transform: translateX(-50%); }
+  .hero__ghost { height: 80%; top: 4%; right: -46%; opacity: .5; }
   .hero--glass .hero__copy { align-self: end; justify-items: center; text-align: center; padding: 0 6px 34px; max-width: none; gap: 12px; }
   .hero--glass .display { justify-items: center; text-align: center; }
   .hero--glass .hero__text, .hero--glass .hero__note { display: none; }
-  .hero--glass .hero__panel::after { content: ""; position: absolute; inset: 45% 0 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(10,10,10,0), rgba(10,10,10,.6)); }
+  .hero--glass .hero__panel::after { z-index: 1; background: linear-gradient(180deg, rgba(10,10,10,0) 45%, rgba(10,10,10,.62)); }
 }

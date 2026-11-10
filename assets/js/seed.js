@@ -155,7 +155,7 @@
       hero: {
         line1: "Layer up", lead: "for", accent: "winter.",
         cta1: "Shop winter", cta1Link: "#category/winter-collection", cta2: "Denim shirts", cta2Link: "#category/denim-shirt",
-        image: "assets/img/home/r-hero-photo.webp", imageAlt: "Model in a tan suede jacket, white tee and sunglasses",
+        image: "assets/img/home/r-hero-cut.webp", imageAlt: "Model in a tan suede jacket, white tee and sunglasses",
         text: "Denim, corduroy and full sleeve shirts for the cooler days. Warm, easy to layer, made in Dhaka.",
         note: "Winter collection 2026 · Cash on delivery all over Bangladesh"
       },
