@@ -144,7 +144,7 @@
     chat: { enabled: true, title: "Ravari", greeting: "Hi! Ask us anything about sizes, delivery or your order.",
       autoReply: true, autoReplyText: "Thanks for your message. We usually reply within a few minutes during store hours." },
     lowStock: 5,
-    announcement: "Free exchange within 7 days · Cash on delivery all over Bangladesh"
+    announcement: "Winter collection is here · Cash on delivery all over Bangladesh"
   };
 
   // ---------------------------------------------------------------------------
@@ -153,44 +153,44 @@
   var pages = {
     home: {
       hero: {
-        line1: "Bold, edge", lead: "&", accent: "classy.",
-        cta1: "Shop now", cta1Link: "#shop", cta2: "Premium Panjabi", cta2Link: "#category/panjabi",
+        line1: "Layer up", lead: "for", accent: "winter.",
+        cta1: "Shop winter", cta1Link: "#category/winter-collection", cta2: "Denim shirts", cta2Link: "#category/denim-shirt",
         image: "assets/img/home/r-hero-photo.webp", imageAlt: "Model in a tan suede jacket, white tee and sunglasses",
-        text: "Premium shirts and panjabis, designed in Dhaka for men who like to look sharp.",
-        subscribe: "Subscribe", note: "New drops every month. Cash on delivery all over Bangladesh."
+        text: "Denim, corduroy and full sleeve shirts for the cooler days. Warm, easy to layer, made in Dhaka.",
+        note: "Winter collection 2026 · Cash on delivery all over Bangladesh"
       },
       tryLook: {
         title: "Try the Look.", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
         looks: []
       },
       house: {
-        eyebrow: "Trendy categories", titleStart: "Shirts", accent: "made", titleEnd: "to stand out.", linkLabel: "Shop all →", link: "#category/men",
-        card1: { image: "assets/img/home/r-half-cut.webp", meta: "Shop half sleeve →", title: "Half Sleeve\nShirt", link: "#category/half-shirt" },
-        card2: { image: "assets/img/home/r-full-cut.webp", meta: "Shop full sleeve →", title: "Full Sleeve\nShirt", link: "#category/full-shirt" }
+        eyebrow: "Winter collection", titleStart: "Warm", accent: "layers", titleEnd: "for cold days.", linkLabel: "Shop winter →", link: "#category/winter-collection",
+        card1: { image: "assets/img/home/r-w-denim-cut.webp", meta: "Shop denim →", title: "Denim\nShirt", link: "#category/denim-shirt" },
+        card2: { image: "assets/img/home/r-w-cord-cut.webp", meta: "Shop corduroy →", title: "Corduroy\nShirt", link: "#category/winter-collection" }
       },
       poster: {
-        kicker: "Raining offers", title: "Summer\ncollection", cta: "Shop now", ctaLink: "#category/on-sale",
-        image: "assets/img/home/r-poster.webp", imageAlt: "Three models in Ravari check and printed shirts",
-        marqueeTop: "RAINING OFFERS", marqueeBottom: "OWN THE STREET"
+        kicker: "Winter collection 2026", title: "Denim &\ncorduroy", cta: "Shop winter", ctaLink: "#category/winter-collection",
+        image: "assets/img/home/r-w-poster.webp", imageAlt: "Model in a blue denim shirt sitting in a green velvet chair",
+        marqueeTop: "WINTER COLLECTION", marqueeBottom: "LAYER UP"
       },
       arrivals: {
-        titleStart: "Fresh fits for your", accent: "next", titleEnd: "occasion!",
+        titleStart: "Fresh fits for the", accent: "cold", titleEnd: "season!",
         // Tabs under the heading. Category is a category slug (t-shirt, half-shirt, full-shirt, trouser,
         // polo...) or top-selling; join several slugs with commas. Clear a label to hide its tab.
         tabs: [
-          { label: "Panjabi", category: "panjabi" },
-          { label: "Full sleeve", category: "full-shirt" },
-          { label: "Half sleeve", category: "half-shirt" },
           { label: "Denim", category: "denim-shirt" },
+          { label: "Full sleeve", category: "full-shirt" },
+          { label: "Panjabi", category: "panjabi" },
+          { label: "Half sleeve", category: "half-shirt" },
           { label: "Top Selling", category: "top-selling" }
         ]
       },
       lookbook: {
-        marqueeBack: "OWN THE STREET", marqueeFront: "BOLD, EDGE & CLASSY",
+        marqueeBack: "WINTER COLLECTION", marqueeFront: "LAYER UP FOR WINTER",
         looks: [
-          { image: "assets/img/home/r-lb-1.webp", name: "Premium casual shirt\nFull sleeve" },
-          { image: "assets/img/home/r-lb-2.webp", name: "Premium Panjabi\nCollection" },
-          { image: "assets/img/home/r-lb-3.webp", name: "Casual shirt\nHalf sleeve" }
+          { image: "assets/img/home/r-w-lb-1.webp", name: "Denim shirt\nAccent pocket" },
+          { image: "assets/img/home/r-w-lb-2.webp", name: "Check & corduroy\nBlue" },
+          { image: "assets/img/home/r-w-lb-3.webp", name: "Corduroy shirt\nElbow patches" }
         ]
       },
       categories: { eyebrow: "Shop men" },
