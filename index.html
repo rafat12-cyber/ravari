@@ -17,8 +17,8 @@
 @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(assets/fonts/plex-mono-500-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(assets/fonts/plex-mono-500-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 </style>
-<link rel="preload" as="image" href="assets/img/home/r-hero.webp" imagesrcset="assets/img/home/r-hero-m.webp 820w, assets/img/home/r-hero.webp 1400w" imagesizes="(max-width: 700px) 60vw, 960px" fetchpriority="high">
-<link rel="stylesheet" href="assets/css/style.css?v=1173">
+<link rel="preload" as="image" href="assets/img/home/r-model-1.webp" imagesrcset="assets/img/home/r-model-1-m.webp 700w, assets/img/home/r-model-1.webp 1100w" imagesizes="(max-width: 700px) 80vw, 520px" fetchpriority="high">
+<link rel="stylesheet" href="assets/css/style.css?v=1174">
 <script>document.documentElement.classList.add("js");try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!/[?&](preview|edit)\b/.test(location.search))document.documentElement.classList.add("js-intro")}catch(e){}</script>
 </head>
 <body>
@@ -31,8 +31,9 @@
 <div data-view="home" data-page="home">
 
 <!-- 1. HERO ------------------------------------------------------------ -->
-<header class="hero" id="top">
+<header class="hero hero--glass" id="top">
   <div class="hero__panel">
+    <img class="hero__ghost" src="assets/img/home/r-model-1-m.webp" alt="" aria-hidden="true" width="700" height="933" decoding="async" data-ci="hero.image">
     <nav class="nav" aria-label="Main"><a class="nav__brand" href="#home" aria-label="Ravari home"><img src="assets/img/logo.webp" alt="Ravari" width="199" height="24"></a></nav>
 
     <div class="hero__copy">
@@ -40,18 +41,26 @@
         <span class="line"><span data-c="hero.line1">Bold, edge</span></span>
         <span class="line"><span><span data-c="hero.lead">&amp;</span> <em class="alt" data-scramble data-c="hero.accent">classy.</em></span></span>
       </h1>
+      <p class="hero__text" data-c="hero.text">Premium shirts and panjabis, designed in Dhaka for men who like to look sharp.</p>
+      <form class="hero__sub" data-notify="hero newsletter">
+        <label class="sr" for="heroEmail">Email</label>
+        <input id="heroEmail" type="email" placeholder="Subscribe to newsletter" required>
+        <button type="submit" data-c="hero.subscribe">Subscribe</button>
+      </form>
+      <p class="hero__ok" hidden>Thanks, you're on the list.</p>
+      <p class="hero__note" data-c="hero.note">New drops every month. Cash on delivery all over Bangladesh.</p>
       <div class="hero__ctas">
         <a class="pill pill--dark" href="#shop" data-chref="hero.cta1Link" data-c="hero.cta1">Shop now</a>
         <a class="pill pill--light" href="#category/panjabi" data-chref="hero.cta2Link" data-c="hero.cta2">Premium Panjabi</a>
       </div>
     </div>
 
-
     <figure class="hero__model">
-      <img src="assets/img/home/r-hero.webp" srcset="assets/img/home/r-hero-m.webp 820w, assets/img/home/r-hero.webp 1400w" sizes="(max-width: 700px) 60vw, 960px" fetchpriority="high" decoding="async" alt="Two models in Ravari printed casual shirts" width="1386" height="1400" data-ci="hero.image" data-calt="hero.imageAlt">
+      <img src="assets/img/home/r-model-1.webp" srcset="assets/img/home/r-model-1-m.webp 700w, assets/img/home/r-model-1.webp 1100w" sizes="(max-width: 700px) 80vw, 520px" fetchpriority="high" decoding="async" alt="Model in a navy suede jacket and white tee" width="1100" height="1467" data-ci="hero.image" data-calt="hero.imageAlt">
     </figure>
 
-
+    <aside class="hero__shop" id="heroShop" aria-label="Featured product" hidden></aside>
+    <ul class="hero__thumbs" id="heroThumbs" aria-label="More featured products" hidden></ul>
   </div>
 </header>
 
@@ -284,7 +293,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/client.js?v=1173"></script>
-<script src="assets/js/store.js?v=1173"></script>
+<script src="assets/js/client.js?v=1174"></script>
+<script src="assets/js/store.js?v=1174"></script>
 </body>
 </html>
