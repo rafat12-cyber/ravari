@@ -10,7 +10,7 @@
 
 var POLICIES = { terms: "Terms & conditions", privacy: "Privacy policy", refund: "Return & refund policy", delivery: "Delivery policy" };
 var LISTS = {
-  shop: { title: "Shop all", text: "Every Ravari piece: oversized T-shirts, boxy shirts and baggy trousers." },
+  shop: { title: "Shop all", text: "Every Ravari piece: casual shirts, denim shirts and premium panjabis." },
   "new-in": { title: "New in", text: "The latest Ravari drops." },
   "on-sale": { title: "On sale", text: "Ravari pieces marked down." }
 };
@@ -70,7 +70,7 @@ function catUrl(base, c) { return base + "/product-category/" + encodeURICompone
 function googleCategory(db, p) {
   var t = catTree(db, p);
   if (t.trouser || t["denim-pant"]) return "204";
-  if (t["t-shirt"] || t.polo || t["half-shirt"] || t["full-shirt"]) return "212";
+  if (t["t-shirt"] || t.polo || t["half-shirt"] || t["full-shirt"] || t["denim-shirt"] || t.panjabi) return "212";
   var n = (p.name || "").toLowerCase();
   if (/trouser|pant|jogger|denim/.test(n)) return "204";
   if (/shirt|tee|polo|top/.test(n)) return "212";

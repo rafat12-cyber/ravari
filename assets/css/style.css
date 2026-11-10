@@ -256,6 +256,7 @@ button { font: inherit; color: inherit; }
 .collage__note--b { grid-column: 3; grid-row: 1; justify-self: end; }
 
 /* 2. Try the look --------------------------------------------------------- */
+.tl[hidden] { display: none; }
 .tl { position: relative; display: grid; grid-template-columns: minmax(0, 3fr) minmax(320px, 1fr); margin: 45px 0 70px;
   background: linear-gradient(180deg, var(--ground) 0, #f4f4f3 150px, #f4f4f3 calc(100% - 170px), var(--ground) 100%); }
 .tl__stage { position: relative; min-width: 0; height: min(760px, 88vh); min-height: 620px; overflow: hidden; overflow: clip; background: none; cursor: none; touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

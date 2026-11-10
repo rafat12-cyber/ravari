@@ -55,10 +55,11 @@ function ld(html) {
 async function main() {
   for (var i = 0; i < 50; i++) { try { await call("GET", "/api/health"); break; } catch (e) { await wait(100); } }
   var store = (await call("GET", "/api/store")).body;
-  var tees = store.products.filter(function (p) { return p.categoryIds.indexOf("cat_t_shirt") > -1; });
+  var inStock = function (p) { return p.variants.length > 2 && p.variants[1].stock > 1; };
+  var tees = store.products.filter(function (p) { return p.categoryIds.indexOf("cat_panjabi") > -1 && inStock(p); });
   var tee = tees[0], tee2 = tees[1];
-  var pants = store.products.filter(function (p) { return p.categoryIds.indexOf("cat_trouser") > -1; })[0];
-  assert.ok(tee && tee2 && pants, "seed has tees and trousers");
+  var pants = store.products.filter(function (p) { return p.categoryIds.indexOf("cat_half_shirt") > -1 && inStock(p); })[0];
+  assert.ok(tee && tee2 && pants, "seed has panjabis and shirts in stock");
 
   // --- Page addresses and search engine tags -----------------------------------------------
   var r = await call("GET", "/product/" + tee.slug);
@@ -76,11 +77,11 @@ async function main() {
   r = await call("GET", "/product/" + tee.slug + "/?utm_source=fb");
   assert.equal(r.status, 301);
   assert.equal(r.headers.location, "/product/" + tee.slug + "?utm_source=fb");
-  r = await call("GET", "/product-category/men/t-shirt/");
+  r = await call("GET", "/product-category/men/panjabi/");
   assert.equal(r.status, 301);
-  r = await call("GET", "/product-category/t-shirt");
+  r = await call("GET", "/product-category/panjabi");
   assert.equal(r.status, 200);
-  assert.ok(r.body.indexOf("Oversized T-shirts in Bangladesh | Ravari") > -1, "category SEO title");
+  assert.ok(r.body.indexOf("Premium Panjabi in Bangladesh | Ravari") > -1, "category SEO title");
   assert.ok(r.body.indexOf('href="/product/' + tee.slug + '"') > -1, "category lists product links");
   r = await call("GET", "/refund_returns/");
   assert.equal(r.status, 301);
@@ -99,11 +100,11 @@ async function main() {
 
   r = await call("GET", "/sitemap.xml");
   assert.ok(r.body.indexOf("<loc>https://shop.example/product/" + tee.slug + "</loc>") > -1, "sitemap has products");
-  assert.ok(r.body.indexOf("/product-category/t-shirt</loc>") > -1, "sitemap has categories");
+  assert.ok(r.body.indexOf("/product-category/panjabi</loc>") > -1, "sitemap has categories");
   r = await call("GET", "/robots.txt");
   assert.ok(r.body.indexOf("Sitemap: https://shop.example/sitemap.xml") > -1);
   r = await call("GET", "/feeds/google.xml");
-  assert.ok(r.body.indexOf("<g:id>" + tee.sku + "</g:id>") > -1 && r.body.indexOf("<g:sale_price>" + tee.price + ".00 BDT</g:sale_price>") > -1, "Google feed");
+  assert.ok(r.body.indexOf("<g:id>" + tee.sku + "</g:id>") > -1 && (r.body.indexOf("<g:sale_price>" + tee.price + ".00 BDT</g:sale_price>") > -1 || r.body.indexOf("<g:price>" + tee.price + ".00 BDT</g:price>") > -1), "Google feed");
   r = await call("GET", "/feeds/meta.csv");
   assert.equal(r.body.split("\n")[0].split(",")[0], "id");
   assert.ok(r.body.indexOf(tee.sku + ",") > -1, "Meta feed");
@@ -116,12 +117,12 @@ async function main() {
   // --- Offers -------------------------------------------------------------------------------
   var token = (await call("POST", "/api/auth/login", { email: "owner@test.com", password: "test-password-1" })).body.token;
   var line = function (p, q) { return { productId: p.id, variantId: p.variants[1].id, qty: q || 1 }; };
-  r = await call("POST", "/api/coupons", { code: "BUY2TEES", type: "fixed", value: 200, auto: true, minQty: 2, categoryIds: ["cat_t_shirt"], description: "Buy 2 tees, save ৳200" }, token);
+  r = await call("POST", "/api/coupons", { code: "BUY2TEES", type: "fixed", value: 300, auto: true, minQty: 2, categoryIds: ["cat_panjabi"], description: "Buy 2 panjabis, save ৳300" }, token);
   assert.equal(r.status, 201);
   r = await call("POST", "/api/checkout/quote", { items: [line(tee), line(pants)] });
   assert.equal(r.body.discount, 0, "one tee: no offer");
   r = await call("POST", "/api/checkout/quote", { items: [line(tee), line(tee2), line(pants)] });
-  assert.equal(r.body.discount, 200, "two tees: offer applies");
+  assert.equal(r.body.discount, 300, "two panjabis: offer applies");
   assert.ok(r.body.coupon.auto);
   r = await call("POST", "/api/coupons/validate", { code: "BUY2TEES", subtotal: 5000 });
   assert.equal(r.status, 400, "an automatic offer can't be typed in");
@@ -191,7 +192,7 @@ async function main() {
   r = await call("GET", "/api/settings", null, token);
   assert.ok(r.body.settings.code.catalogTokenSet && !r.body.settings.code.catalogToken, "the token isn't sent back");
   graphCalls = [];
-  await call("PUT", "/api/products/" + tee2.id, { price: 777 }, token);
+  await call("PUT", "/api/products/" + tee2.id, { price: 777, comparePrice: 999 }, token);
   await wait(3600);
   var up = graphCalls.filter(function (c) { return /\/998877665544\/items_batch$/.test(c.url); })[0];
   assert.ok(up, "product change sent to the catalog");

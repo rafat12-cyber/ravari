@@ -744,7 +744,7 @@
       ${isNew ? "" : `<p class="muted">SKU ${esc(p.sku)} · ${pill(p.status)} · <a href="./#product/${esc(p.slug)}" target="_blank" rel="noopener">View on store ↗</a></p>`}</div></div>
       <form class="cols" id="pForm" novalidate>
         <div class="stack">
-          <div class="card"><label class="field"><span>Product name</span><input class="input" name="name" required value="${esc(draft.name)}" placeholder="Fearless Oversized T-shirt – Black"></label>
+          <div class="card"><label class="field"><span>Product name</span><input class="input" name="name" required value="${esc(draft.name)}" placeholder="Premium Casual Shirt – Blue"></label>
             <label class="field"><span>Description</span><textarea class="input" name="description" rows="3">${esc(draft.description || "")}</textarea></label>
             <label class="field"><span>Details &amp; fit</span><textarea class="input" name="details" rows="4" placeholder="One point per line">${esc(draft.details)}</textarea><small>One point per line. Shown under “Details &amp; fit”.</small></label></div>
           <div class="card"><div class="card__head"><h2 class="h2">Photos</h2><small class="muted">The first photo is the main one. Drag order with the arrows. Best size: 690 × 862 px (4:5) · WebP · under 80 KB each.</small></div><div class="gallery" id="gallery"></div></div>
@@ -769,7 +769,7 @@
           <div class="card"><div class="card__head"><h2 class="h2">Categories</h2><a class="btn btn--link" href="#/categories">Manage</a></div>
             <div class="tree">${catTree(store.categories).map(({ c, depth }) => `<label class="check" style="padding-left:${depth * 18}px"><input type="checkbox" name="cat" value="${c.id}" ${draft.categoryIds.indexOf(c.id) > -1 ? "checked" : ""}> ${esc(c.name)}</label>`).join("")}</div></div>
           <div class="card"><h2 class="h2">Style</h2>
-            <label class="field"><span>Line / collection label</span><input class="input" name="line" value="${esc(draft.line || "")}" placeholder="Fearless"><small>Used for the filter chips on the shop page.</small></label>
+            <label class="field"><span>Line / collection label</span><input class="input" name="line" value="${esc(draft.line || "")}" placeholder="Winter Collection"><small>Used for the filter chips on the shop page.</small></label>
             <div class="row row--2"><label class="field"><span>Colour name</span><input class="input" name="color" value="${esc(draft.color || "")}" placeholder="Black"></label>
             <label class="field"><span>Colour</span><input class="input" name="hex" type="color" value="${esc(draft.hex || "#7b7e83")}" style="padding:2px"></label></div>
             <div class="field"><span>Shop filter colour</span><input type="hidden" name="colorGroup" value="${esc(draft.colorGroup || "")}">
@@ -1371,7 +1371,7 @@
   // Pages: visual editor (live preview in an iframe of the store)
   // ---------------------------------------------------------------------------
   const PAGES = {
-    home: { title: "Home page", route: "home", sections: { hero: "Hero", tryLook: "Try the look", house: "Oversized items", poster: "Offer poster", arrivals: "Product showcase", lookbook: "Lookbook", categories: "Shop by category", footer: "Footer" } },
+    home: { title: "Home page", route: "home", sections: { hero: "Hero", tryLook: "Try the look", house: "Trendy categories", poster: "Offer poster", arrivals: "Product showcase", lookbook: "Lookbook", categories: "Shop by category", footer: "Footer" } },
     about: { title: "About us", route: "about" },
     contact: { title: "Contact us", route: "contact" },
     stores: { title: "Store locations", route: "store-locations" },
@@ -2616,7 +2616,7 @@
         <li>In <a href="#/settings">Settings → Live chat</a>, turn the automatic reply off so customers only see the AI's answer.</li></ol>
         <pre class="code">curl -X POST ${esc(base)}/api/chats/CHAT_ID/messages \\
   -H "Authorization: Bearer rk_YOUR_KEY" -H "Content-Type: application/json" \\
-  -d '{"text":"Yes, the Fearless tee in XL is in stock."}'</pre></div>
+  -d '{"text":"Yes, the Premium Panjabi in XL is in stock."}'</pre></div>
       <div class="card"><h2 class="h2">Most used endpoints</h2><div class="table-wrap"><table class="t"><tbody>
         ${[["GET", "/api/orders?status=pending", "List orders (add &full=1 for items and addresses)"], ["GET", "/api/orders/RV1001", "One order"], ["PATCH", "/api/orders/RV1001", '{"status":"shipped","tracking":"…"}'],
           ["GET", "/api/products", "All products with variations, SKUs and stock"], ["POST", "/api/products", "Create a product"], ["GET", "/api/stock", "Stock for every SKU"], ["PATCH", "/api/stock", '{"items":[{"sku":"RV-FRL-BLK-M","stock":12}]} or "delta":-1'],

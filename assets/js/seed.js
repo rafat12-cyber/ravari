@@ -1,5 +1,5 @@
-// Starting data for a new store: settings, categories, variations, the 41
-// products from the October 2026 shoot, page content and menus.
+// Starting data for a new store: settings, categories, variations, the 55
+// products from the old ravaribd.com shop, page content and menus.
 // The server copies this into data/db.json on first run; the demo copies it
 // into the browser. Edit the live data from the admin panel, not here.
 (function (root, factory) {
@@ -16,129 +16,107 @@
   // Categories (from the ravaribd.com menu)
   // ---------------------------------------------------------------------------
   var CATS = [
-    ["men", "Men", null, 1, "assets/img/home/h-look-3.webp", "Oversized tees, shirts and trousers."],
-    ["t-shirt", "T-shirt", "men", 1, "assets/img/home/h-hero.webp", "Heavyweight oversized tees."],
-    ["polo", "Polo", "men", 2, "", ""],
-    ["half-shirt", "Half shirt", "men", 3, "", ""],
-    ["full-shirt", "Full shirt", "men", 4, "", ""],
-    ["trouser", "Trouser", "men", 5, "", ""],
-    ["denim-pant", "Denim pant", "men", 6, "", ""],
-    ["women", "Women", null, 2, "assets/img/c-blue.webp", "The women's line is on its way."],
-    ["the-house", "The House", null, 3, "assets/img/home/h-collage-b.webp", "Five collections from Ravari, each with its own mood."],
-    ["nior-division", "Nior Division", "the-house", 1, "assets/img/home/h-house-1.webp", "Dark washes for the after hours."],
-    ["saint-sinners", "Saint & Sinners Hype", "the-house", 2, "assets/img/home/h-house-2.webp", "Loud graphics, quiet confidence."],
-    ["essential", "Essential Collection", "the-house", 3, "assets/img/home/h-look-4.webp", "The everyday blanks, cut heavy."],
-    ["obsedian", "Obsedian Virtue", "the-house", 4, "assets/img/home/h-look-1.webp", "Black on black, built to last."],
-    ["monarch-drop", "Monarch Drop", "the-house", 5, "assets/img/home/h-look-2.webp", "Regal details on everyday shapes."]
+    ["men", "Men", null, 1, "assets/img/home/r-hero-wide.webp", "Shirts and panjabis for men."],
+    ["winter-collection", "Winter Collection", null, 2, "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", "Denim and corduroy shirts for the cooler days."],
+    ["denim-shirt", "Denim Shirt", "winter-collection", 1, "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", "Heavyweight denim and corduroy shirts."],
+    ["full-shirt", "Full Sleeve Shirt", "men", 1, "assets/img/home/r-lb-1.webp", "Premium full sleeve casual shirts."],
+    ["half-shirt", "Half Sleeve Shirt", "men", 2, "assets/img/home/r-lb-3.webp", "Half sleeve casual shirts in bold prints."],
+    ["panjabi", "Premium Panjabi", "men", 3, "assets/img/home/r-lb-2.webp", "Embroidered, sequin and classic cotton panjabis."],
+    ["on-sale", "On Sale", null, 3, "assets/img/home/r-panjabi-wide.webp", "Picks on sale now."]
   ];
   // A short paragraph under each category's products, written for search engines (Admin › Categories)
   var SEO_TEXT = {
-    "men": "Oversized T-shirts, boxy shirts and baggy trousers for men, designed in Dhaka. Cash on delivery all over Bangladesh and exchange within 7 days.",
-    "t-shirt": "Ravari oversized T-shirts are cut heavy, with a dropped shoulder and a boxy, relaxed fit. Choose printed graphic tees or acid-washed tees, made in Bangladesh and delivered across the country with cash on delivery.",
-    "half-shirt": "Boxy fitted half-sleeve shirts with a straight hem and a relaxed shoulder. Wear one open over a tee or buttoned up on its own.",
-    "trouser": "Baggy trousers with a wide, straight leg and an easy waist. They sit right with an oversized tee or a boxy shirt."
+    "men": "Casual shirts and premium panjabis for men from Ravari, Dhaka. Cash on delivery all over Bangladesh.",
+    "full-shirt": "Ravari full sleeve casual shirts in premium cotton, with modern prints and a comfortable fit. Delivered across Bangladesh with cash on delivery.",
+    "half-shirt": "Half sleeve casual shirts in breathable cotton with bold prints, made for everyday wear in the heat.",
+    "panjabi": "Premium embroidered, sequin and classic cotton panjabis for Eid, weddings and every occasion. Cash on delivery all over Bangladesh.",
+    "denim-shirt": "Heavyweight denim and corduroy shirts for layering through the cooler months."
   };
-  var SEO_TITLE = { "men": "Men's Oversized Clothing in Bangladesh", "t-shirt": "Oversized T-shirts in Bangladesh", "half-shirt": "Boxy Half Shirts in Bangladesh", "trouser": "Baggy Trousers in Bangladesh" };
+  var SEO_TITLE = { "men": "Men's Shirts and Panjabis in Bangladesh", "full-shirt": "Full Sleeve Shirts in Bangladesh", "half-shirt": "Half Sleeve Shirts in Bangladesh", "panjabi": "Premium Panjabi in Bangladesh", "denim-shirt": "Denim Shirts in Bangladesh" };
   var categories = CATS.map(function (c) {
     return { id: "cat_" + c[0].replace(/-/g, "_"), slug: c[0], name: c[1], parentId: c[2] ? "cat_" + c[2].replace(/-/g, "_") : null,
       order: c[3], image: c[4], description: c[5], seoText: SEO_TEXT[c[0]] || "", seoTitle: SEO_TITLE[c[0]] || "", createdAt: T0 };
   });
 
   var attributes = [
-    { id: "att_size", name: "Size", type: "button", values: ["S", "M", "L", "XL", "2XL", "3XL"].map(function (v) { return { label: v }; }), createdAt: T0 },
-    { id: "att_color", name: "Color", type: "color", values: [
-      { label: "Black", hex: "#1f2022" }, { label: "Ocean Blue", hex: "#3e6577" }, { label: "Yellow", hex: "#b4a679" },
-      { label: "Brick Red", hex: "#8e3b2c" }, { label: "Blue", hex: "#3b5677" }, { label: "Cream", hex: "#c9bda3" }, { label: "Coffee", hex: "#5b4335" },
-      { label: "Green", hex: "#2f8f6b" }, { label: "Red", hex: "#b52a45" }, { label: "Pink", hex: "#c93f5f" }, { label: "Charcoal", hex: "#45474b" }
-    ], createdAt: T0 }
+    { id: "att_size", name: "Size", type: "button", values: ["M", "L", "XL", "XXL"].map(function (v) { return { label: v }; }), createdAt: T0 },
+    { id: "att_color", name: "Color", type: "color", values: [{"label": "Blue", "hex": "#3b5677"}, {"label": "Gray", "hex": "#8a8d91"}, {"label": "Black", "hex": "#1f2022"}, {"label": "Brown", "hex": "#6b4a35"}, {"label": "Off-White", "hex": "#ece6d8"}, {"label": "Yellow", "hex": "#d8b84a"}, {"label": "Coffee", "hex": "#5b4335"}, {"label": "White", "hex": "#f4f4f2"}, {"label": "Olive", "hex": "#6b6b3a"}, {"label": "Black (Mixed)", "hex": "#2b2c2e"}, {"label": "Light Pink", "hex": "#e8b9c0"}, {"label": "Bronze", "hex": "#8c6a3f"}, {"label": "Maroon", "hex": "#6d1f2a"}, {"label": "Bottle Green", "hex": "#1f4a3a"}, {"label": "Peach", "hex": "#f0b99a"}, {"label": "Red", "hex": "#b52a45"}, {"label": "Red (Mixed)", "hex": "#a3343f"}], createdAt: T0 }
   ];
 
   // ---------------------------------------------------------------------------
-  // Products. One colour is one product; sizes are its variations. A line's
-  // type sets how its products are named and which category they sit in.
+  // Products, imported from the old ravaribd.com shop (November 2026). One colour
+  // is one product; sizes are its variations with the stock the old shop had.
+  // Row: slug, name, colour, swatch, price, compare-at price, categories, photo
+  // count, description, details, [size, stock] pairs.
   // ---------------------------------------------------------------------------
-  var TYPE = {
-    tee: { name: function (line, color) { return line + " Oversized T-shirt – " + color; }, cat: "cat_t_shirt" },
-    shirt: { name: function (line, color) { return "Boxy Fitted Shirt – " + color; }, cat: "cat_half_shirt" },
-    trouser: { name: function (line, color) { return "Baggy Trouser – " + color; }, cat: "cat_trouser" }
-  };
-  var LINE = {
-    "Fearless": { code: "FRL", about: "Cracked Fearless chest print on a dip-dyed, sun-faded body. Oversized fit with a dropped shoulder." },
-    "RVCHL": { code: "RVC", about: "A small RVCHL wordmark on a boxy oversized blank. Easy to wear with anything." },
-    "Stride Out": { code: "STO", about: "Stride Out graphic on an oversized, dropped-shoulder body." },
-    "Paradox": { code: "PDX", about: "Paradox graphic on an oversized, dropped-shoulder body." },
-    "574 Acid Washed": { code: "574", about: "Acid-washed oversized tee with the 574 graphic." },
-    "Brand New Day": { code: "BND", about: "Brand New Day spider graphic on an acid-washed, oversized body." },
-    "After Hours": { code: "AFH", about: "After Hours city-at-night print on a sun-faded, dip-dyed oversized body." },
-    "Trust Broken": { code: "TRB", about: "Small chest mark up front, Trust Broken chain print across the back. Faded, dip-dyed oversized body." },
-    "Starlight": { code: "STL", about: "Small chest logo up front, a big star-burst script print across the back. Faded oversized body." },
-    "Santa Rosa": { code: "SRS", about: "Small chest patch up front, a Santa Rosa newspaper-and-roses collage across the back." },
-    "Talking Rubbish": { code: "TRS", about: "\"Why do you think you're talking rubbish?\" printed at the chest, photo print on the back." },
-    "Cloud Nine": { code: "CL9", about: "Small chest logo up front, a black-and-white cloud photo collage across the back." },
-    "Halo": { code: "HAL", about: "Round Halo graphic on an acid-washed, oversized body." },
-    "Boxy Fitted Shirt": { code: "BXS", type: "shirt", about: "Short-sleeve shirt with a boxy, relaxed fit, an open collar and an all-over print." },
-    "Baggy Trouser": { code: "BGT", type: "trouser", about: "Wide, baggy-fit trouser with a relaxed, full-length leg." }
-  };
-  var COLOR = { "Black": "BLK", "Ocean Blue": "OBL", "Yellow": "YLW", "Brick Red": "BRD", "Blue": "BLU", "Cream": "CRM", "Coffee": "COF",
-    "Green": "GRN", "Red": "RED", "Pink": "PNK", "Charcoal": "CHR",
-    "Mosaic": "MOS", "Line Art": "LNA", "Coral Wave": "CRW", "Sage Garden": "SGG", "Mono Bloom": "MNB" };
-  var FIT = ["Model usually wears size L top and 32 waist bottoms. Model is wearing size L.", "Fits true to size.",
-    "Model height: 6 ft 2 in (183 cm). Chest: 38 in (97 cm). Shoulder: 18.5 in (47 cm)."];
   var P = [
-    ["Fearless", "Black", "#2b2c2e", 890, 1190, "oversized-t-shirt-fearless-black", photos("fearless-black", 4), true, true],
-    ["Fearless", "Ocean Blue", "#3e6577", 890, 1190, "fearless-oversized-t-shirt-ocean-blue", photos("fearless-ocean-blue", 4), true, true],
-    ["Fearless", "Yellow", "#b4a679", 890, 1190, "fearless-oversized-t-shirt-yellow", photos("fearless-yellow", 4), true, true],
-    ["Fearless", "Brick Red", "#8e3b2c", 890, 1190, "oversized-t-shirt-fearless-bricks-red", photos("fearless-brick-red", 4), false, false],
-    ["RVCHL", "Yellow", "#b3a578", 890, 1190, "rvchl-oversized-t-shirt-yellow", photos("rvchl-yellow", 4), false, true],
-    ["RVCHL", "Ocean Blue", "#335a6c", 890, 1190, "rvchl-oversized-t-shirt-ocean-blue", photos("rvchl-ocean-blue", 4), false, false],
-    ["RVCHL", "Black", "#1f2022", 890, 1190, "rvchl-oversized-t-shirt-black", photos("rvchl-black", 4), false, false],
-    ["Stride Out", "Brick Red", "#8e3b2c", 890, 1190, "stride-out-oversized-t-shirt-brick-red", photos("stride-out-brick-red", 2), true, false],
-    ["Stride Out", "Black", "#232426", 890, 1190, "stride-out-oversized-t-shirt-black", photos("stride-out-black", 4), true, false],
-    ["Stride Out", "Blue", "#3b5677", 890, 1190, "stride-out-oversized-t-shirt-blue", photos("stride-out-blue", 4), true, false],
-    ["Paradox", "Cream", "#c9bda3", 890, 1190, "paradox-oversized-t-shirt-cream", photos("paradox-cream", 4), false, false],
-    ["Paradox", "Black", "#1f2022", 890, 1190, "paradox-oversized-t-shirt-black", photos("paradox-black", 4), false, false],
-    ["574 Acid Washed", "Coffee", "#5b4335", 680, 990, "574-acid-washed-oversized-t-shirt-coffee", photos("574-coffee", 3), false, false],
-    ["574 Acid Washed", "Yellow", "#a3904f", 680, 990, "574-acid-washed-oversized-t-shirt-yellow", photos("574-yellow", 4), false, false],
-    ["574 Acid Washed", "Brick Red", "#8e3b2c", 680, 990, "574-oversized-t-shirt-brick-red", photos("574-brick-red", 4), false, false],
-    ["Brand New Day", "Black", "#2e2f31", 680, 990, "brand-new-day-acid-washed-oversized-t-shirt-black", photos("brand-new-day-black", 4), true, false],
-    ["Brand New Day", "Green", "#2f8f6b", 680, 990, "brand-new-day-acid-washed-oversized-t-shirt-green", photos("brand-new-day-green", 2), true, false],
-    ["After Hours", "Black", "#2b2c2e", 890, 1190, "after-hours-oversized-t-shirt-black", photos("after-hours-black", 4), true, false],
-    ["After Hours", "Ocean Blue", "#3e6577", 890, 1190, "after-hours-oversized-t-shirt-ocean-blue", photos("after-hours-blue", 4), true, false],
-    ["Trust Broken", "Ocean Blue", "#3e6577", 890, 1190, "trust-broken-oversized-t-shirt-ocean-blue", photos("trust-broken-blue", 4), true, false],
-    ["Trust Broken", "Black", "#2b2c2e", 890, 1190, "trust-broken-oversized-t-shirt-black", photos("trust-broken-black", 4), true, false],
-    ["Starlight", "Ocean Blue", "#3e6577", 890, 1190, "starlight-oversized-t-shirt-ocean-blue", photos("starlight-blue", 4), true, false],
-    ["Starlight", "Black", "#2b2c2e", 890, 1190, "starlight-oversized-t-shirt-black", photos("starlight-black", 4), true, false],
-    ["Starlight", "Cream", "#c9bda3", 890, 1190, "starlight-oversized-t-shirt-cream", photos("starlight-cream", 4), true, false],
-    ["Santa Rosa", "Ocean Blue", "#3e6577", 890, 1190, "santa-rosa-oversized-t-shirt-ocean-blue", photos("santa-rosa-blue", 4), true, false],
-    ["Santa Rosa", "Red", "#b52a45", 890, 1190, "santa-rosa-oversized-t-shirt-red", photos("santa-rosa-red", 4), true, false],
-    ["Santa Rosa", "Black", "#1f2022", 890, 1190, "santa-rosa-oversized-t-shirt-black", photos("santa-rosa-black", 4), true, false],
-    ["Talking Rubbish", "Black", "#1f2022", 890, 1190, "talking-rubbish-oversized-t-shirt-black", photos("talking-rubbish-black", 4), true, false],
-    ["Cloud Nine", "Brick Red", "#8e4a3c", 680, 990, "cloud-nine-acid-washed-oversized-t-shirt-brick-red", photos("cloud-nine-brick-red", 4), true, false],
-    ["Cloud Nine", "Black", "#1f2022", 890, 1190, "cloud-nine-oversized-t-shirt-black", photos("cloud-nine-black", 4), true, false],
-    ["Cloud Nine", "Charcoal", "#45474b", 680, 990, "cloud-nine-acid-washed-oversized-t-shirt-charcoal", photos("cloud-nine-charcoal", 4), true, false],
-    ["Halo", "Yellow", "#a3904f", 680, 990, "halo-acid-washed-oversized-t-shirt-yellow", photos("halo-yellow", 4), true, false],
-    ["Halo", "Green", "#2f8f6b", 680, 990, "halo-acid-washed-oversized-t-shirt-green", photos("halo-green", 4), true, false],
-    ["Halo", "Pink", "#c93f5f", 680, 990, "halo-acid-washed-oversized-t-shirt-pink", photos("halo-pink", 4), true, false],
-    ["Boxy Fitted Shirt", "Mosaic", "#7a4a36", 850, 1290, "boxy-fitted-shirt-mosaic", photos("shirt-mosaic", 4), true, true],
-    ["Boxy Fitted Shirt", "Line Art", "#d4a184", 850, 1290, "boxy-fitted-shirt-line-art", photos("shirt-line-art", 4), true, false],
-    ["Boxy Fitted Shirt", "Coral Wave", "#c98a7c", 850, 1290, "boxy-fitted-shirt-coral-wave", photos("shirt-coral-wave", 3), true, false],
-    ["Boxy Fitted Shirt", "Sage Garden", "#8d958c", 850, 1290, "boxy-fitted-shirt-sage-garden", photos("shirt-sage-garden", 4), true, true],
-    ["Boxy Fitted Shirt", "Mono Bloom", "#e9e6df", 850, 1290, "boxy-fitted-shirt-mono-bloom", photos("shirt-mono-bloom", 4), true, false],
-    ["Baggy Trouser", "Black", "#1f2022", 990, 1390, "baggy-trouser-black", photos("baggy-trouser-black", 3), true, true],
-    ["Baggy Trouser", "Charcoal", "#45474b", 990, 1390, "baggy-trouser-charcoal", photos("baggy-trouser-charcoal", 4), true, false]
+    ["classic-double-pocket-denim-shirt-blue", "Classic Double Pocket Denim Shirt – Blue", "Blue", "#3b5677", 1299, 0, ["denim-shirt", "winter-collection"], 4, "", [], [["M", 10], ["L", 3], ["XL", 4], ["XXL", 1]]],
+    ["classic-denim-casual-shirt-gray", "Classic Denim Casual Shirt – Gray", "Gray", "#8a8d91", 1299, 0, ["denim-shirt", "winter-collection"], 2, "Crafted from premium, heavyweight cotton denim, it offers extra insulation and structure, making it a perfect layering piece for crisp autumn days and chilly winter evenings. Wear it buttoned up over a thermal, or leave it open as an overshirt paired with your favorite jacket for an effortlessly cool, street-smart aesthetic.", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing", "Premium Heavyweight Denim: Durable cotton construction designed to offer extra warmth and structure for the cooler months.", "Classic Double-Pocket Design: Features dual chest pockets with secure button flaps for a rugged, utilitarian look.", "Versatile Winter Layering: Easily pairs over tees or under heavy jackets, making it a versatile staple for transitional and winter weather.", "Timeless Vintage Wash: Rich blue indigo wash that pairs effortlessly with any jeans or chinos."], [["M", 0], ["L", 0], ["XL", 1], ["XXL", 1]]],
+    ["classic-denim-shirt-with-accent-pocket-blue", "Classic Denim Shirt with Accent Pocket – Blue", "Blue", "#3b5677", 1299, 0, ["denim-shirt", "winter-collection"], 3, "Designed with a unique contrast chest pocket and classic button-down front, it adds subtle depth and visual interest to your cold-weather outfits. Whether worn on its own or layered open over a sleek T-shirt or turtleneck, this versatile piece transitions effortlessly from crisp autumn days to cooler winter outings.", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing", "Material: Premium Cotton Denim", "Fit: Modern Casual Fit", "Features: Long sleeves, button-down closure, collar neck, and a stylish contrast pocket accent", "Styling Tip: Pair it with black denim or trousers for a sharp, monochrome winter look, or layer it under a jacket when temperatures drop."], [["M", 3], ["L", 0], ["XL", 4], ["XXL", 0]]],
+    ["corduroy-shirt-with-elbow-patches-blue", "Corduroy Shirt with Elbow Patches – Blue", "Blue", "#3b5677", 1299, 0, ["denim-shirt", "winter-collection"], 4, "Featuring a rich, textured black corduroy fabric complemented by contrasting elbow patches, it offers a rugged yet refined aesthetic. Whether you are layering it over a basic T-shirt for a crisp autumn evening or wearing it buttoned up during cooler winter days, this full-sleeve shirt delivers unmatched comfort and standout style.", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing", "Premium Fabric: Soft, durable, and heavyweight corduroy blend designed to provide warmth and comfort through the winter season.", "Classic Patch Detail: Features stylish contrasting elbow patches for a timeless, academic-chic look.", "Versatile Styling: Perfect for casual outings, winter gatherings, or layered streetwear looks.", "Functional Design: Includes a classic button-down front, a neat collar, and a secure chest pocket."], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 2]]],
+    ["classic-black-denim-casual-shirt-black", "Classic Black Denim Casual Shirt", "Black", "#1f2022", 1299, 0, ["denim-shirt", "winter-collection"], 4, "Crafted from premium, heavyweight cotton denim, it offers extra insulation and structure, making it a perfect layering piece for crisp autumn days and chilly winter evenings. Wear it buttoned up over a thermal, or leave it open as an overshirt paired with your favorite jacket for an effortlessly cool, street-smart aesthetic.", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing", "Premium Heavyweight Denim: Durable cotton construction designed to offer extra warmth and structure for the cooler months.", "Classic Double-Pocket Design: Features dual chest pockets with secure button flaps for a rugged, utilitarian look.", "Versatile Winter Layering: Easily pairs over tees or under heavy jackets, making it a versatile staple for transitional and winter weather.", "Timeless Vintage Wash: Rich blue indigo wash that pairs effortlessly with any jeans or chinos."], [["M", 0], ["L", 0], ["XL", 2], ["XXL", 0]]],
+    ["dual-tone-check-corduroy-shirt-blue", "Dual-Tone Check & Corduroy Shirt – Blue", "Blue", "#3b5677", 1299, 0, ["denim-shirt", "winter-collection"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing", "Premium Fabric: A soft, durable, heavyweight blend designed to provide warmth and comfort through the winter.", "Unique Patchwork Design: A modern fusion of solid brown corduroy and classic plaid.", "Versatile Styling: Perfect for casual outings, winter gatherings, or layered streetwear looks.", "Functional Details: Features a sturdy front button closure and a secure chest pocket. Featuring a striking dual-tone design, it pairs classic textured corduroy with a contrast check-pattern panel for a unique, rugged look. Whether you are layering it over a basic T-shirt for a crisp autumn evening or wearing it buttoned up during cooler winter days, this full-sleeve shirt delivers both unmatched comfort and standout street style."], [["M", 4], ["L", 0], ["XL", 5], ["XXL", 0]]],
+    ["classic-blue-denim-casual-shirt-blue", "Classic Blue Denim Casual Shirt", "Blue", "#3b5677", 1299, 0, ["denim-shirt", "winter-collection"], 3, "Crafted from premium, heavyweight cotton denim, it offers extra insulation and structure, making it a perfect layering piece for crisp autumn days and chilly winter evenings. Wear it buttoned up over a thermal, or leave it open as an overshirt paired with your favorite jacket for an effortlessly cool, street-smart aesthetic.", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing", "Premium Heavyweight Denim: Durable cotton construction designed to offer extra warmth and structure for the cooler months.", "Classic Double-Pocket Design: Features dual chest pockets with secure button flaps for a rugged, utilitarian look.", "Versatile Winter Layering: Easily pairs over tees or under heavy jackets, making it a versatile staple for transitional and winter weather.", "Timeless Vintage Wash: Rich blue indigo wash that pairs effortlessly with any jeans or chinos."], [["M", 2], ["L", 1], ["XL", 5], ["XXL", 3]]],
+    ["dual-tone-check-corduroy-shirt-brown", "Dual-Tone Check & Corduroy Shirt – Brown", "Brown", "#6b4a35", 1299, 0, ["denim-shirt", "winter-collection"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing", "Premium Fabric: A soft, durable, heavyweight blend designed to provide warmth and comfort through the winter.", "Unique Patchwork Design: A modern fusion of solid brown corduroy and classic plaid.", "Versatile Styling: Perfect for casual outings, winter gatherings, or layered streetwear looks.", "Functional Details: Features a sturdy front button closure and a secure chest pocket. Featuring a striking dual-tone design, it pairs classic textured corduroy with a contrast check-pattern panel for a unique, rugged look. Whether you are layering it over a basic T-shirt for a crisp autumn evening or wearing it buttoned up during cooler winter days, this full-sleeve shirt delivers both unmatched comfort and standout street style."], [["M", 2], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-casual-shirt-blue", "Premium Casual Shirt – Blue", "Blue", "#3b5677", 1499, 0, ["full-shirt", "on-sale"], 2, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 1], ["XXL", 1]]],
+    ["half-sleeve-casual-shirt-off-white", "Half Sleeve Casual Shirt – Off-White", "Off-White", "#ece6d8", 1299, 0, ["half-shirt", "on-sale"], 2, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 2], ["L", 0], ["XL", 1], ["XXL", 0]]],
+    ["half-sleeve-casual-shirt-blue", "Half Sleeve Casual Shirt – Blue", "Blue", "#3b5677", 1299, 0, ["half-shirt", "men", "on-sale"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 5], ["L", 6], ["XL", 3], ["XXL", 1]]],
+    ["premium-casual-shirt-yellow", "Premium Casual Shirt – Yellow", "Yellow", "#d8b84a", 1499, 0, ["full-shirt", "men", "on-sale"], 2, "", ["Premium-quality Remi-Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["half-sleeve-casual-shirt-brown", "Half Sleeve Casual Shirt – Brown", "Brown", "#6b4a35", 1299, 0, ["half-shirt", "men", "on-sale"], 4, "", ["Premium-quality cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 5], ["L", 3], ["XL", 4], ["XXL", 0]]],
+    ["premium-casual-shirt-blue-2", "Premium Casual Shirt – Blue", "Blue", "#3b5677", 1499, 0, ["full-shirt", "men", "on-sale"], 2, "", ["Premium-quality Remi-Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-casual-shirt-coffee", "Premium Casual Shirt – Coffee", "Coffee", "#5b4335", 1499, 0, ["full-shirt", "men", "on-sale"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-casual-shirt-white", "Premium Casual Shirt – White", "White", "#f4f4f2", 1499, 0, ["full-shirt", "men", "on-sale"], 4, "", ["Premium-quality Remi-Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 1]]],
+    ["premium-embroidered-panjabi-olive", "Premium Embroidered Panjabi – Olive", "Olive", "#6b6b3a", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-off-white", "Premium Embroidered Panjabi – Off-White", "Off-White", "#ece6d8", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-blue", "Premium Embroidered Panjabi – Blue", "Blue", "#3b5677", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-cotton-sequin-panjabi-yellow", "Premium Cotton Sequin Panjabi – Yellow", "Yellow", "#d8b84a", 2699, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 5], ["L", 3], ["XL", 2], ["XXL", 0]]],
+    ["premium-classic-panjabi-brown", "Premium Classic Panjabi – Brown", "Brown", "#6b4a35", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-classic-panjabi-blue", "Premium Classic Panjabi – Blue", "Blue", "#3b5677", 2699, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 3], ["XL", 0], ["XXL", 3]]],
+    ["premium-classic-panjabi-black-mixed", "Premium Classic Panjabi – Black (Mixed)", "Black (Mixed)", "#2b2c2e", 2499, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 5], ["L", 1], ["XL", 6], ["XXL", 0]]],
+    ["premium-classic-panjabi-light-pink", "Premium Classic Panjabi – Light Pink", "Light Pink", "#e8b9c0", 2699, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-classic-panjabi-bronze", "Premium Classic Panjabi – Bronze", "Bronze", "#8c6a3f", 2699, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Premium-quality fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["panjabi-maroon", "Panjabi – Maroon", "Maroon", "#6d1f2a", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-classic-panjabi-blue-2", "Premium Classic Panjabi – Blue", "Blue", "#3b5677", 2699, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-olive-2", "Premium Embroidered Panjabi – Olive", "Olive", "#6b6b3a", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 3], ["L", 0], ["XL", 1], ["XXL", 0]]],
+    ["premium-classic-panjabi-brown-2", "Premium Classic Panjabi – Brown", "Brown", "#6b4a35", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-off-white-2", "Premium Embroidered Panjabi – Off-White", "Off-White", "#ece6d8", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-white", "Premium Embroidered Panjabi – White", "White", "#f4f4f2", 2699, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-black", "Premium Embroidered Panjabi – Black", "Black", "#1f2022", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 3], ["L", 0], ["XL", 2], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-bottle-green", "Premium Embroidered Panjabi – Bottle Green", "Bottle Green", "#1f4a3a", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 3], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-blue-2", "Premium Embroidered Panjabi – Blue", "Blue", "#3b5677", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 3], ["L", 0], ["XL", 3], ["XXL", 0]]],
+    ["classic-cotton-panjabi-blue", "Classic Cotton Panjabi – Blue", "Blue", "#3b5677", 2699, 0, ["men", "on-sale", "panjabi"], 5, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["classic-cotton-panjabi-peach", "Classic Cotton Panjabi – Peach", "Peach", "#f0b99a", 2699, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["classic-cotton-panjabi-black", "Classic Cotton Panjabi – Black", "Black", "#1f2022", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 2], ["XXL", 2]]],
+    ["classic-cotton-panjabi-maroon", "Classic Cotton Panjabi – Maroon", "Maroon", "#6d1f2a", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["classic-cotton-panjabi-blue-2", "Classic Cotton Panjabi – Blue", "Blue", "#3b5677", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-gray", "Premium Embroidered Panjabi – Gray", "Gray", "#8a8d91", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 8], ["L", 1], ["XL", 6], ["XXL", 0]]],
+    ["premium-embroidered-panjabi-bottle-green-2", "Premium Embroidered Panjabi – Bottle Green", "Bottle Green", "#1f4a3a", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 2], ["XXL", 0]]],
+    ["premium-classic-panjabi-blue-3", "Premium Classic Panjabi – Blue", "Blue", "#3b5677", 2499, 0, ["men", "on-sale", "panjabi"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 3], ["L", 1], ["XL", 2], ["XXL", 0]]],
+    ["premium-classic-panjabi-gray", "Premium Classic Panjabi – Gray", "Gray", "#8a8d91", 2499, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 2], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["half-sleeve-casual-shirt-blue-2", "Half Sleeve Casual Shirt – Blue", "Blue", "#3b5677", 1299, 0, ["half-shirt", "men", "on-sale"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["classic-cotton-panjabi-blue-3", "Classic Cotton Panjabi – Blue", "Blue", "#3b5677", 2699, 0, ["men", "on-sale", "panjabi"], 4, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 4], ["L", 1], ["XL", 4], ["XXL", 0]]],
+    ["premium-casual-shirt-coffee-2", "Premium Casual Shirt – Coffee", "Coffee", "#5b4335", 1499, 0, ["full-shirt", "men", "on-sale"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 4], ["L", 0], ["XL", 0], ["XXL", 0]]],
+    ["premium-casual-shirt-red", "Premium Casual Shirt – Red", "Red", "#b52a45", 1499, 0, ["full-shirt", "men", "on-sale"], 2, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 6], ["L", 6], ["XL", 5], ["XXL", 1]]],
+    ["premium-casual-shirt-olive", "Premium Casual Shirt – Olive", "Olive", "#6b6b3a", 1499, 0, ["full-shirt", "men", "on-sale"], 2, "", ["Premium-quality Oxford Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 1], ["XL", 2], ["XXL", 1]]],
+    ["premium-casual-shirt-black-mixed", "Premium Casual Shirt – Black (Mixed)", "Black (Mixed)", "#2b2c2e", 1499, 0, ["full-shirt", "men", "on-sale"], 2, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 4], ["L", 5], ["XL", 4], ["XXL", 2]]],
+    ["half-sleeve-casual-shirt-brown-2", "Half Sleeve Casual Shirt – Brown", "Brown", "#6b4a35", 1299, 0, ["half-shirt", "men", "on-sale"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 4], ["L", 1], ["XL", 0], ["XXL", 0]]],
+    ["half-sleeve-casual-shirt-red-mixed", "Half Sleeve Casual Shirt – Red (Mixed)", "Red (Mixed)", "#a3343f", 1299, 0, ["half-shirt", "men", "on-sale"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 6], ["L", 6], ["XL", 7], ["XXL", 2]]],
+    ["half-sleeve-casual-shirt-brown-3", "Half Sleeve Casual Shirt – Brown", "Brown", "#6b4a35", 1299, 0, ["half-shirt", "men", "on-sale"], 2, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 6], ["L", 2], ["XL", 5], ["XXL", 1]]],
+    ["half-sleeve-casual-shirt-black", "Half Sleeve Casual Shirt – Black", "Black", "#1f2022", 1299, 0, ["half-shirt", "men", "on-sale"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 3], ["L", 6], ["XL", 5], ["XXL", 3]]],
+    ["half-sleeve-casual-shirt-olive", "Half Sleeve Casual Shirt – Olive", "Olive", "#6b6b3a", 1299, 0, ["half-shirt", "men", "on-sale"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 3], ["L", 3], ["XL", 2], ["XXL", 0]]],
+    ["half-sleeve-casual-shirt-blue-3", "Half Sleeve Casual Shirt – Blue", "Blue", "#3b5677", 1299, 0, ["half-shirt", "men", "on-sale"], 3, "", ["Premium-quality Cotton fabric", "Comfortable and breathable for everyday wear", "Stylish and modern design", "Durable stitching and excellent finishing"], [["M", 0], ["L", 0], ["XL", 0], ["XXL", 0]]]
   ];
-  var SIZES = ["M", "L", "XL", "2XL"];
-  var STOCK = { M: 18, L: 24, XL: 20, "2XL": 12 };
+  var NEW = { "denim-shirt": 1 };
   var products = P.map(function (r, i) {
-    var line = r[0], color = r[1], sku = "RV-" + LINE[line].code + "-" + COLOR[color], type = TYPE[LINE[line].type || "tee"];
+    var sku = "RV-" + String(1001 + i);
+    var cats = ["cat_men"].concat(r[6].filter(function (c) { return c !== "men"; }).map(function (c) { return "cat_" + c.replace(/-/g, "_"); }));
     return {
-      id: "prd_" + r[5].replace(/-/g, "_").slice(0, 60), slug: r[5], sku: sku, status: "published",
-      name: type.name(line, color), line: line, color: color, hex: r[2],
-      price: r[3], comparePrice: r[4], description: LINE[line].about, details: FIT.slice(),
-      images: r[6], sizeGuide: "assets/img/size-guide-sample.webp",
-      categoryIds: ["cat_men", type.cat], isNew: r[7], featured: r[8], trackStock: true, stock: 0,
-      attributes: [{ name: "Size", values: SIZES.slice() }],
-      variants: SIZES.map(function (s) { return { id: "var_" + i + "_" + s.toLowerCase(), sku: sku + "-" + s, options: { Size: s }, price: null, stock: STOCK[s] - (i % 4) * 2 }; }),
+      id: "prd_" + r[0].replace(/-/g, "_").slice(0, 60), slug: r[0], sku: sku, status: "published",
+      name: r[1], color: r[2], hex: r[3], price: r[4], comparePrice: r[5] || null,
+      description: r[8], details: r[9].slice(), images: photos(r[0], r[7]), sizeGuide: "",
+      categoryIds: cats, isNew: r[6].some(function (c) { return NEW[c]; }), featured: i < 8, trackStock: true, stock: 0,
+      attributes: [{ name: "Size", values: r[10].map(function (v) { return v[0]; }) }],
+      variants: r[10].map(function (v) { return { id: "var_" + i + "_" + v[0].toLowerCase(), sku: sku + "-" + v[0], options: { Size: v[0] }, price: null, stock: v[1] }; }),
       createdAt: T0 - i * 36e5, updatedAt: T0
     };
   });
@@ -148,13 +126,13 @@
   // ---------------------------------------------------------------------------
   var settings = {
     store: {
-      name: "Ravari", legalName: "Ravari – A Life Style Brand", tagline: "Designed for presence, not attention.",
-      email: "hello@ravaribd.com", phone: "+880 1XXX-XXXXXX", whatsapp: "",
+      name: "Ravari", legalName: "Ravari – A Life Style Brand", tagline: "Bold, edge & classy.",
+      email: "hello@ravaribd.com", phone: "+880 1875-006070", whatsapp: "8801875006070",
       address: "Dhaka, Bangladesh", hours: "Saturday to Thursday, 10am to 8pm",
       tradeLicense: "TRAD/DNCC/XXXXXX/2026", tin: "XXXXXXXXXXXX", dbid: "XXXXXXXXXX", bin: "", website: "https://ravaribd.com"
     },
-    social: { facebook: "https://www.facebook.com/profile.php?id=61590338530147", instagram: "https://www.instagram.com/ravellebd/", tiktok: "", youtube: "" },
-    seo: { title: "Ravari – A Life Style Brand", description: "Heavyweight oversized tees, acid washes and baggy fits from Dhaka. Designed for presence, not attention." },
+    social: { facebook: "https://www.facebook.com/share/1DGsytccNU/", instagram: "https://www.instagram.com/ravari_bd", tiktok: "", youtube: "" },
+    seo: { title: "Ravari – A Life Style Brand", description: "Premium casual shirts, denim shirts and panjabis for men from Dhaka. Bold, edge & classy. Cash on delivery all over Bangladesh." },
     shipping: {
       zones: [
         { id: "inside-dhaka", name: "Inside Dhaka", fee: 70, days: "1–3 days" },
@@ -175,68 +153,56 @@
   var pages = {
     home: {
       hero: {
-        line1: "Designed for presence,", lead: "not", accent: "attention!",
-        cta1: "Shop now", cta1Link: "#shop", cta2: "Explore the House", cta2Link: "#category/the-house",
-        image: "assets/img/home/h-hero-fearless.webp", imageAlt: "Two models in the Fearless tee in black and in ocean blue"
+        line1: "Bold, edge", lead: "&", accent: "classy.",
+        cta1: "Shop now", cta1Link: "#shop", cta2: "Premium Panjabi", cta2Link: "#category/panjabi",
+        image: "assets/img/home/r-hero.webp", imageAlt: "Two models in Ravari printed casual shirts"
       },
       tryLook: {
-        title: "Try the Look.", sub: "Eleven looks, styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
-        looks: [
-          { name: "Fearless", image: "assets/img/home/look-1.webp", imageAlt: "Model in the Fearless oversized T-shirt in yellow with the black baggy trouser", products: "fearless-oversized-t-shirt-yellow, baggy-trouser-black" },
-          { name: "RVCHL", image: "assets/img/home/look-2.webp", imageAlt: "Model in the RVCHL oversized T-shirt in black with the black baggy trouser", products: "rvchl-oversized-t-shirt-black, baggy-trouser-black" },
-          { name: "574", image: "assets/img/home/look-7.webp", imageAlt: "Model in the 574 acid washed oversized T-shirt in brick red with the black baggy trouser", products: "574-oversized-t-shirt-brick-red, baggy-trouser-black" },
-          { name: "Starlight Blue", image: "assets/img/home/look-10.webp", imageAlt: "Model in the Starlight oversized T-shirt in ocean blue, seen from the back with the black baggy trouser", products: "starlight-oversized-t-shirt-ocean-blue, baggy-trouser-black" },
-          { name: "Paradox", image: "assets/img/home/look-8.webp", imageAlt: "Model in the Paradox oversized T-shirt in cream with the black baggy trouser", products: "paradox-oversized-t-shirt-cream, baggy-trouser-black" },
-          { name: "Starlight Black", image: "assets/img/home/look-5.webp", imageAlt: "Model in the Starlight oversized T-shirt in black with the black baggy trouser", products: "starlight-oversized-t-shirt-black, baggy-trouser-black" },
-          { name: "RVCHL Blue", image: "assets/img/home/look-11.webp", imageAlt: "Model in the RVCHL oversized T-shirt in ocean blue, seen from the back with the black baggy trouser", products: "rvchl-oversized-t-shirt-ocean-blue, baggy-trouser-black" },
-          { name: "Fearless Blue", image: "assets/img/home/look-12.webp", imageAlt: "Model in the Fearless oversized T-shirt in ocean blue with the black baggy trouser", products: "fearless-oversized-t-shirt-ocean-blue, baggy-trouser-black" },
-          { name: "Stride Out", image: "assets/img/home/look-6.webp", imageAlt: "Model in the Stride Out oversized T-shirt in blue with the black baggy trouser", products: "stride-out-oversized-t-shirt-blue, baggy-trouser-black" },
-          { name: "Fearless Black", image: "assets/img/home/look-13.webp", imageAlt: "Model in the Fearless oversized T-shirt in black with the black baggy trouser", products: "oversized-t-shirt-fearless-black, baggy-trouser-black" },
-          { name: "Trust Broken", image: "assets/img/home/look-14.webp", imageAlt: "Model in the Trust Broken oversized T-shirt in black with the black baggy trouser", products: "trust-broken-oversized-t-shirt-black, baggy-trouser-black" }
-        ]
+        title: "Try the Look.", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
+        looks: []
       },
       house: {
-        eyebrow: "New in", titleStart: "Trendy", accent: "oversized", titleEnd: "items.", linkLabel: "Shop all →", link: "#category/men",
-        card1: { image: "assets/img/home/h-tee-cat-full.webp", meta: "Shop T-shirts →", title: "Oversized\nT-shirt", link: "#category/t-shirt" },
-        card2: { image: "assets/img/home/h-shirt-cat-full.webp", meta: "Shop shirts →", title: "Boxy Fitted\nShirt", link: "#category/half-shirt" }
+        eyebrow: "Trendy categories", titleStart: "Shirts", accent: "made", titleEnd: "to stand out.", linkLabel: "Shop all →", link: "#category/men",
+        card1: { image: "assets/img/home/r-half-cut.webp", meta: "Shop half sleeve →", title: "Half Sleeve\nShirt", link: "#category/half-shirt" },
+        card2: { image: "assets/img/home/r-full-cut.webp", meta: "Shop full sleeve →", title: "Full Sleeve\nShirt", link: "#category/full-shirt" }
       },
       poster: {
-        kicker: "Up to 31% off", title: "Raining offers\nfor hot summer", cta: "Shop the sale", ctaLink: "#on-sale",
-        image: "assets/img/home/h-poster-fearless.webp", imageAlt: "Model in the Fearless oversized T-shirt in yellow with black baggy trousers, in front of a Fearless flag",
-        marqueeTop: "RAINING OFFERS FOR HOT SUMMER", marqueeBottom: "OWN THE STREET"
+        kicker: "Raining offers", title: "Summer\ncollection", cta: "Shop now", ctaLink: "#category/on-sale",
+        image: "assets/img/home/r-poster.webp", imageAlt: "Three models in Ravari check and printed shirts",
+        marqueeTop: "RAINING OFFERS", marqueeBottom: "OWN THE STREET"
       },
       arrivals: {
-        titleStart: "Fresh fits for your", accent: "next", titleEnd: "move!",
+        titleStart: "Fresh fits for your", accent: "next", titleEnd: "occasion!",
         // Tabs under the heading. Category is a category slug (t-shirt, half-shirt, full-shirt, trouser,
         // polo...) or top-selling; join several slugs with commas. Clear a label to hide its tab.
         tabs: [
-          { label: "T-shirt", category: "t-shirt" },
-          { label: "Shirt", category: "half-shirt, full-shirt" },
-          { label: "Trouser", category: "trouser" },
-          { label: "Polo", category: "polo" },
+          { label: "Panjabi", category: "panjabi" },
+          { label: "Full sleeve", category: "full-shirt" },
+          { label: "Half sleeve", category: "half-shirt" },
+          { label: "Denim", category: "denim-shirt" },
           { label: "Top Selling", category: "top-selling" }
         ]
       },
       lookbook: {
-        marqueeBack: "FRESH FITS FOR YOUR NEXT MOVE", marqueeFront: "YOUR NEXT MOVE",
+        marqueeBack: "OWN THE STREET", marqueeFront: "BOLD, EDGE & CLASSY",
         looks: [
-          { image: "assets/img/home/lb-1.webp", name: "Fearless tee\nOcean blue" },
-          { image: "assets/img/home/lb-2.webp", name: "Brand New Day tee\nBlack" },
-          { image: "assets/img/home/lb-3.webp", name: "Starlight tee\nBlack" }
+          { image: "assets/img/home/r-lb-1.webp", name: "Premium casual shirt\nFull sleeve" },
+          { image: "assets/img/home/r-lb-2.webp", name: "Premium Panjabi\nCollection" },
+          { image: "assets/img/home/r-lb-3.webp", name: "Casual shirt\nHalf sleeve" }
         ]
       },
       categories: { eyebrow: "Shop men" },
-      footer: { tagline: "Designed for presence,\nnot attention.", newsletter: "Your email for drop alerts" }
+      footer: { tagline: "Bold, edge\n& classy.", newsletter: "Your email for new arrivals" }
     },
     about: {
       eyebrow: "About us", title: "Own your style.", accent: "Define", titleEnd: "your identity.",
-      intro: "Ravari is a lifestyle brand from Dhaka, built for people who dress for themselves.",
-      image: "assets/img/about.webp", imageAlt: "Two models in Fearless oversized T-shirts, black and blue, with black star baggy trousers",
+      intro: "Ravari is a lifestyle brand from Dhaka. Bold, edge and classy.",
+      image: "assets/img/about.webp", imageAlt: "Four models in Ravari premium panjabis",
       storyTitle: "Our story",
-      story: "Ravari blends modern streetwear with classic polish. We make everyday staples and bolder statement pieces that feel good, last long and look like you.\n\nEvery piece starts with fabric. We cut heavyweight cotton into relaxed, oversized shapes, then finish them with washes and prints that age well. The result works for a long day in the city and still looks considered at night.\n\nOur goal is simple: make contemporary fashion more expressive, more accessible and more meaningful for people who want to stand out on their own terms.",
+      story: "Ravari makes shirts and panjabis for men who like to look sharp without trying too hard. From printed casual shirts to embroidered panjabis for Eid and weddings, every piece is designed in Dhaka.\n\nEvery piece starts with fabric. We choose premium, breathable cotton and denim, then finish each piece with careful stitching so it lasts.\n\nOur goal is simple: bold, edge and classy clothing that is easy to buy, with cash on delivery all over Bangladesh.",
       values: [
-        { title: "Quality first", text: "Heavyweight fabrics, reinforced seams and washes tested to hold their colour." },
-        { title: "Made to be worn", text: "Relaxed fits for real days in Dhaka heat, not just photos." },
+        { title: "Quality first", text: "Premium cotton and denim, durable stitching and a clean finish." },
+        { title: "Made to be worn", text: "Breathable fabrics for real days in Dhaka heat, not just photos." },
         { title: "Honest service", text: "Cash on delivery, easy exchanges and real people on the other end of the chat." }
       ],
       companyTitle: "Company details",
@@ -247,13 +213,13 @@
       eyebrow: "Contact us", title: "Talk to", accent: "us",
       intro: "Questions about sizes, an order or a collaboration? Send a message, chat with us or call during store hours.",
       formTitle: "Send a message", formNote: "We reply within one working day.",
-      image: "assets/img/c-blue.webp"
+      image: "assets/img/contact.webp"
     },
     // Home page popup banner (Admin › Popup banner): shows 2 seconds after the home page opens, once per visit
     popup: {
-      enabled: true, delay: 2, image: "assets/img/home/h-poster-fearless.webp", mobileImage: "", imageAlt: "Fearless oversized T-shirt",
-      eyebrow: "This week only", title: "Fearless drop\n25% off", text: "The new Fearless oversized tees in four washes. Cash on delivery all over Bangladesh.",
-      buttonText: "Shop the drop", buttonLink: "#on-sale", version: 1
+      enabled: true, delay: 2, image: "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", mobileImage: "", imageAlt: "Ravari denim shirt",
+      eyebrow: "New in", title: "Winter\ncollection", text: "Denim and corduroy shirts for the cooler days. Cash on delivery all over Bangladesh.",
+      buttonText: "Shop winter", buttonLink: "#category/winter-collection", version: 1
     },
     // Store locations: shops are grouped by district, in the order set in districtOrder (Admin › Pages › Store locations)
     stores: {
@@ -267,7 +233,7 @@
       eyebrow: "Franchise", title: "Open a", accent: "Ravari", titleEnd: "store.",
       intro: "Bring Ravari to your city. We give you the brand, the stock and the support. You run the store.",
       points: [
-        { title: "Proven products", text: "Our best-selling oversized tees, shirts and trousers, restocked every month." },
+        { title: "Proven products", text: "Our best-selling shirts and panjabis, restocked every month." },
         { title: "Full support", text: "Store design, staff training, launch marketing and our order system from day one." },
         { title: "Shared growth", text: "Online orders from your area can be picked up and exchanged at your store." }
       ],
@@ -304,24 +270,19 @@
   var catLink = function (slug, label) { return { id: "mi_" + slug, label: label, url: "#category/" + slug, children: [] }; };
   var menus = {
     header: [
-      { id: "mi_shop", label: "Shop", url: "#shop", image: "assets/img/menu-shop.webp", children: [
-        { id: "mi_all", label: "All products", url: "#shop", children: [] },
-        { id: "mi_new", label: "New in", url: "#new-in", children: [] },
-        { id: "mi_sale2", label: "On sale", url: "#on-sale", children: [] }
+      { id: "mi_winter", label: "Winter", url: "#category/winter-collection", image: "assets/img/menu-shop.webp", children: [
+        catLink("denim-shirt", "Denim Shirt")
       ] },
-      { id: "mi_men", label: "Men", url: "#category/men", image: "assets/img/menu-men.webp", children: [
-        catLink("t-shirt", "T-shirt"), catLink("polo", "Polo"), catLink("half-shirt", "Half shirt"),
-        catLink("full-shirt", "Full shirt"), catLink("trouser", "Trouser"), catLink("denim-pant", "Denim pant")
-      ] },
-      { id: "mi_women", label: "Women", url: "#category/women", children: [] },
-      { id: "mi_newin", label: "New in", url: "#new-in", children: [] },
-      { id: "mi_sale", label: "On sale", url: "#on-sale", children: [] }
+      { id: "mi_full", label: "Full sleeve", url: "#category/full-shirt", children: [] },
+      { id: "mi_half", label: "Half sleeve", url: "#category/half-shirt", children: [] },
+      { id: "mi_panjabi", label: "Panjabi", url: "#category/panjabi", image: "assets/img/menu-men.webp", children: [] },
+      { id: "mi_sale", label: "On sale", url: "#category/on-sale", children: [] }
     ],
     footer: [
       { id: "fc_shop", title: "Shop", items: [
-        { id: "f1", label: "Men", url: "#category/men", children: [] }, { id: "f2", label: "Women", url: "#category/women", children: [] },
-        { id: "f3", label: "The House", url: "#category/the-house", children: [] }, { id: "f4", label: "New in", url: "#new-in", children: [] },
-        { id: "f5", label: "On sale", url: "#on-sale", children: [] }
+        { id: "f1", label: "Winter Collection", url: "#category/winter-collection", children: [] }, { id: "f2", label: "Full Sleeve Shirt", url: "#category/full-shirt", children: [] },
+        { id: "f3", label: "Half Sleeve Shirt", url: "#category/half-shirt", children: [] }, { id: "f4", label: "Premium Panjabi", url: "#category/panjabi", children: [] },
+        { id: "f5", label: "On Sale", url: "#category/on-sale", children: [] }
       ] },
       { id: "fc_company", title: "Company", items: [
         { id: "f6", label: "About us", url: "#about", children: [] }, { id: "f7", label: "Contact us", url: "#contact", children: [] },

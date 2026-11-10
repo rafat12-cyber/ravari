@@ -489,8 +489,8 @@
     }).join("");
   }
   var HOME_TABS = [];
-  var DEFAULT_TABS = [{ label: "T-shirt", category: "t-shirt" }, { label: "Shirt", category: "half-shirt, full-shirt" },
-    { label: "Trouser", category: "trouser" }, { label: "Polo", category: "polo" }, { label: "Top Selling", category: "top-selling" }];
+  var DEFAULT_TABS = [{ label: "Panjabi", category: "panjabi" }, { label: "Full sleeve", category: "full-shirt" },
+    { label: "Half sleeve", category: "half-shirt" }, { label: "Denim", category: "denim-shirt" }, { label: "Top Selling", category: "top-selling" }];
   function tabProducts(t) {
     var slugs = String((t && t.category) || "").toLowerCase().split(",").map(function (s) { return s.trim().replace(/^#?category\//, ""); }).filter(Boolean);
     if (!slugs.length || slugs.indexOf("top-selling") > -1 || slugs.indexOf("all") > -1) {
@@ -988,7 +988,7 @@
       return words.every(function (w) { return hay.indexOf(w) > -1; });
     });
     if (q) track("search", "", { q: q, n: list.length, ids: list.slice(0, 10).map(function (p) { return p.sku; }) });
-    viewListing({ list: list, crumb: "Search", title: '“' + esc(q) + '”', sub: list.length ? list.length + " results" : "Nothing found. Try another word, like tee, black or fearless." });
+    viewListing({ list: list, crumb: "Search", title: '“' + esc(q) + '”', sub: list.length ? list.length + " results" : "Nothing found. Try another word, like panjabi, denim or blue." });
   }
 
   // ---------------------------------------------------------------------------
