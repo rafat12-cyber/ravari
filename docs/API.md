@@ -2,7 +2,7 @@
 
 Every part of the store (products, stock, orders, customers, chat and more) can be read and changed over HTTPS with JSON. Use it to connect an AI chat reply tool, a courier or accounting system, a warehouse or POS, Google Sheets, Zapier, Make or your own app.
 
-- **Base address:** your domain, for example `https://ravellebd.com`. All paths below start with `/api`.
+- **Base address:** your domain, for example `https://ravaribd.com`. All paths below start with `/api`.
 - **Format:** send `Content-Type: application/json`; every answer is JSON.
 - **Errors:** a non-2xx status with `{ "error": "Message", "fields": { "phone": "…" } }` (`fields` only on form errors).
 
@@ -27,22 +27,22 @@ Keys can never manage users, settings or other keys. The admin panel itself sign
 
 ```sh
 # Pending orders, with items and addresses
-curl -H "Authorization: Bearer $KEY" "https://ravellebd.com/api/orders?status=pending&full=1"
+curl -H "Authorization: Bearer $KEY" "https://ravaribd.com/api/orders?status=pending&full=1"
 
 # Mark an order shipped and add the courier tracking number
 curl -X PATCH -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
   -d '{"status":"shipped","tracking":"Pathao 12345678","note":"Sent with Pathao","notifyCustomer":true}' \
-  https://ravellebd.com/api/orders/RV1001
+  https://ravaribd.com/api/orders/RV1001
 
 # Set stock for two sizes, and take one off another
 curl -X PATCH -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
   -d '{"items":[{"sku":"RV-FRL-BLK-M","stock":12},{"sku":"RV-FRL-BLK-L","stock":8},{"sku":"RV-FRL-BLK-XL","delta":-1}]}' \
-  https://ravellebd.com/api/stock
+  https://ravaribd.com/api/stock
 
 # Reply to a customer in live chat (shows as the bot)
 curl -X POST -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
   -d '{"text":"Yes, XL is in stock. Want me to hold one for you?"}' \
-  https://ravellebd.com/api/chats/chat_ab12cd34ef56/messages
+  https://ravaribd.com/api/chats/chat_ab12cd34ef56/messages
 ```
 
 ## Endpoints

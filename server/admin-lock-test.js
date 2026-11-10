@@ -1,4 +1,4 @@
-// Live-site admin lock: with PUBLIC_URL=https://ravellebd.com the sign-in only works at https://ravellebd.com/admin.
+// Live-site admin lock: with PUBLIC_URL=https://ravaribd.com the sign-in only works at https://ravaribd.com/admin.
 // Run with: node server/admin-lock-test.js (part of npm test)
 "use strict";
 var http = require("http");
@@ -11,7 +11,7 @@ var ROOT = path.resolve(__dirname, "..");
 var dirName = "data-locktest-" + process.pid;
 var PORT = 4500 + Math.floor(Math.random() * 400);
 var child = spawn(process.execPath, [path.join(__dirname, "server.js")], {
-  env: Object.assign({}, process.env, { PORT: PORT, DATA_DIR: dirName, PUBLIC_URL: "https://ravellebd.com", ADMIN_EMAIL: "owner@test.com", ADMIN_PASSWORD: "test-password-1", TRUST_PROXY: "1", ADMIN_LOCK: "" }),
+  env: Object.assign({}, process.env, { PORT: PORT, DATA_DIR: dirName, PUBLIC_URL: "https://ravaribd.com", ADMIN_EMAIL: "owner@test.com", ADMIN_PASSWORD: "test-password-1", TRUST_PROXY: "1", ADMIN_LOCK: "" }),
   stdio: ["ignore", "pipe", "inherit"]
 });
 function call(method, p, headers, body) {
@@ -25,7 +25,7 @@ function call(method, p, headers, body) {
     req.on("error", reject); req.end(data);
   });
 }
-var site = { Host: "ravellebd.com", "X-Forwarded-Proto": "https" };
+var site = { Host: "ravaribd.com", "X-Forwarded-Proto": "https" };
 var login = { email: "owner@test.com", password: "test-password-1" };
 function h(extra) { return Object.assign({}, site, extra); }
 
@@ -36,25 +36,25 @@ async function main() {
   assert.strictEqual(r.status, 200, "admin page on the real address");
   r = await call("GET", "/admin.html", site);
   assert.strictEqual(r.status, 404, "/admin.html is gone");
-  r = await call("GET", "/admin", { Host: "www.ravellebd.com" });
-  assert.strictEqual(r.status, 301); assert.strictEqual(r.headers.location, "https://ravellebd.com/admin", "www goes to the real address");
+  r = await call("GET", "/admin", { Host: "www.ravaribd.com" });
+  assert.strictEqual(r.status, 301); assert.strictEqual(r.headers.location, "https://ravaribd.com/admin", "www goes to the real address");
   r = await call("GET", "/admin?reset=abc", { Host: "203.0.113.5:" + PORT });
-  assert.strictEqual(r.headers.location, "https://ravellebd.com/admin?reset=abc", "server IP goes to the real address and keeps the reset link");
-  r = await call("GET", "/admin", { Host: "ravellebd.com", "X-Forwarded-Proto": "http" });
+  assert.strictEqual(r.headers.location, "https://ravaribd.com/admin?reset=abc", "server IP goes to the real address and keeps the reset link");
+  r = await call("GET", "/admin", { Host: "ravaribd.com", "X-Forwarded-Proto": "http" });
   assert.strictEqual(r.status, 301, "plain http goes to https");
 
-  r = await call("POST", "/api/auth/login", h({ Origin: "https://ravellebd.com" }), login);
+  r = await call("POST", "/api/auth/login", h({ Origin: "https://ravaribd.com" }), login);
   assert.strictEqual(r.status, 200, "sign-in from the admin page works"); assert.ok(r.body.token);
   var token = r.body.token;
   r = await call("POST", "/api/auth/login", h({ Origin: "https://evil.example" }), login);
   assert.strictEqual(r.status, 403, "sign-in from another site is refused");
   r = await call("POST", "/api/auth/login", h({}), login);
   assert.strictEqual(r.status, 403, "sign-in from a script with no page is refused");
-  r = await call("POST", "/api/auth/login", { Host: "www.ravellebd.com", Origin: "https://www.ravellebd.com" }, login);
+  r = await call("POST", "/api/auth/login", { Host: "www.ravaribd.com", Origin: "https://www.ravaribd.com" }, login);
   assert.strictEqual(r.status, 403, "sign-in on www is refused");
   r = await call("POST", "/api/auth/forgot", h({ Origin: "https://evil.example" }), { email: "owner@test.com" });
   assert.strictEqual(r.status, 403, "password reset requests from elsewhere are refused");
-  r = await call("GET", "/api/auth/reset/nope", h({ Referer: "https://ravellebd.com/admin?reset=nope" }));
+  r = await call("GET", "/api/auth/reset/nope", h({ Referer: "https://ravaribd.com/admin?reset=nope" }));
   assert.notStrictEqual(r.status, 403, "reset link check works from the admin page");
 
   // Once signed in, the token still works for the admin's other calls and for API keys from other software
@@ -62,7 +62,7 @@ async function main() {
   assert.strictEqual(r.status, 200, "signed-in calls are not affected");
   r = await call("GET", "/api/store", { Host: "whatever" });
   assert.strictEqual(r.status, 200, "the public store API is not affected");
-  r = await call("GET", "/", { Host: "www.ravellebd.com" });
+  r = await call("GET", "/", { Host: "www.ravaribd.com" });
   assert.strictEqual(r.status, 200, "the storefront is not affected");
   console.log("Admin lock tests passed");
 }

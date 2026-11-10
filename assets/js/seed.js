@@ -13,7 +13,7 @@
   var T0 = Date.UTC(2026, 9, 20);
 
   // ---------------------------------------------------------------------------
-  // Categories (from the ravellebd.com menu)
+  // Categories (from the ravaribd.com menu)
   // ---------------------------------------------------------------------------
   var CATS = [
     ["men", "Men", null, 1, "assets/img/home/h-look-3.webp", "Oversized tees, shirts and trousers."],
@@ -149,9 +149,9 @@
   var settings = {
     store: {
       name: "Ravelle", legalName: "Ravelle – A Life Style Brand", tagline: "Designed for presence, not attention.",
-      email: "hello@ravellebd.com", phone: "+880 1XXX-XXXXXX", whatsapp: "",
+      email: "hello@ravaribd.com", phone: "+880 1XXX-XXXXXX", whatsapp: "",
       address: "Dhaka, Bangladesh", hours: "Saturday to Thursday, 10am to 8pm",
-      tradeLicense: "TRAD/DNCC/XXXXXX/2026", tin: "XXXXXXXXXXXX", dbid: "XXXXXXXXXX", bin: "", website: "https://ravellebd.com"
+      tradeLicense: "TRAD/DNCC/XXXXXX/2026", tin: "XXXXXXXXXXXX", dbid: "XXXXXXXXXX", bin: "", website: "https://ravaribd.com"
     },
     social: { facebook: "https://www.facebook.com/profile.php?id=61590338530147", instagram: "https://www.instagram.com/ravellebd/", tiktok: "", youtube: "" },
     seo: { title: "Ravelle – A Life Style Brand", description: "Heavyweight oversized tees, acid washes and baggy fits from Dhaka. Designed for presence, not attention." },
@@ -278,12 +278,12 @@
     },
     terms: {
       title: "Terms & conditions", updated: "28 October 2026",
-      intro: "Please read these terms carefully before using ravellebd.com. By using the website or placing an order, you agree to them.",
+      intro: "Please read these terms carefully before using ravaribd.com. By using the website or placing an order, you agree to them.",
       body: "## 1. Definitions\n- **\"Ravelle\", \"we\", \"us\"** means Ravelle – A Life Style Brand, Dhaka, Bangladesh, which operates this website.\n- **\"Customer\", \"you\"** means anyone who visits the website or places an order.\n- **\"Products\"** means the clothing and accessories sold on this website.\n\n## 2. Using the website\n- You must be at least 18 years old, or use the website with a parent or guardian's permission.\n- You agree to give true and complete information when you place an order.\n- You must not misuse the website, try to break its security, or copy its content for commercial use.\n\n## 3. Products and prices\n- We show product colours as accurately as we can. Screens differ, so the actual colour may vary slightly.\n- All prices are in Bangladeshi Taka (৳) and include VAT where it applies. Delivery charges are shown at checkout.\n- We may change prices or end offers at any time. The price you pay is the price shown when you place the order.\n\n## 4. Orders\n- After you place an order, we call or message you to confirm it. An order is accepted once we confirm it.\n- We may cancel an order if a product is out of stock, the price was shown wrongly, or we can't verify the order. If you paid online, we refund you in full.\n\n## 5. Payment\n- You can pay cash on delivery, or online by card, mobile banking or internet banking through SSLCOMMERZ.\n- Online payments are processed by SSLCOMMERZ. We never see or store your card details.\n\n## 6. Delivery\nDelivery times and charges are explained in our [Delivery policy](#delivery).\n\n## 7. Returns, exchanges and refunds\nYou can exchange or return products as explained in our [Return & refund policy](#refund).\n\n## 8. Intellectual property\nAll content on this website, including designs, logos, photos and text, belongs to Ravelle. You may not use it without our written permission.\n\n## 9. Limitation of liability\nWe are not responsible for indirect losses arising from the use of this website. Nothing in these terms limits your rights under the Consumer Rights Protection Act, 2009.\n\n## 10. Governing law\nThese terms are governed by the laws of Bangladesh. Disputes are handled by the courts of Dhaka.\n\n## 11. Changes\nWe may update these terms. The date at the top shows the latest version.\n\n## 12. Contact\nQuestions about these terms? Visit our [Contact page](#contact)."
     },
     privacy: {
       title: "Privacy policy", updated: "28 October 2026",
-      intro: "Your privacy matters to us. This policy explains what we collect when you use ravellebd.com, how we use it and how we keep it safe.",
+      intro: "Your privacy matters to us. This policy explains what we collect when you use ravaribd.com, how we use it and how we keep it safe.",
       body: "## 1. Information we collect\n- **Order details:** your name, phone number, email, delivery address and the products you buy.\n- **Messages:** what you send through the contact form or chat.\n- **Usage data:** pages you visit and products you view, collected without your name.\n\n## 2. How we use it\n- To confirm, deliver and support your orders.\n- To reply to your messages and chats.\n- To improve the website and our products.\n- To send offers, only if you sign up for them. You can unsubscribe at any time.\n\n## 3. Payment security\n- Online payments are processed by **SSLCOMMERZ**, a payment gateway licensed by Bangladesh Bank and certified to PCI DSS.\n- Card numbers, PINs and mobile banking passwords are entered on SSLCOMMERZ's secure page, not on our website. We never see or store them.\n- Our website uses HTTPS encryption, so everything you send to us is encrypted on the way.\n- We only receive the payment result and a transaction reference, which we keep with your order.\n\n## 4. Cookies\n- **Essential cookies and storage** keep your bag, saved items and checkout working. The website can't work without them.\n- **Analytics** counts visits and product views so we know what people like. It does not identify you.\n- You can delete or block cookies in your browser settings. If you block essential storage, your bag may not be saved.\n- We do not use cookies for third-party advertising.\n\n## 5. Sharing your information\n- We share your name, phone and address with our delivery partners so they can deliver your order.\n- We share payment details with SSLCOMMERZ to process online payments.\n- We never sell your personal information.\n\n## 6. How long we keep it\nWe keep order records for as long as the law requires for tax and accounting. You can ask us to delete other information at any time.\n\n## 7. Your rights\nYou can ask to see, correct or delete your personal information. Contact us through the [Contact page](#contact).\n\n## 8. Children\nOur website is not meant for children under 13, and we don't knowingly collect their information.\n\n## 9. Changes\nWe may update this policy. The date at the top shows the latest version."
     },
     refund: {

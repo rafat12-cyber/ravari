@@ -1,6 +1,6 @@
 # Ravelle BD website
 
-The online store for [Ravelle – A Life Style Brand](https://ravellebd.com/): storefront, checkout with SSLCOMMERZ, admin panel, live chat and an API for other software. It runs on Node.js with no other dependencies and keeps its data in one JSON file.
+The online store for [Ravelle – A Life Style Brand](https://ravaribd.com/): storefront, checkout with SSLCOMMERZ, admin panel, live chat and an API for other software. It runs on Node.js with no other dependencies and keeps its data in one JSON file.
 
 ## What's in it
 
@@ -38,7 +38,7 @@ The online store for [Ravelle – A Life Style Brand](https://ravellebd.com/): s
 - Product feeds that update themselves: `/feeds/meta.csv` for Meta Commerce Manager (catalog ads, Shop) and `/feeds/google.xml` for Google Merchant Center (Shopping, free listings). The product id is the SKU, the same id the Pixel and GA4 send. Setup steps are in **Admin → Pixel & Analytics**. With a catalog ID and access token filled in there, every product create, edit, delete, stock change and order is also pushed to the Meta catalog within seconds (Graph API `items_batch`), and **Send all products to Meta now** pushes everything.
 - Products and categories have optional "Title in Google" and "Description in Google" fields; categories also have a short text under the product grid.
 - Text files and API replies are gzip-compressed; site photos are cached for 30 days and fonts for a year. Fonts are served from the site itself (`assets/fonts/`), not from Google. Phones and small cards load the smaller `-s` copy of each product photo.
-- Set `PUBLIC_URL=https://ravellebd.com` in `.env` on the live server. Canonical links, the sitemap, feeds and emails use it.
+- Set `PUBLIC_URL=https://ravaribd.com` in `.env` on the live server. Canonical links, the sitemap, feeds and emails use it.
 
 **API and webhooks:** read and write orders, products, stock, customers and chats with API keys, and get signed webhooks when things happen. See [docs/API.md](docs/API.md). This is how an AI chat reply tool connects.
 
@@ -67,7 +67,7 @@ npm start               # http://localhost:3000, admin at /admin
 npm test                # end-to-end API check
 ```
 
-On first start the store is filled with the 41 products from the October 2026 shoot and the categories from ravellebd.com, and the first admin account is made from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (a random password is printed if you leave it empty).
+On first start the store is filled with the 41 products from the October 2026 shoot and the categories from ravaribd.com, and the first admin account is made from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (a random password is printed if you leave it empty).
 
 Forgot an admin password? Use **Forgot password?** on the admin sign-in page: it emails a one-time link (valid 30 minutes) once email is set up in **Email & reminders**. The owner can also set a staff member's password in **Users**. If nobody can sign in, stop the store and run `node server/reset-password.js you@example.com "new password"`, then start it again.
 
@@ -76,7 +76,7 @@ Forgot an admin password? Use **Forgot password?** on the admin sign-in page: it
 | Setting | Meaning |
 |---|---|
 | `PORT` | Port to listen on (default 3000) |
-| `PUBLIC_URL` | Your public address, like `https://ravellebd.com`. Used for SSLCOMMERZ return links and email links. When it starts with `https`, admin sign-in only works at exactly `PUBLIC_URL/admin` (see below) |
+| `PUBLIC_URL` | Your public address, like `https://ravaribd.com`. Used for SSLCOMMERZ return links and email links. When it starts with `https`, admin sign-in only works at exactly `PUBLIC_URL/admin` (see below) |
 | `DATA_DIR` | Where the database, daily backups and uploaded images are kept (default `data`) |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | First admin account, only used when there are no users yet |
 | `SSLC_STORE_ID`, `SSLC_STORE_PASSWORD` | SSLCOMMERZ merchant credentials |
@@ -85,7 +85,7 @@ Forgot an admin password? Use **Forgot password?** on the admin sign-in page: it
 
 ### Admin address lock
 
-On the live site (`PUBLIC_URL=https://ravellebd.com`) the admin panel only signs in at **https://ravellebd.com/admin**. `/admin.html` is gone, `/admin` opened on `www.`, the server IP, a hosting preview address or plain `http` is sent to that address, and the sign-in, forgot-password and reset calls are refused unless they come from that page. Signed-in staff and API keys for other software (Acore) work as before.
+On the live site (`PUBLIC_URL=https://ravaribd.com`) the admin panel only signs in at **https://ravaribd.com/admin**. `/admin.html` is gone, `/admin` opened on `www.`, the server IP, a hosting preview address or plain `http` is sent to that address, and the sign-in, forgot-password and reset calls are refused unless they come from that page. Signed-in staff and API keys for other software (Acore) work as before.
 
 ### Hosting
 
@@ -103,7 +103,7 @@ Then put Nginx (or Caddy) in front for HTTPS and point your domain at it:
 
 ```nginx
 server {
-  server_name ravellebd.com www.ravellebd.com;
+  server_name ravaribd.com www.ravaribd.com;
   client_max_body_size 20m;
   location / { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host; proxy_set_header X-Forwarded-For $remote_addr; proxy_set_header X-Forwarded-Proto $scheme; }
 }
@@ -117,7 +117,7 @@ The checkout sends the customer to SSLCOMMERZ and back to `/api/payments/sslcomm
 
 ## Demo mode
 
-Open `index.html` straight from the folder, add `?demo` to the address (ignored on the live Node server), or host the files without the Node server, and the store runs entirely in your browser with the real products and pages and no orders or customers, so you can try the admin. Demo sign-in: `admin@ravellebd.com` / `ravelle-demo`. Nothing leaves the browser; **Reset** in the admin starts the demo over.
+Open `index.html` straight from the folder, add `?demo` to the address (ignored on the live Node server), or host the files without the Node server, and the store runs entirely in your browser with the real products and pages and no orders or customers, so you can try the admin. Demo sign-in: `admin@ravaribd.com` / `ravelle-demo`. Nothing leaves the browser; **Reset** in the admin starts the demo over.
 
 ## Structure
 
@@ -126,7 +126,7 @@ Open `index.html` straight from the folder, add `?demo` to the address (ignored 
 | `index.html`, `assets/css/style.css`, `assets/js/store.js` | Storefront |
 | `admin.html`, `assets/admin/` | Admin panel |
 | `assets/js/core.js` | The store engine: every API route, validation, stock, coupons, orders and analytics. Shared by the server and demo mode |
-| `assets/js/seed.js` | Starting data: products and categories from ravellebd.com, pages, policies, menus and settings |
+| `assets/js/seed.js` | Starting data: products and categories from ravaribd.com, pages, policies, menus and settings |
 | `assets/js/client.js` | Talks to the server, or runs the engine in the browser for the demo |
 | `server/server.js` | Node server: static files, API, sessions, uploads, webhooks, SSLCOMMERZ |
 | `server/test.js` | End-to-end test |

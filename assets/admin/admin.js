@@ -775,7 +775,7 @@
             <div class="field"><span>Shop filter colour</span><input type="hidden" name="colorGroup" value="${esc(draft.colorGroup || "")}">
               <div class="chips" id="cgPick">${[["", "Auto"]].concat(FILTER_COLORS).map(([n, h]) => `<button type="button" class="chipbtn${(draft.colorGroup || "") === n ? " is-on" : ""}" data-cg="${esc(n)}">${h ? `<span class="sw" style="background:${h}"></span>` : ""}${esc(n || "Auto")}</button>`).join("")}</div>
               <small>The colour this product is listed under in the shop's colour filter. Auto picks it from the colour name.</small></div></div>
-          <div class="card"><h2 class="h2">Web address</h2><label class="field"><span>Slug</span><input class="input" name="slug" value="${esc(draft.slug || "")}" placeholder="Made from the name"><small>ravellebd.com/product/<b>${esc(draft.slug || "…")}</b></small></label></div>
+          <div class="card"><h2 class="h2">Web address</h2><label class="field"><span>Slug</span><input class="input" name="slug" value="${esc(draft.slug || "")}" placeholder="Made from the name"><small>ravaribd.com/product/<b>${esc(draft.slug || "…")}</b></small></label></div>
           <div class="card"><h2 class="h2">Search engines</h2>
             <label class="field"><span>Title in Google</span><input class="input" name="seoTitle" maxlength="80" value="${esc(draft.seoTitle || "")}" placeholder="${esc(draft.name || "Product name")}"><small>Leave empty to use the product name. " | Ravelle" is added.</small></label>
             <label class="field"><span>Description in Google</span><textarea class="input" name="seoDescription" rows="2" maxlength="200" placeholder="Made from the description and price">${esc(draft.seoDescription || "")}</textarea><small>About 150 characters. Also shown when the link is shared on Facebook or WhatsApp.</small></label></div>
@@ -1394,7 +1394,7 @@
       title: (s) => s.name, sub: (s) => [s.district || "No district", s.type === "franchise" ? "Franchise" : "Ravelle own shop"].join(" · "),
       blank: () => ({ name: "", type: "own", district: "", image: "", address: "", phone: "", email: "", hours: "", map: "" }),
       fields: [["name", "Shop name", "text", "Ravelle Banani"], ["type", "Shop type", "select", [["own", "Ravelle own shop"], ["franchise", "Franchise shop"]]], ["district", "District", "district"],
-        ["image", "Shop photo", "image"], ["address", "Shop address", "textarea"], ["phone", "Shop number", "text", "01XXX-XXXXXX"], ["email", "Shop email", "text", "shop@ravellebd.com"],
+        ["image", "Shop photo", "image"], ["address", "Shop address", "textarea"], ["phone", "Shop number", "text", "01XXX-XXXXXX"], ["email", "Shop email", "text", "shop@ravaribd.com"],
         ["hours", "Opening hours (optional)", "text", "Every day, 11am – 10pm"], ["map", "Google Maps link (optional)", "text", "Leave empty to search the address"]] },
     franchise: { list: "stories", label: "Franchise partner cards", add: "Add partner card", skip: ["stories", "pdf"],
       help: "Stories from franchise store owners. If you remove every card, the whole section is hidden on the page.",
@@ -1878,7 +1878,7 @@
       <form class="stack" id="emForm">
         <div class="card"><div class="card__head"><h2 class="h2">Company Gmail</h2><span class="trk__state ${e.enabled && e.passwordSet ? "is-on" : ""}">${e.enabled && e.passwordSet ? "● Connected" : "○ Not connected"}</span></div>
           ${demo ? `<p class="small muted" style="margin:0">The demo has no email server, so emails are listed in the log below but not sent. On the live store they go out for real.</p>` : ""}
-          <div class="row row--2"><label class="field"><span>Gmail address</span><input class="input" name="user" type="email" value="${esc(e.user)}" placeholder="orders@gmail.com or you@ravellebd.com"><small>Emails come from this address.</small></label>
+          <div class="row row--2"><label class="field"><span>Gmail address</span><input class="input" name="user" type="email" value="${esc(e.user)}" placeholder="orders@gmail.com or you@ravaribd.com"><small>Emails come from this address.</small></label>
           <label class="field"><span>App password</span><input class="input" name="password" type="password" autocomplete="new-password" placeholder="${e.passwordSet ? "Saved. Paste a new one to replace it." : "16 letters from Google, like abcd efgh ijkl mnop"}"><small>Not your normal Gmail password. Kept on your server only.${e.passwordSet ? ` <a href="#" id="emPwClear">Remove</a>` : ""}</small></label></div>
           <div class="row row--3"><label class="field"><span>Sender name</span><input class="input" name="fromName" value="${esc(e.fromName)}"></label><label class="field"><span>Replies go to (optional)</span><input class="input" name="replyTo" type="email" value="${esc(e.replyTo)}" placeholder="Same as the Gmail address"></label>
           <label class="field"><span>Mail server</span><select class="input" name="server"><option value="smtp.gmail.com:465"${e.host === "smtp.gmail.com" ? " selected" : ""}>Gmail / Google Workspace</option><option value="custom"${e.host !== "smtp.gmail.com" ? " selected" : ""}>Other (${esc(e.host)}:${esc(e.port)})</option></select></label></div>
@@ -1895,7 +1895,7 @@
         <div class="card"><h2 class="h2">Order invoice</h2>
           <label class="switch"><input type="checkbox" name="invoice" ${e.invoice ? "checked" : ""}> Email an invoice to the customer the moment they place an order</label>
           <p class="small muted" style="margin:0">It lists the items, prices, delivery charge, total, payment method, delivery address and a Track order button. Customers who leave the email empty don't get one.</p>
-          <label class="field"><span>Also send a copy of every new order to (optional)</span><input class="input" name="copyTo" value="${esc(e.copyTo)}" placeholder="you@ravellebd.com"><small>Separate several addresses with commas.</small></label></div>
+          <label class="field"><span>Also send a copy of every new order to (optional)</span><input class="input" name="copyTo" value="${esc(e.copyTo)}" placeholder="you@ravaribd.com"><small>Separate several addresses with commas.</small></label></div>
         <div class="card"><h2 class="h2">Order updates</h2>
           <p class="small muted" style="margin:0">Sent once, when you (or Acore) change the order's status. Customers who left the email empty don't get them.</p>
           <label class="switch"><input type="checkbox" name="notifyConfirmed" ${e.notifyConfirmed !== false ? "checked" : ""}> Email the customer when the order is <b>confirmed</b></label>
@@ -2269,7 +2269,7 @@
           <details class="trk__guide"><summary>Step-by-step: set up the Pixel and Conversions API</summary>
             <h3>1. Create the Pixel</h3>${steps([
               `Open <a href="https://business.facebook.com/events_manager2" target="_blank" rel="noopener">Meta Events Manager</a> with the Business account that runs your ads.`,
-              `Click <b>Connect data sources › Web › Meta Pixel</b>. Name it "Ravelle website" and enter <b>ravellebd.com</b>.`,
+              `Click <b>Connect data sources › Web › Meta Pixel</b>. Name it "Ravelle website" and enter <b>ravaribd.com</b>.`,
               `When it asks how to install, close that window. You don't need to paste Meta's code; this store adds it.`,
               `Copy the <b>Pixel ID</b> (the number under the pixel's name) into the box above and press Save.`])}
             <h3>2. Turn on the Conversions API</h3>${steps([
@@ -2282,7 +2282,7 @@
               `Open your store in another tab, view a product, add it to the bag and place a test order. Each event should show twice, <b>Browser</b> and <b>Server</b>, and Meta marks them "Deduplicated".`,
               `Clear the test code and Save.`])}
             <h3>4. Finish in Business Settings</h3>${steps([
-              `<a href="https://business.facebook.com/settings/owned-domains" target="_blank" rel="noopener">Business Settings › Brand safety › Domains</a>: add and verify ravellebd.com.`,
+              `<a href="https://business.facebook.com/settings/owned-domains" target="_blank" rel="noopener">Business Settings › Brand safety › Domains</a>: add and verify ravaribd.com.`,
               `In your pixel, open <b>Aggregated event measurement</b> and put <b>Purchase</b> at the top, then InitiateCheckout, AddToCart, ViewContent.`,
               `After a few days, check <b>Overview › Event match quality</b>. Purchase usually reaches "Good" or "Great" because the server sends hashed phone numbers.`])}
             <p class="muted small">Events the store sends: PageView, ViewCategory, ViewContent, Search, AddToWishlist, AddToCart, InitiateCheckout, AddPaymentInfo, Purchase, Lead, Contact.</p>
@@ -2297,7 +2297,7 @@
           <details class="trk__guide"><summary>Step-by-step: set up Google Analytics</summary>
             <h3>1. Create the property</h3>${steps([
               `Go to <a href="https://analytics.google.com" target="_blank" rel="noopener">analytics.google.com</a> › <b>Admin › Create › Property</b>. Name it "Ravelle", time zone <b>Bangladesh</b>, currency <b>Bangladeshi Taka (BDT)</b>.`,
-              `Choose <b>Web</b> as the platform, enter <b>https://ravellebd.com</b>, and create the stream.`,
+              `Choose <b>Web</b> as the platform, enter <b>https://ravaribd.com</b>, and create the stream.`,
               `Copy the <b>Measurement ID</b> (G-…) into the box above and press Save. Skip Google's "install manually" code; the store adds it.`])}
             <h3>2. Send purchases from the server</h3>${steps([
               `In the same web stream page, open <b>Measurement Protocol API secrets › Create</b>. Accept the terms if asked.`,
@@ -2332,11 +2332,11 @@
               `Under <b>Events</b>, connect the catalog to your Pixel. Product IDs already match (the SKU), so Meta can show people the exact pieces they viewed or added to the bag.`,
               `In Ads Manager, create a <b>Sales</b> campaign and turn on <b>Advantage+ catalog ads</b> with this catalog.`])}
             <h3>Google Merchant Center (Shopping)</h3>${steps([
-              `Open <a href="https://merchants.google.com" target="_blank" rel="noopener">Merchant Center</a>, add and verify ravellebd.com, country <b>Bangladesh</b>, currency BDT.`,
+              `Open <a href="https://merchants.google.com" target="_blank" rel="noopener">Merchant Center</a>, add and verify ravaribd.com, country <b>Bangladesh</b>, currency BDT.`,
               `Go to <b>Products › Add products › Add products from a file › Enter a link to your file</b>. Paste the Google feed link and set a <b>daily</b> fetch.`,
               `Turn on <b>free listings</b>. Link Google Ads to run Shopping or Performance Max campaigns.`])}
             <h3>Google Search Console</h3>${steps([
-              `Open <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Search Console</a> and add ravellebd.com as a <b>Domain</b> property (verify with a DNS record), or as a URL prefix using the HTML tag. Paste that tag into <b>Code inside &lt;head&gt;</b> below.`,
+              `Open <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Search Console</a> and add ravaribd.com as a <b>Domain</b> property (verify with a DNS record), or as a URL prefix using the HTML tag. Paste that tag into <b>Code inside &lt;head&gt;</b> below.`,
               `Open <b>Sitemaps</b>, enter <b>sitemap.xml</b> and press Submit. Do the same in <a href="https://www.bing.com/webmasters" target="_blank" rel="noopener">Bing Webmaster Tools</a> (it can import from Search Console).`,
               `After a few days, check <b>Pages</b> for errors and <b>Shopping › Product snippets</b> for the price data.`])}
           </details></div>

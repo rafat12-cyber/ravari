@@ -1,5 +1,5 @@
 // Emergency password reset for an admin user, run on the server:
-//   node server/reset-password.js you@ravellebd.com "new-password"
+//   node server/reset-password.js you@ravaribd.com "new-password"
 // Stop the store first (it keeps the database in memory), then start it again.
 var fs = require("fs"), path = require("path"), crypto = require("crypto");
 var ROOT = path.join(__dirname, "..");

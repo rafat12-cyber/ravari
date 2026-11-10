@@ -1875,7 +1875,7 @@
     route();
   }
   if (PATHS) {
-    // Old shared links (ravellebd.com/#product/x) open the right page, at its real address
+    // Old shared links (ravaribd.com/#product/x) open the right page, at its real address
     var oldHash = location.hash.replace(/^#/, "");
     if (location.pathname === "/" && oldHash && isRoute(oldHash) && !HOME_ANCHORS[oldHash]) history.replaceState(null, "", pathFor(oldHash) + (EDIT ? (pathFor(oldHash).indexOf("?") > -1 ? "&" : "?") + "edit" : ""));
     window.addEventListener("popstate", function () { route(); });

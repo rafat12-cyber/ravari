@@ -57,7 +57,7 @@ else {
 }
 var upgraded = Core.upgradeDb(db, SEED);
 if (!db.users.length) {
-  var email = (process.env.ADMIN_EMAIL || "admin@ravellebd.com").toLowerCase();
+  var email = (process.env.ADMIN_EMAIL || "admin@ravaribd.com").toLowerCase();
   var pw = process.env.ADMIN_PASSWORD || crypto.randomBytes(9).toString("base64url");
   var salt = random(8);
   db.users.push({ id: "usr_" + random(6), name: "Owner", email: email, role: "owner", salt: salt, passwordHash: hashPassword(pw, salt), createdAt: Date.now() });
@@ -471,7 +471,7 @@ function startPayment(order, cb) {
     store_id: sslStoreId(), store_passwd: SSLC_PASS, total_amount: order.total.toFixed(2), currency: "BDT", tran_id: order.id,
     success_url: PUBLIC_URL + "/api/payments/sslcommerz/success", fail_url: PUBLIC_URL + "/api/payments/sslcommerz/fail",
     cancel_url: PUBLIC_URL + "/api/payments/sslcommerz/cancel", ipn_url: PUBLIC_URL + "/api/payments/sslcommerz/ipn",
-    cus_name: order.customer.name, cus_email: order.customer.email || "no-email@ravellebd.com", cus_add1: order.customer.address,
+    cus_name: order.customer.name, cus_email: order.customer.email || "no-email@ravaribd.com", cus_add1: order.customer.address,
     cus_city: order.customer.city || "Dhaka", cus_country: "Bangladesh", cus_phone: order.customer.phone,
     shipping_method: "Courier", num_of_item: order.items.length, ship_name: order.customer.name, ship_add1: order.customer.address,
     ship_city: order.customer.city || "Dhaka", ship_postcode: "1000", ship_country: "Bangladesh",
