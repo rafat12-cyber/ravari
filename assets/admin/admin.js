@@ -110,7 +110,7 @@
   const pill = (s) => `<span class="pill pill--${esc(s)}">${esc(human(s))}</span>`;
   const STATUSES = ["pending", "confirmed", "hold", "processing", "shipped", "delivered", "partial_return", "cancelled", "returned"];
   const PAY_STATUSES = ["unpaid", "paid", "refunded", "failed"];
-  const PAY_LABEL = { cod: "Cash on delivery", sslcommerz: "SSLCOMMERZ" };
+  const PAY_LABEL = { cod: "Cash on delivery", sslcommerz: "SSLCOMMERZ", bkash: "bKash", nagad: "Nagad" };
 
   // ---------------------------------------------------------------------------
   // Media: upload (resized in the browser) and the picker
@@ -720,7 +720,8 @@
               ${cr.riderName ? `<dt>Rider</dt><dd>${esc(cr.riderName)}${cr.riderPhone ? ` · <a href="tel:${esc(cr.riderPhone)}">${esc(cr.riderPhone)}</a>` : ""}</dd>` : ""}</dl>
               <button class="btn btn--ghost btn--sm" type="button" id="acoreSend">${a.sentAt ? "Send again" : "Send to Acore"}</button></div>`;
           })()}
-          <div class="card"><h2 class="h2">Payment</h2><dl class="kv"><dt>Method</dt><dd>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</dd><dt>Status</dt><dd>${pill(o.paymentStatus)}</dd>${o.paymentRef ? `<dt>Reference</dt><dd class="mono">${esc(o.paymentRef)}</dd>` : ""}</dl></div>
+          <div class="card"><h2 class="h2">Payment</h2><dl class="kv"><dt>Method</dt><dd>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</dd><dt>Status</dt><dd>${pill(o.paymentStatus)}</dd>${o.paymentRef ? `<dt>${o.paymentSender ? "TrxID" : "Reference"}</dt><dd class="mono">${esc(o.paymentRef)}</dd>` : ""}${o.paymentSender ? `<dt>Sent from</dt><dd class="mono">${esc(o.paymentSender)}</dd>` : ""}</dl>
+            ${o.paymentSender && o.paymentStatus === "unpaid" ? `<p class="small muted" style="margin:8px 0 0">Check this TrxID in your ${esc(PAY_LABEL[o.paymentMethod])} app or statement. If the money is there, set Payment to Paid above.</p>` : ""}</div>
           ${o.note ? `<div class="card"><h2 class="h2">Customer note</h2><p style="margin:0">${esc(o.note)}</p></div>` : ""}
         </div>
       </div>`;
@@ -2561,7 +2562,7 @@
     setTitle("Settings");
     let s;
     try { s = (await api("GET", "/api/settings")).settings; } catch (err) { return fail(err); }
-    const st = s.store, ssl = s.payments.sslcommerz;
+    const st = s.store;
     const f = (group, k, label, hint, ph) => `<label class="field"><span>${label}</span><input class="input" data-g="${group}" name="${k}" value="${esc((s[group] || {})[k] || "")}" placeholder="${esc(ph || "")}">${hint ? `<small>${hint}</small>` : ""}</label>`;
     view.innerHTML = `<div class="head"><div><h1 class="h1">Settings</h1><p class="muted">Store details, legal numbers, delivery, payments and chat.</p></div></div>
       <form class="stack" id="setForm">
@@ -2574,12 +2575,7 @@
         <div class="card"><h2 class="h2">Delivery</h2><div class="stack stack--sm" id="zones"></div><button class="btn btn--ghost btn--sm" type="button" id="addZone" style="justify-self:start">+ Add delivery area</button>
           <div class="row row--2"><label class="field"><span>Free delivery over (৳)</span><input class="input" type="number" min="0" id="freeOver" value="${esc(s.shipping.freeOver || "")}" placeholder="0 = never"></label>
           <label class="field"><span>Processing note</span><input class="input" id="processing" value="${esc(s.shipping.processing || "")}"></label></div></div>
-        <div class="card"><h2 class="h2">Payments</h2>
-          <label class="switch"><input type="checkbox" id="payCod" ${s.payments.cod ? "checked" : ""}> Cash on delivery</label>
-          <label class="switch"><input type="checkbox" id="paySsl" ${ssl.enabled ? "checked" : ""}> Online payment with SSLCOMMERZ (cards, bKash, Nagad, Rocket, banks)</label>
-          <div class="row row--2"><label class="field"><span>SSLCOMMERZ Store ID</span><input class="input" id="sslId" value="${esc(ssl.storeId || "")}" placeholder="From your SSLCOMMERZ merchant panel"></label>
-          <label class="field"><span>Mode</span><select class="input" id="sslSandbox"><option value="1">Sandbox (testing)</option><option value="0"${ssl.sandbox ? "" : " selected"}>Live payments</option></select></label></div>
-          <p class="small ${ssl.serverReady ? "" : "muted"}" style="margin:0">${window.Ravari.mode === "demo" ? "In this demo, online payments are simulated." : ssl.serverReady ? "✓ The server has your SSLCOMMERZ store password." : "The store password stays secret on the server: set SSLC_STORE_PASSWORD in the server's .env file, then restart. See the README."}</p></div>
+        <div class="card"><h2 class="h2">Payments</h2><p class="muted small" style="margin:0">Cash on delivery, SSLCOMMERZ, bKash and Nagad are set up in <a href="#/payments">Payments</a>.</p></div>
         <div class="card"><h2 class="h2">Live chat</h2>
           <label class="switch"><input type="checkbox" data-g="chat" name="enabled" ${s.chat.enabled ? "checked" : ""}> Show the chat bubble on the store</label>
           <div class="row row--2">${f("chat", "title", "Chat name", "Shown at the top of the chat.")}${f("chat", "greeting", "Greeting")}</div>
@@ -2607,7 +2603,6 @@
       const out = { store: {}, social: {}, seo: {}, chat: {} };
       $$("[data-g]", e.target).forEach((el) => { out[el.dataset.g][el.name] = el.type === "checkbox" ? el.checked : el.value; });
       out.shipping = { zones, freeOver: +$("#freeOver").value || 0, processing: $("#processing").value };
-      out.payments = { cod: $("#payCod").checked, sslcommerz: { enabled: $("#paySsl").checked, sandbox: $("#sslSandbox").value === "1", storeId: $("#sslId").value } };
       out.announcement = $("#announcement").value;
       out.lowStock = +$("#lowStock").value || 0;
       try { await api("PUT", "/api/settings", { settings: out }); toast("Settings saved"); store = null; } catch (err) { fail(err); }
@@ -2909,6 +2904,57 @@
       catch (err) { busy(btn, false); fail(err); }
     };
   }
+  // Payments: each method has its own switch and details; checkout shows only the ones that are on
+  async function viewPayments() {
+    setTitle("Payments");
+    let s;
+    try { s = (await api("GET", "/api/settings")).settings; } catch (err) { return fail(err); }
+    const p = s.payments, ssl = p.sslcommerz, bk = p.bkash, ng = p.nagad, owner = me.role === "owner", demo = window.Ravari.mode === "demo";
+    const lock = owner ? "" : " disabled";
+    const inp = (id, label, val, extra, hint) => `<label class="field"><span>${label}</span><input class="input" id="${id}" value="${esc(val || "")}"${extra || ""}${lock}>${hint ? `<small>${hint}</small>` : ""}</label>`;
+    const secret = (id, label, isSet, hint) => `<label class="field"><span>${label}</span><input class="input" id="${id}" type="password" autocomplete="new-password" placeholder="${isSet ? "Saved. Type a new one to change it" : "Not set"}"${lock}>${hint ? `<small>${hint}</small>` : ""}</label>`;
+    const acct = (id, v) => `<label class="field"><span>Account type</span><select class="input" id="${id}"${lock}>${["Personal", "Merchant", "Agent"].map((a) => `<option${a === v ? " selected" : ""}>${a}</option>`).join("")}</select></label>`;
+    const head = (id, title, on, text) => `<div class="pay-head"><div><h2 class="h2" style="margin:0">${title}</h2><p class="muted small" style="margin:2px 0 0">${text}</p></div>
+      <label class="switch"><input type="checkbox" id="${id}" ${on ? "checked" : ""}${id === "payCod" ? "" : lock}> <span data-onoff>${on ? "On" : "Off"}</span></label></div>`;
+    view.innerHTML = `<div class="head"><div><h1 class="h1">Payments</h1><p class="muted">Turn each payment method on or off. Checkout shows only the ones that are on.</p></div></div>
+      ${owner ? "" : `<p class="note">Only the store owner can change online payment details. You can turn cash on delivery on or off.</p>`}
+      <form class="stack" id="payForm">
+        <div class="card pay-card">${head("payCod", "Cash on delivery", p.cod, "The customer pays the rider. Pathao collects the money.")}</div>
+        <div class="card pay-card">${head("paySsl", "SSLCOMMERZ", ssl.enabled, "Cards, bKash, Nagad, Rocket and internet banking on SSLCOMMERZ's secure page.")}
+          <div class="row row--2">${inp("sslId", "Store ID", ssl.storeId, ` placeholder="From your SSLCOMMERZ merchant panel"`)}
+          ${secret("sslPass", "Store password", ssl.storePasswordSet, ssl.envPassword ? "The server's .env file also has a password, and that one is used." : "Kept secret: it is never shown again after saving.")}</div>
+          <label class="field"><span>Mode</span><select class="input" id="sslSandbox"${lock}><option value="1">Sandbox (testing)</option><option value="0"${ssl.sandbox ? "" : " selected"}>Live payments</option></select></label>
+          <p class="small ${ssl.serverReady ? "" : "muted"}" style="margin:0">${demo ? "In this demo, online payments are simulated." : ssl.serverReady ? "✓ Ready: the store ID and password are set." : "Add the store ID and password to take online payments."}</p></div>
+        <div class="card pay-card">${head("payBk", "bKash", bk.enabled, "Customers pay with bKash.")}
+          <label class="field"><span>How customers pay</span><select class="input" id="bkMode"${lock}><option value="manual">Send Money to your number, then enter the TrxID</option><option value="api"${bk.mode === "api" ? " selected" : ""}>bKash payment page (API, needs a bKash merchant account)</option></select></label>
+          <div data-bk="manual" class="row row--2">${inp("bkNum", "bKash number", bk.number, ` inputmode="numeric" placeholder="01XXXXXXXXX"`)}${acct("bkAcct", bk.accountType)}</div>
+          <p data-bk="manual" class="muted small" style="margin:0">The order comes in as unpaid with the customer's TrxID. Check it in your bKash app, then set the order's Payment to Paid.</p>
+          <div data-bk="api" class="stack stack--sm"><div class="row row--2">${inp("bkKey", "App key", bk.appKey)}${secret("bkSecret", "App secret", bk.appSecretSet)}</div>
+            <div class="row row--2">${inp("bkUser", "Username", bk.username)}${secret("bkPass", "Password", bk.passwordSet)}</div>
+            <label class="field"><span>Mode</span><select class="input" id="bkSandbox"${lock}><option value="1">Sandbox (testing)</option><option value="0"${bk.sandbox ? "" : " selected"}>Live payments</option></select></label>
+            <p class="muted small" style="margin:0">bKash gives these four details when your merchant account is approved for the tokenized checkout. ${demo ? "In this demo, bKash payments are simulated." : "The order is marked paid by itself after bKash confirms the payment."}</p></div></div>
+        <div class="card pay-card">${head("payNg", "Nagad", ng.enabled, "Customers Send Money by Nagad and enter the TrxID.")}
+          <div class="row row--2">${inp("ngNum", "Nagad number", ng.number, ` inputmode="numeric" placeholder="01XXXXXXXXX"`)}${acct("ngAcct", ng.accountType)}</div>
+          <p class="muted small" style="margin:0">The order comes in as unpaid with the customer's TrxID. Check it in your Nagad app, then set the order's Payment to Paid. The Nagad payment page (API) can be added once you have Nagad merchant keys.</p></div>
+        <div class="sticky-save"><span class="small">Changes show at checkout right away.</span><button class="btn btn--dark" type="submit">Save payments</button></div>
+      </form>`;
+    const mode = () => $$("[data-bk]").forEach((el) => { el.hidden = el.dataset.bk !== $("#bkMode").value; });
+    $("#bkMode").onchange = mode; mode();
+    $("#payForm").addEventListener("change", (e) => { const t = e.target.closest(".pay-head input"); if (t) t.parentNode.querySelector("[data-onoff]").textContent = t.checked ? "On" : "Off"; });
+    $("#payForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const out = { cod: $("#payCod").checked };
+      if (owner) {
+        out.sslcommerz = { enabled: $("#paySsl").checked, sandbox: $("#sslSandbox").value === "1", storeId: $("#sslId").value.trim(), storePassword: $("#sslPass").value };
+        out.bkash = { enabled: $("#payBk").checked, mode: $("#bkMode").value, sandbox: $("#bkSandbox").value === "1", number: $("#bkNum").value, accountType: $("#bkAcct").value,
+          appKey: $("#bkKey").value.trim(), appSecret: $("#bkSecret").value, username: $("#bkUser").value.trim(), password: $("#bkPass").value };
+        out.nagad = { enabled: $("#payNg").checked, number: $("#ngNum").value, accountType: $("#ngAcct").value };
+      }
+      const btn = e.submitter; busy(btn, true);
+      try { await api("PUT", "/api/settings", { settings: { payments: out } }); toast("Payments saved"); store = null; viewPayments(); } catch (err) { busy(btn, false); fail(err); }
+    };
+  }
+
   async function viewPathao() {
     setTitle("Pathao");
     let s;
@@ -3262,7 +3308,7 @@
     ["Catalog", [["products", "Products", "products"], ["stock", "Stock", "products"], ["bulk", "Bulk edit", "products"], ["categories", "Categories", "catalog"], ["variations", "Variations", "catalog"], ["sizecharts", "Size charts", "catalog"]]],
     ["Website", [["pages", "Pages", "content"], ["menus", "Menus", "content"], ["layout", "Header & footer", "settings"], ["tracking", "Pixel & Analytics", "settings"], ["popup", "Popup banner", "content"], ["media", "Media library", "content"]]],
     ["Inbox", [["chat", "Live chat", "chat"], ["messages", "Messages", "messages"], ["franchise", "Franchise requests", "franchise"]]],
-    ["Admin", [["users", "Users", "users"], ["settings", "Settings", "settings"], ["email", "Email & reminders", "settings"], ["integrations", "API & webhooks", "integrations"], ["acore", "Acore", "settings"], ["pathao", "Pathao", "settings"], ["trash", "Trash", "trash"]]]
+    ["Admin", [["users", "Users", "users"], ["settings", "Settings", "settings"], ["payments", "Payments", "settings"], ["email", "Email & reminders", "settings"], ["integrations", "API & webhooks", "integrations"], ["acore", "Acore", "settings"], ["pathao", "Pathao", "settings"], ["trash", "Trash", "trash"]]]
   ];
   const counts = { orders: 0, chat: 0, messages: 0, franchise: 0, carts: 0 };
   function drawSide() {
@@ -3311,7 +3357,7 @@
     [/^categories$/, viewCategories, "catalog"], [/^variations$/, viewVariations, "catalog"], [/^sizecharts$/, viewSizeCharts, "catalog"], [/^sizecharts\/([^/]+)$/, viewSizeChart, "catalog"],
     [/^pages$/, viewPages, "content"], [/^pages\/([^/]+)$/, viewPageEditor, "content"], [/^menus$/, viewMenus, "content"], [/^media$/, viewMedia, "content"], [/^trash$/, viewTrash, "trash"],
     [/^chat$/, viewChat, "chat"], [/^chat\/([^/]+)$/, viewChat, "chat"], [/^messages$/, viewMessages, "messages"],
-    [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"], [/^pathao$/, viewPathao, "settings"],
+    [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^payments$/, viewPayments, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"], [/^pathao$/, viewPathao, "settings"],
     [/^account$/, viewAccount, null]
   ];
   let leaveGuard = null, cleanup = null, lastHash = location.href;

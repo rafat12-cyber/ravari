@@ -105,6 +105,27 @@
 
   var ORDER_STATUSES = ["pending", "confirmed", "hold", "processing", "shipped", "delivered", "partial_return", "cancelled", "returned"];
   var PAYMENT_STATUSES = ["unpaid", "paid", "refunded", "failed"];
+  // Payment methods (Admin › Payments). Each has an on/off switch; checkout shows only the ones that are on.
+  var PAY_DEFAULTS = {
+    sslcommerz: { enabled: false, sandbox: true, storeId: "", storePassword: "" },
+    bkash: { enabled: false, mode: "manual", sandbox: true, number: "", accountType: "Personal", appKey: "", appSecret: "", username: "", password: "" },
+    nagad: { enabled: false, number: "", accountType: "Personal" }
+  };
+  var PAY_ACCOUNTS = ["Personal", "Merchant", "Agent"];
+  var PAY_NAMES = { cod: "Cash on delivery", sslcommerz: "SSLCOMMERZ", bkash: "bKash", nagad: "Nagad" };
+  function paySettings(s) {
+    var p = s.payments || (s.payments = { cod: true });
+    if (p.cod === undefined) p.cod = true;
+    Object.keys(PAY_DEFAULTS).forEach(function (k) { p[k] = Object.assign({}, PAY_DEFAULTS[k], p[k] || {}); });
+    return p;
+  }
+  // What checkout may see: never keys or passwords
+  function publicPayments(s) {
+    var p = paySettings(s), manual = function (x) { return { mode: "manual", number: x.number, accountType: x.accountType }; };
+    return { cod: !!p.cod, sslcommerz: !!p.sslcommerz.enabled,
+      bkash: p.bkash.enabled ? (p.bkash.mode === "api" ? { mode: "api" } : manual(p.bkash)) : false,
+      nagad: p.nagad.enabled ? manual(p.nagad) : false };
+  }
   var EVENTS = ["order.created", "order.updated", "product.created", "product.updated", "product.deleted", "stock.updated", "stock.low",
     "customer.created", "chat.message.created", "contact.created", "coupon.used", "franchise.created", "subscriber.created"];
 
@@ -174,7 +195,7 @@
   function publicSettings(s) {
     return {
       store: s.store, social: s.social, shipping: s.shipping,
-      payments: { cod: !!(s.payments && s.payments.cod), sslcommerz: !!(s.payments && s.payments.sslcommerz && s.payments.sslcommerz.enabled) },
+      payments: publicPayments(s),
       chat: { enabled: !!(s.chat && s.chat.enabled), greeting: s.chat && s.chat.greeting, title: s.chat && s.chat.title },
       seo: s.seo, announcement: s.announcement || "", lowStock: s.lowStock,
       layout: siteLayout(s), code: { head: headCode(s), bodyEnd: siteCode(s).bodyEnd, pixelId: siteCode(s).pixelId, gaId: siteCode(s).gaId }
@@ -963,8 +984,16 @@
       if (info.address.length < 6) errors.address = "Enter your full delivery address.";
       if (!b.agree) errors.agree = "Please accept the terms and conditions, privacy policy and refund policy.";
       var pay = str(b.paymentMethod, 20);
-      var ps = db.settings.payments || {};
-      if (!(pay === "cod" && ps.cod) && !(pay === "sslcommerz" && ps.sslcommerz && ps.sslcommerz.enabled)) errors.payment = "Choose a payment method.";
+      var ps = publicPayments(db.settings), manualPay = null;
+      if (!ps[pay] || ["cod", "sslcommerz", "bkash", "nagad"].indexOf(pay) < 0) errors.payment = "Choose a payment method.";
+      else if (ps[pay].mode === "manual") {
+        // bKash / Nagad Send Money: the customer gives their number and the transaction ID; the shop checks it and marks it paid
+        var bp = b.payment || {}, trx = str(bp.trxId, 30).replace(/\s+/g, "").toUpperCase();
+        manualPay = { sender: normPhone(str(bp.sender, 20)), trxId: trx };
+        if (!isPhone(bp.sender || "")) errors.paySender = "Enter the number you sent the money from.";
+        if (!/^[A-Z0-9]{8,12}$/.test(trx)) errors.payTrx = "Enter the transaction ID (TrxID) from your SMS, like 9C7A1B2D3E.";
+        else if (db.orders.some(function (o) { return o.paymentMethod === pay && o.paymentRef === trx; })) errors.payTrx = "This transaction ID is already used on another order.";
+      }
       if (Object.keys(errors).length) fail(400, "Please check the highlighted fields.", errors);
       var q = quote(db, b);
       db.counters.order = int(db.counters.order, 1000) + 1;
@@ -976,8 +1005,9 @@
         shippingZone: q.zone ? { id: q.zone.id, name: q.zone.name, days: q.zone.days } : null,
         items: q.lines, subtotal: q.subtotal, discount: q.discount, coupon: q.coupon ? q.coupon.code : "", shipping: q.shipping, total: q.total,
         note: str(b.note, 500), source: str(b.source, 40) || "website",
-        history: [{ at: t, status: "pending", note: "Order placed" + (pay === "cod" ? " · cash on delivery" : " · paying online"), by: "Customer" }]
+        history: [{ at: t, status: "pending", note: "Order placed" + (pay === "cod" ? " · cash on delivery" : manualPay ? " · " + PAY_NAMES[pay] + " Send Money, TrxID " + manualPay.trxId + " from " + manualPay.sender + ". Check it, then set Payment to Paid." : " · paying online"), by: "Customer" }]
       };
+      if (manualPay) { order.paymentRef = manualPay.trxId; order.paymentSender = manualPay.sender; }
       // Reserve stock now; cancelling or returning puts it back.
       order.items.forEach(function (it) {
         var p = findProduct(db, it.productId);
@@ -2125,7 +2155,7 @@
       o.paymentRef = str(c.body.ref, 120);
       if (paid && o.status === "pending") o.status = "confirmed";
       if (!paid && o.status === "pending") { o.status = "cancelled"; if (!o.restocked) restock(c.db, o); }
-      o.history.push({ at: now(), status: o.status, note: paid ? "Paid online · " + o.paymentRef : "Online payment " + str(c.body.status, 20), public: paid ? "Payment received" : "Payment didn't go through", by: "SSLCOMMERZ" });
+      o.history.push({ at: now(), status: o.status, note: paid ? "Paid online · " + o.paymentRef : "Online payment " + str(c.body.status, 20), public: paid ? "Payment received" : "Payment didn't go through", by: str(c.body.by, 30) || "SSLCOMMERZ" });
       emit(c.db, "order.updated", o);
       acoreSync(c, o);
       return { order: o };
@@ -2342,6 +2372,10 @@
       s.code.capiTokenSet = !!s.code.capiToken; s.code.capiToken = "";
       s.code.gaSecretSet = !!s.code.gaSecret; s.code.gaSecret = "";
       s.code.catalogTokenSet = !!s.code.catalogToken; s.code.catalogToken = "";
+      var pp = paySettings(s);
+      pp.sslcommerz.storePasswordSet = !!pp.sslcommerz.storePassword; pp.sslcommerz.storePassword = "";
+      pp.bkash.appSecretSet = !!pp.bkash.appSecret; pp.bkash.appSecret = "";
+      pp.bkash.passwordSet = !!pp.bkash.password; pp.bkash.password = "";
       if (s.email) { s.email.passwordSet = !!s.email.password; s.email.password = ""; }
       var ac = acoreSettings(c.db);
       s.acore = { enabled: ac.enabled, url: ac.url, apiKeySet: !!ac.apiKey, webhookSecret: isOwner(c.auth) ? ac.webhookSecret : (ac.webhookSecret ? "Only the owner can see this" : ""), since: ac.since };
@@ -2376,13 +2410,41 @@
         if (!s.shipping.zones.length) fail(400, "Keep at least one delivery area.");
       }
       if (b.payments) {
-        var ssl = b.payments.sslcommerz || {}, cur = s.payments.sslcommerz || {};
-        var nextSsl = { enabled: bool(ssl.enabled), sandbox: bool(ssl.sandbox), storeId: str(ssl.storeId, 80) };
-        // Turning sandbox (test) mode on, or swapping the store ID, would let orders "pay" without real money
-        if (nextSsl.enabled !== !!cur.enabled || nextSsl.sandbox !== !!cur.sandbox || nextSsl.storeId !== (cur.storeId || "")) needOwner(c, "change the SSLCOMMERZ settings");
-        s.payments.cod = bool(b.payments.cod);
-        s.payments.sslcommerz = nextSsl;
-        if (!s.payments.cod && !s.payments.sslcommerz.enabled) fail(400, "Keep at least one payment method on.");
+        var bp = b.payments, curP = paySettings(s), nextP = clone(curP);
+        if (bp.cod !== undefined) nextP.cod = bool(bp.cod);
+        var keep = function (v, old, max) { return v ? str(v, max) : old; };   // secrets: empty means "keep the saved one"
+        if (bp.sslcommerz) {
+          var x = bp.sslcommerz, y = nextP.sslcommerz;
+          if (x.enabled !== undefined) y.enabled = bool(x.enabled);
+          if (x.sandbox !== undefined) y.sandbox = bool(x.sandbox);
+          if (x.storeId !== undefined) y.storeId = str(x.storeId, 80);
+          y.storePassword = keep(x.storePassword, y.storePassword, 120);
+        }
+        if (bp.bkash) {
+          var k = bp.bkash, bk = nextP.bkash;
+          ["enabled", "sandbox"].forEach(function (f) { if (k[f] !== undefined) bk[f] = bool(k[f]); });
+          if (k.mode !== undefined) bk.mode = k.mode === "api" ? "api" : "manual";
+          if (k.number !== undefined) bk.number = normPhone(str(k.number, 20));
+          if (k.accountType !== undefined) bk.accountType = PAY_ACCOUNTS.indexOf(k.accountType) > -1 ? k.accountType : "Personal";
+          if (k.appKey !== undefined) bk.appKey = str(k.appKey, 120);
+          if (k.username !== undefined) bk.username = str(k.username, 120);
+          bk.appSecret = keep(k.appSecret, bk.appSecret, 200);
+          bk.password = keep(k.password, bk.password, 120);
+        }
+        if (bp.nagad) {
+          var n = bp.nagad, ng = nextP.nagad;
+          if (n.enabled !== undefined) ng.enabled = bool(n.enabled);
+          if (n.number !== undefined) ng.number = normPhone(str(n.number, 20));
+          if (n.accountType !== undefined) ng.accountType = PAY_ACCOUNTS.indexOf(n.accountType) > -1 ? n.accountType : "Personal";
+        }
+        // Online payment settings decide where money goes, and test mode lets orders "pay" without real money: owner only
+        var gw = function (p) { return JSON.stringify([p.sslcommerz, p.bkash, p.nagad]); };
+        if (gw(nextP) !== gw(curP)) needOwner(c, "change the online payment settings");
+        if (nextP.bkash.enabled && nextP.bkash.mode === "manual" && !isPhone(nextP.bkash.number)) fail(400, "Enter the bKash number customers send money to.");
+        if (nextP.bkash.enabled && nextP.bkash.mode === "api" && !(nextP.bkash.appKey && nextP.bkash.username && nextP.bkash.appSecret && nextP.bkash.password)) fail(400, "Fill in all four bKash API details: app key, app secret, username and password.");
+        if (nextP.nagad.enabled && !isPhone(nextP.nagad.number)) fail(400, "Enter the Nagad number customers send money to.");
+        if (!nextP.cod && !nextP.sslcommerz.enabled && !nextP.bkash.enabled && !nextP.nagad.enabled) fail(400, "Keep at least one payment method on.");
+        s.payments = nextP;
       }
       if (b.lowStock !== undefined) s.lowStock = Math.max(0, int(b.lowStock));
       if (b.announcement !== undefined) s.announcement = str(b.announcement, 200);

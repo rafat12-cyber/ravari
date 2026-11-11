@@ -82,9 +82,9 @@
         var out = engine.handle({ method: method, path: parts[0], query: q, body: body ? JSON.parse(JSON.stringify(body)) : {}, headers: token ? { authorization: "Bearer " + token } : {} }, db);
         if (out.changed && out.status < 400) writeDb(db);
         // Online payment in the demo: pretend the customer paid.
-        if (method === "POST" && parts[0] === "/api/orders" && out.status === 201 && body.paymentMethod === "sslcommerz") {
+        if (method === "POST" && parts[0] === "/api/orders" && out.status === 201 && (body.paymentMethod === "sslcommerz" || (body.paymentMethod === "bkash" && db.settings.payments.bkash.mode === "api"))) {
           var o = db.orders.filter(function (x) { return x.number === out.body.order.number; })[0];
-          engine.handle({ method: "POST", path: "/api/internal/payment", internal: true, body: { orderId: o.id, status: "paid", ref: "DEMO-" + hex(4).toUpperCase() } }, db);
+          engine.handle({ method: "POST", path: "/api/internal/payment", internal: true, body: { orderId: o.id, status: "paid", ref: "DEMO-" + hex(4).toUpperCase(), by: body.paymentMethod === "bkash" ? "bKash" : "SSLCOMMERZ" } }, db);
           writeDb(db);
           out.body.payment = { demo: true };
         }

@@ -493,3 +493,8 @@ a.tab { text-decoration: none; }
 .sc-preview { min-width: 0; }
 .sc-preview .szc__title { font-size: 30px; }
 @media (max-width: 1100px) { .sc-edit { grid-template-columns: 1fr; } }
+
+/* Payments page */
+.pay-card { display: grid; gap: 14px; }
+.pay-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.pay-card:has(.pay-head input:not(:checked)) > :not(.pay-head) { opacity: .55; }

@@ -556,7 +556,7 @@ setInterval(function () { run({ method: "POST", path: "/api/internal/cart-remind
 
 var core = Core.create({
   now: Date.now, random: random, hashPassword: hashPassword, emit: emit, saveMedia: saveMedia, deleteMedia: deleteMedia, trashMedia: trashMedia, restoreMedia: restoreMedia,
-  describeSettings: function (s) { s.payments.sslcommerz.serverReady = !!(SSLC_PASS && (SSLC_ID || s.payments.sslcommerz.storeId)); if (s.code) { s.code.capiStatus = capiStatus; s.code.gaStatus = gaStatus; s.code.catalogStatus = catalogStatus; } if (s.pathao) { s.pathao.lastSend = pathaoLast.send; s.pathao.lastWebhook = pathaoLast.webhook; s.pathao.webhookUrl = PUBLIC_URL + "/api/pathao/webhook"; } if (s.acore) { s.acore.lastSend = acoreLast.send; s.acore.lastWebhook = acoreLast.webhook; s.acore.webhookUrl = PUBLIC_URL + "/api/acore/webhook"; } },
+  describeSettings: function (s) { s.payments.sslcommerz.serverReady = !!((SSLC_PASS || s.payments.sslcommerz.storePasswordSet) && (SSLC_ID || s.payments.sslcommerz.storeId)); s.payments.sslcommerz.envPassword = !!SSLC_PASS; s.payments.bkash.callbackUrl = PUBLIC_URL + "/api/payments/bkash/callback"; if (s.code) { s.code.capiStatus = capiStatus; s.code.gaStatus = gaStatus; s.code.catalogStatus = catalogStatus; } if (s.pathao) { s.pathao.lastSend = pathaoLast.send; s.pathao.lastWebhook = pathaoLast.webhook; s.pathao.webhookUrl = PUBLIC_URL + "/api/pathao/webhook"; } if (s.acore) { s.acore.lastSend = acoreLast.send; s.acore.lastWebhook = acoreLast.webhook; s.acore.webhookUrl = PUBLIC_URL + "/api/acore/webhook"; } },
   metaEvent: metaEvent, gaEvent: gaEvent, catalogSync: catalogSyncAll, acoreSend: acoreSend, pathao: true, sendEmail: sendEmail, publicUrl: PUBLIC_URL
 });
 
@@ -565,10 +565,12 @@ var core = Core.create({
 // ---------------------------------------------------------------------------
 function sslHost() { return db.settings.payments.sslcommerz.sandbox ? "sandbox.sslcommerz.com" : "securepay.sslcommerz.com"; }
 function sslStoreId() { return SSLC_ID || db.settings.payments.sslcommerz.storeId; }
+// The .env password wins; otherwise the one the owner saved in Admin › Payments
+function sslPass() { return SSLC_PASS || db.settings.payments.sslcommerz.storePassword || ""; }
 function startPayment(order, cb) {
-  if (!sslStoreId() || !SSLC_PASS) return cb(new Error("SSLCOMMERZ isn't set up on the server yet."));
+  if (!sslStoreId() || !sslPass()) return cb(new Error("SSLCOMMERZ isn't set up on the server yet."));
   var form = querystring.stringify({
-    store_id: sslStoreId(), store_passwd: SSLC_PASS, total_amount: order.total.toFixed(2), currency: "BDT", tran_id: order.id,
+    store_id: sslStoreId(), store_passwd: sslPass(), total_amount: order.total.toFixed(2), currency: "BDT", tran_id: order.id,
     success_url: PUBLIC_URL + "/api/payments/sslcommerz/success", fail_url: PUBLIC_URL + "/api/payments/sslcommerz/fail",
     cancel_url: PUBLIC_URL + "/api/payments/sslcommerz/cancel", ipn_url: PUBLIC_URL + "/api/payments/sslcommerz/ipn",
     cus_name: order.customer.name, cus_email: order.customer.email || "no-email@ravaribd.com", cus_add1: order.customer.address,
@@ -593,7 +595,7 @@ function startPayment(order, cb) {
   req.end(form);
 }
 function validatePayment(valId, cb) {
-  var q = querystring.stringify({ val_id: valId, store_id: sslStoreId(), store_passwd: SSLC_PASS, format: "json" });
+  var q = querystring.stringify({ val_id: valId, store_id: sslStoreId(), store_passwd: sslPass(), format: "json" });
   https.get({ host: sslHost(), path: "/validator/api/validationserverAPI.php?" + q, timeout: 15000 }, function (res) {
     readAll(res, function (text) {
       try { cb(null, JSON.parse(text)); } catch (e) { cb(e); }
@@ -617,6 +619,69 @@ function paymentCallback(kind, body, res) {
     if (good) run({ method: "POST", path: "/api/internal/payment", internal: true, body: { orderId: order.id, status: "paid", ref: v.bank_tran_id || body.val_id } });
     if (kind === "ipn") return sendJson(res, 200, { ok: good });
     back(good ? "paid" : "failed");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// bKash tokenized checkout (Admin › Payments › bKash › API mode)
+// ---------------------------------------------------------------------------
+var bkTok = { key: "", token: "", until: 0 };
+var bkPending = new Map();   // paymentID -> order id, so only our own payments can be cancelled
+function bkCfg() { return db.settings.payments.bkash || {}; }
+function bkPost(path, headers, body, cb) {
+  var b = bkCfg(), data = JSON.stringify(body);
+  var req = https.request({ host: b.sandbox ? "tokenized.sandbox.bka.sh" : "tokenized.pay.bka.sh", path: "/v1.2.0-beta/tokenized/checkout/" + path, method: "POST", timeout: 20000,
+    headers: Object.assign({ "Content-Type": "application/json", Accept: "application/json", "Content-Length": Buffer.byteLength(data) }, headers) }, function (res) {
+    readAll(res, function (text) { try { cb(null, JSON.parse(text)); } catch (e) { cb(new Error("bKash sent an unexpected reply.")); } });
+  });
+  req.on("timeout", function () { req.destroy(new Error("bKash timed out.")); });
+  req.on("error", cb);
+  req.end(data);
+}
+function bkToken(cb) {
+  var b = bkCfg(), key = [b.sandbox, b.appKey, b.username].join("|");
+  if (bkTok.key === key && bkTok.until > Date.now()) return cb(null, bkTok.token);
+  if (!b.appKey || !b.appSecret || !b.username || !b.password) return cb(new Error("bKash isn't set up yet."));
+  bkPost("token/grant", { username: b.username, password: b.password }, { app_key: b.appKey, app_secret: b.appSecret }, function (e, j) {
+    if (e) return cb(e);
+    if (!j.id_token) return cb(new Error(j.statusMessage || j.msg || "bKash didn't accept the API details."));
+    bkTok = { key: key, token: j.id_token, until: Date.now() + 50 * 60e3 };   // tokens last an hour
+    cb(null, j.id_token);
+  });
+}
+function bkCall(path, body, cb) {
+  bkToken(function (e, t) { if (e) return cb(e); bkPost(path, { Authorization: t, "X-APP-Key": bkCfg().appKey }, body, cb); });
+}
+function bkashStart(order, cb) {
+  bkCall("create", { mode: "0011", payerReference: order.customer.phone, callbackURL: PUBLIC_URL + "/api/payments/bkash/callback/" + order.id,
+    amount: order.total.toFixed(2), currency: "BDT", intent: "sale", merchantInvoiceNumber: order.number }, function (e, j) {
+    if (e) return cb(e);
+    if (!j.bkashURL || !j.paymentID) return cb(new Error(j.statusMessage || "bKash didn't start the payment."));
+    bkPending.set(j.paymentID, order.id);
+    cb(null, j.bkashURL);
+  });
+}
+function bkashCallback(orderId, q, res) {
+  var order = db.orders.filter(function (o) { return o.id === orderId; })[0];
+  var back = function (state) { redirect(res, "/order/" + (order ? order.number : "") + "?payment=" + state); };
+  if (!order || order.paymentMethod !== "bkash") return back("missing");
+  if (order.paymentStatus === "paid") return back("paid");
+  var pid = String(q.paymentID || "");
+  if (q.status !== "success") {
+    if (bkPending.get(pid) === order.id && order.status === "pending") run({ method: "POST", path: "/api/internal/payment", internal: true, body: { orderId: order.id, status: q.status === "cancel" ? "cancelled" : "failed", by: "bKash" } });
+    bkPending.delete(pid);
+    return back(q.status === "cancel" ? "cancel" : "fail");
+  }
+  var good = function (j) { return j && j.transactionStatus === "Completed" && j.paymentID === pid && j.merchantInvoiceNumber === order.number && Math.abs(+j.amount - order.total) < 1; };
+  var done = function (j) {
+    var ok = good(j);
+    if (ok) { bkPending.delete(pid); run({ method: "POST", path: "/api/internal/payment", internal: true, body: { orderId: order.id, status: "paid", ref: j.trxID, by: "bKash" } }); }
+    back(ok ? "paid" : "failed");
+  };
+  bkCall("execute", { paymentID: pid }, function (e, j) {
+    if (!e && good(j)) return done(j);
+    // Already executed (a page refresh) or a slow reply: ask bKash for the payment's status instead
+    bkCall("payment/status", { paymentID: pid }, function (e2, j2) { done(e2 ? null : j2); });
   });
 }
 
@@ -746,6 +811,8 @@ function api(req, res, u, p) {
     if (p === "/api/pathao/webhook" && req.method === "POST") return pathaoWebhook(req, raw, body, res);
     var ssl = /^\/api\/payments\/sslcommerz\/(success|fail|cancel|ipn)$/.exec(p);
     if (ssl) return paymentCallback(ssl[1], Object.assign({}, Object.fromEntries(u.searchParams), body), res);
+    var bk = /^\/api\/payments\/bkash\/callback\/([\w-]+)$/.exec(p);
+    if (bk) return bkashCallback(bk[1], Object.fromEntries(u.searchParams), res);
 
     var query = Object.fromEntries(u.searchParams);
     var out, call = function () { return run({ method: req.method, path: p, query: query, body: body, headers: req.headers, ip: ip }); };
@@ -759,10 +826,11 @@ function api(req, res, u, p) {
     if (out.status < 400 && out.body && out.body.pathao && out.body.pathao.op) return pathaoJob(out.body.pathao, req, res);
     var hold = req.method === "GET" && waitKey(p, query, out);
     if (hold) return park(hold, res, function () { try { return call(); } catch (e) { console.error(e); return { status: 500, body: { error: "Something went wrong on the server." } }; } }, out);
-    // Online payment: hand the customer to SSLCOMMERZ.
-    if (p === "/api/orders" && req.method === "POST" && out.status === 201 && body.paymentMethod === "sslcommerz") {
+    // Online payment: hand the customer to SSLCOMMERZ, or to bKash when its API is set up
+    var bkApi = body.paymentMethod === "bkash" && bkCfg().mode === "api";
+    if (p === "/api/orders" && req.method === "POST" && out.status === 201 && (body.paymentMethod === "sslcommerz" || bkApi)) {
       var order = db.orders.filter(function (o) { return o.number === out.body.order.number; })[0];
-      return startPayment(order, function (e, url) {
+      return (bkApi ? bkashStart : startPayment)(order, function (e, url) {
         out.body.payment = e ? { error: e.message } : { url: url };
         sendJson(res, out.status, out.body);
       });

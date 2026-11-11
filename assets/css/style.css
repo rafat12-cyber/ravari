@@ -970,6 +970,9 @@ details[open] > .menu__link::after { transform: rotate(45deg); }
 .zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .checkout__hint { margin: -6px 0 0; color: var(--ink-2); }
 .ssl-row { display: flex; justify-content: center; padding: 10px; border-radius: 12px; background: var(--ground); }
+.paybox { padding: 14px; border-radius: 12px; background: var(--ground); display: grid; gap: 10px; }
+.paybox[hidden] { display: none; }
+.paybox p { margin: 0; font-size: 14px; line-height: 1.6; }
 .ssl-row img { max-height: 70px; width: auto; }
 .ssl-row__fallback { display: none; color: var(--ink-2); }
 .ssl-row.no-img .ssl-row__fallback { display: block; }
