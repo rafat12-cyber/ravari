@@ -208,8 +208,8 @@
   const IMG_SPECS = [
     [/^hero\.image$/, 1200, 1212, "see-through background (PNG or WebP cutout)", 250],
     [/^tryLook\.looks\.\d+\.image$/, 400, 1200, "model cutout with a see-through background", 80],
-    [/^house\.card\d+\.image$/, 900, 1200, "3:4 photo", 150],
-    [/^poster\.image$/, 900, 1125, "4:5 photo", 200],
+    [/^house\.card\d+\.image$/, 1100, 1375, "4:5 photo", 260],
+    [/^poster\.image$/, 820, 2005, "cut-out PNG/WebP on a see-through background", 200], [/^tiles\.items\.\d+\.image$/, 900, 1200, "3:4 photo", 200], [/^insta\.images\.\d+\.image$/, 520, 520, "square photo", 90],
     [/^lookbook\.looks\.\d+\.image$/, 900, 1200, "3:4 photo", 180],
     [/^sizeGuide$/, 1200, 0, "width", 120],
     [/^image$/, 900, 1200, "3:4 photo", 150],
@@ -1371,7 +1371,7 @@
   // Pages: visual editor (live preview in an iframe of the store)
   // ---------------------------------------------------------------------------
   const PAGES = {
-    home: { title: "Home page", route: "home", sections: { hero: "Hero", tryLook: "Try the look", house: "Trendy categories", poster: "Offer poster", arrivals: "Product showcase", lookbook: "Lookbook", categories: "Shop by category", footer: "Footer" } },
+    home: { title: "Home page", route: "home", sections: { hero: "Hero", tryLook: "Try the look", house: "Collection split", arrivals: "New arrivals", tiles: "Category tiles", poster: "Winter poster", insta: "Instagram row", categories: "Shop by category", footer: "Footer" } },
     about: { title: "About us", route: "about" },
     contact: { title: "Contact us", route: "contact" },
     stores: { title: "Store locations", route: "store-locations" },

@@ -186,95 +186,30 @@
   // ---------------------------------------------------------------------------
   // Effects
   // ---------------------------------------------------------------------------
-  var GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ/#*";
-  function scramble(el) {
-    if (EDIT) return;
-    var final = el.textContent, frame = 0, total = final.length * 3 + 8;
-    // Keep the word's width while its letters change, so the line around it never re-wraps (no layout shift)
-    var lock = el.getClientRects().length === 1 && getComputedStyle(el).display === "inline";
-    if (lock) { el.style.width = el.getBoundingClientRect().width + "px"; el.style.display = "inline-block"; el.style.whiteSpace = "nowrap"; }
-    (function tick() {
-      var out = "";
-      for (var i = 0; i < final.length; i++) {
-        var settle = i * 3 + 6;
-        out += frame >= settle || final[i] === " " ? final[i] : GLYPHS[(Math.random() * GLYPHS.length) | 0];
-      }
-      el.textContent = out;
-      if (++frame <= total) requestAnimationFrame(tick);
-      else { el.textContent = final; if (lock) { el.style.width = el.style.display = el.style.whiteSpace = ""; } }
-    })();
+  // One light effect: blocks marked .reveal fade and rise into place the first time they scroll into
+  // view (CSS does the motion, a single IntersectionObserver only adds the class).
+  // Product photo change: a quick fade with a slight settle
+  function swapIn(el) {
+    var i = el && el.querySelector("img");
+    if (!i || !i.animate || reduce || EDIT) return;
+    i.animate([{ opacity: 0, transform: "scale(1.03)" }, { opacity: 1, transform: "none" }], { duration: 450, easing: "cubic-bezier(.2,.7,.2,1)" });
   }
-
-  // Copies the card's photo into strips; each strip opens sideways from a thin
-  // line, then thickens to meet its neighbours, staggered top to bottom.
-  function buildSlats(el) {
-    var img = el.querySelector(":scope > img");
-    if (!img || !img.animate || reduce || EDIT) return;
-    $$(".slat__strip", el).forEach(function (s) { s.remove(); });
-    var go = function () {
-      if (!img.isConnected || !img.naturalWidth) return;
-      var N = 14, band = 100 / N, strips = [], done = 0;
-      var er = el.getBoundingClientRect(), ir = img.getBoundingClientRect(), cs = getComputedStyle(img);
-      var box = { left: ir.left - er.left, top: ir.top - er.top, width: ir.width, height: ir.height };
-      el.classList.add("is-building");
-      for (var i = 0; i < N; i++) {
-        var strip = document.createElement("div");
-        strip.className = "slat__strip";
-        var copy = img.cloneNode();
-        ["loading", "class", "data-guard", "data-ci", "data-calt", "id"].forEach(function (a) { copy.removeAttribute(a); });
-        copy.alt = "";
-        copy.style.cssText = "position:absolute;max-width:none;margin:0;translate:none;transform:none;" +
-          "left:" + box.left + "px;top:" + box.top + "px;width:" + box.width + "px;height:" + box.height + "px;" +
-          "object-fit:" + cs.objectFit + ";object-position:" + cs.objectPosition + ";padding:" + cs.padding + ";box-sizing:" + cs.boxSizing + ";";
-        strip.appendChild(copy);
-        el.insertBefore(strip, img);
-        strips.push(strip);
-        var top = i * band, bot = 100 - (i + 1) * band - 0.3;
-        var thin = band * 0.42;
-        var fromLeft = i % 3 !== 1;
-        var start = "inset(" + (top + thin) + "% " + (fromLeft ? 100 : 0) + "% " + (bot + thin) + "% " + (fromLeft ? 0 : 100) + "%)";
-        var mid = "inset(" + (top + thin) + "% 0% " + (bot + thin) + "% 0%)";
-        var end = "inset(" + top + "% 0% " + Math.max(0, bot) + "% 0%)";
-        strip.animate(
-          [{ clipPath: start }, { clipPath: mid, offset: 0.6 }, { clipPath: end }],
-          { duration: 820, delay: i * 45 + (i % 2) * 70, easing: "cubic-bezier(.7,0,.25,1)", fill: "both" }
-        ).onfinish = function () {
-          if (++done < N) return;
-          el.classList.remove("is-building");
-          strips.forEach(function (s) { s.remove(); });
-        };
-      }
-    };
-    if (img.complete && img.naturalWidth) go();
-    else img.addEventListener("load", go, { once: true });
-  }
-
-  var io, rio;
+  var rio;
   if (!reduce && !EDIT && "IntersectionObserver" in window) {
-    io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        io.unobserve(en.target);
-        scramble(en.target);
-      });
-    }, { threshold: 0.4 });
     rio = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (!en.isIntersecting) return;
-        var el = en.target;
-        rio.unobserve(el);
-        el.classList.add("is-in");
-        if (el.classList.contains("slat")) setTimeout(function () { buildSlats(el); }, 380);
+        rio.unobserve(en.target);
+        en.target.classList.add("is-in");
       });
-    }, { threshold: 0.2 });
+    }, { threshold: 0.15, rootMargin: "0px 0px -6% 0px" });
   } else {
     document.documentElement.classList.add("no-reveal");
   }
   function activate(root, skip) {
     guardImages(root);
     if (EDIT) editable(root);
-    if (!io) return;
-    $$("[data-scramble]", root).forEach(function (el) { if (el !== skip) io.observe(el); });
+    if (!rio) return;
     $$(".reveal", root).forEach(function (el) { rio.observe(el); });
   }
 
@@ -1160,7 +1095,7 @@
         }
         img.src = t.dataset.src;
         guardImages(main);
-        buildSlats(main);
+        swapIn(main);
       });
     });
     // 3x zoom that follows the pointer (mouse and trackpad only)
@@ -1176,7 +1111,7 @@
       main.addEventListener("mouseleave", function () { main.classList.remove("is-zooming"); });
     }
     refresh();
-    setTimeout(function () { buildSlats(main); }, 120);
+    swapIn(main);
   }
   var cssEsc = function (s) { return window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/"/g, '\\"'); };
 

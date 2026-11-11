@@ -155,7 +155,7 @@
       hero: {
         line1: "Layer up", lead: "for", accent: "winter.",
         cta1: "Shop winter", cta1Link: "#category/winter-collection", cta2: "Denim shirts", cta2Link: "#category/denim-shirt",
-        image: "assets/img/home/r-hero-cut.webp", imageAlt: "Model in a tan suede jacket, white tee and sunglasses",
+        image: "assets/img/home/r-hero-duo.webp", imageAlt: "Two models in a burgundy and a grey suede jacket with white tees",
         text: "Denim, corduroy and full sleeve shirts for the cooler days. Warm, easy to layer, made in Dhaka.",
         note: "Winter collection 2026 · Cash on delivery all over Bangladesh"
       },
@@ -163,18 +163,14 @@
         title: "Try the Look.", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
         looks: []
       },
+      // Two photos side by side with the collection name in the middle
       house: {
-        eyebrow: "Winter collection", titleStart: "Warm", accent: "layers", titleEnd: "for cold days.", linkLabel: "Shop winter →", link: "#category/winter-collection",
-        card1: { image: "assets/img/home/r-w-denim-cut.webp", meta: "Shop denim →", title: "Denim\nShirt", link: "#category/denim-shirt" },
-        card2: { image: "assets/img/home/r-w-cord-cut.webp", meta: "Shop corduroy →", title: "Corduroy\nShirt", link: "#category/winter-collection" }
-      },
-      poster: {
-        kicker: "Winter collection 2026", title: "Denim &\ncorduroy", cta: "Shop winter", ctaLink: "#category/winter-collection",
-        image: "assets/img/home/r-w-poster.webp", imageAlt: "Model in a blue denim shirt sitting in a green velvet chair",
-        marqueeTop: "WINTER COLLECTION", marqueeBottom: "LAYER UP"
+        eyebrow: "2026", titleStart: "Winter", accent: "", titleEnd: "collection", linkLabel: "Shop winter", link: "#category/winter-collection",
+        card1: { image: "assets/img/home/r-split-1.webp", meta: "Model in a burgundy suede jacket", title: "", link: "#category/winter-collection" },
+        card2: { image: "assets/img/home/r-split-2.webp", meta: "Model in a grey suede jacket", title: "", link: "#category/full-shirt" }
       },
       arrivals: {
-        titleStart: "Fresh fits for the", accent: "cold", titleEnd: "season!",
+        titleStart: "New", accent: "arrivals", titleEnd: "",
         // Tabs under the heading. Category is a category slug (t-shirt, half-shirt, full-shirt, trouser,
         // polo...) or top-selling; join several slugs with commas. Clear a label to hide its tab.
         tabs: [
@@ -185,12 +181,26 @@
           { label: "Top Selling", category: "top-selling" }
         ]
       },
-      lookbook: {
-        marqueeBack: "WINTER COLLECTION", marqueeFront: "LAYER UP FOR WINTER",
-        looks: [
-          { image: "assets/img/home/r-w-lb-1.webp", name: "Denim shirt\nAccent pocket" },
-          { image: "assets/img/home/r-w-lb-2.webp", name: "Check & corduroy\nBlue" },
-          { image: "assets/img/home/r-w-lb-3.webp", name: "Corduroy shirt\nElbow patches" }
+      // Three photo tiles with a glass label, on the dark band
+      tiles: {
+        eyebrow: "Shop by category",
+        items: [
+          { image: "assets/img/home/r-tile-1.webp", label: "Winter collection", link: "#category/winter-collection" },
+          { image: "assets/img/home/r-tile-2.webp", label: "Full sleeve", link: "#category/full-shirt" },
+          { image: "assets/img/home/r-tile-3.webp", label: "Denim & check", link: "#category/denim-shirt" }
+        ]
+      },
+      // Big type around a cut-out model
+      poster: {
+        kicker: "Winter collection 2026", title: "When the cold\nhits, layer up.", cta: "Shop winter", ctaLink: "#category/winter-collection",
+        image: "assets/img/home/r-poster-cut.webp", imageAlt: "Model in a white half-zip and black trousers",
+        marqueeTop: "Made in Dhaka. Cut for the cooler months: suede, denim and corduroy you can wear all season.", marqueeBottom: "Bold, edge\n& classy.", price: "From ৳1,299"
+      },
+      insta: {
+        title: "Follow us on", handle: "Instagram", link: "https://www.instagram.com/ravari_bd",
+        images: [
+          { image: "assets/img/home/r-ig-1.webp" }, { image: "assets/img/home/r-ig-2.webp" }, { image: "assets/img/home/r-ig-3.webp" },
+          { image: "assets/img/home/r-ig-4.webp" }, { image: "assets/img/home/r-ig-5.webp" }, { image: "assets/img/home/r-ig-6.webp" }
         ]
       },
       categories: { eyebrow: "Shop men" },

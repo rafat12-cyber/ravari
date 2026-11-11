@@ -16,8 +16,8 @@
   --warn-bg: #fbf0d9;
   --danger: #9a3b2a;
   --danger-bg: #f8e4df;
-  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --f-display: "Saira", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "Chakra Petch", "Saira", Arial, sans-serif;
   --side: 232px;
   color-scheme: light;
 }

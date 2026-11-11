@@ -190,7 +190,7 @@ async function main() {
   assert.equal(r.status, 404);
   r = await call("GET", "/assets/img/logo.webp");
   assert.ok(/max-age=2592000/.test(r.headers["cache-control"]), "site photos cached 30 days");
-  r = await call("GET", "/assets/fonts/archivo-latin.woff2");
+  r = await call("GET", "/assets/fonts/saira-latin.woff2");
   assert.equal(r.status, 200);
   assert.ok(/immutable/.test(r.headers["cache-control"]));
   r = await call("GET", "/");
