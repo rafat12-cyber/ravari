@@ -1906,3 +1906,20 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
   .hero--photo .hero__photo { aspect-ratio: auto; height: clamp(360px, 62svh, 135vw); object-fit: cover; object-position: 36% 30%; }
 }
 .cold__h--top:empty { display: none; }
+
+/* Collection pages: sub-category boxes in one row, photo fills each box (Rafat, 2026-11-11) */
+.house--page .house__grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 14px; }
+.house--page .house__grid > * { grid-column: auto !important; }
+.house--page .drop { aspect-ratio: 3 / 4; background: #2b2c30; }
+.house--page .drop > img { inset: 0; top: 0; right: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+.house--page .drop:hover > img { transform: scale(1.03); }
+.house--page .drop::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 30%, transparent 50%, transparent 72%, rgba(0,0,0,.45) 100%); }
+.house--page .drop__meta, .house--page .drop__title, .house--page .chip { z-index: 2; }
+.house--page .drop__meta { top: 16px; right: 16px; font-size: 9.5px; }
+.house--page .drop__title { left: 18px; right: 18px; top: 44px; font-family: var(--f-head); font-size: clamp(20px, 1.9vw, 28px) !important; }
+.house--page .drop__mood { display: none; }
+@media (max-width: 960px) {
+  .house--page .house__grid { grid-auto-flow: row; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .house--page .drop__title { left: 14px; top: 38px; font-size: 18px !important; }
+  .house--page .drop__meta { top: 12px; right: 12px; font-size: 8.5px; }
+}
