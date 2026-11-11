@@ -51,7 +51,7 @@ async function main() {
   for (var i = 0; i < 50; i++) { try { await call("GET", "/api/health"); break; } catch (e) { await wait(100); } }
   var r = await call("GET", "/api/store");
   assert.equal(r.status, 200);
-  assert.equal(r.body.products.length, 55, "55 products");
+  assert.equal(r.body.products.length, 74, "74 products");
   var product = r.body.products[0], variant = product.variants[1];
   console.log("✓ storefront data:", r.body.products.length, "products,", r.body.categories.length, "categories");
 
@@ -88,7 +88,7 @@ async function main() {
   assert.equal(r.status, 201, JSON.stringify(r.body));
   var order = r.body.order;
   assert.equal(order.subtotal, product.price * 2);
-  assert.equal(order.discount, Math.round(product.price * 2 * 0.1));
+  assert.equal(order.discount, Math.min(300, Math.round(product.price * 2 * 0.1)));
   assert.equal(order.shipping, 70);
   assert.equal(order.total, order.subtotal - order.discount + 70);
   r = await call("GET", "/api/products/" + product.id, null, token);

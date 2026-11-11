@@ -1797,3 +1797,6 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 }
 .cats__list a { position: relative; padding-right: 48px; }
 .cats__list a::after { position: absolute; right: 8px; top: 50%; translate: 0 -50%; }
+
+/* Keep the "nothing matches" note hidden while there are products */
+.empty[hidden] { display: none; }
