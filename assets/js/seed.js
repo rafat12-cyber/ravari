@@ -187,7 +187,7 @@
         note: "Winter collection 2026 · Cash on delivery all over Bangladesh"
       },
       tryLook: {
-        title: "Try the Look.", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
+        title: "Try Winter Looks", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
         looks: [
           { name: "Tan velvet", image: "assets/img/home/look-1.webp", imageAlt: "Model in a tan velvet jacket and black denim", products: "solid-velvet-jacket-tan, baggy-denim-pant-black" },
           { name: "Navy velvet", image: "assets/img/home/look-2.webp", imageAlt: "Model in a navy velvet jacket and off-white denim", products: "solid-velvet-jacket-navy, baggy-denim-pant-off-white" },
