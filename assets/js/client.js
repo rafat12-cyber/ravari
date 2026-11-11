@@ -9,7 +9,7 @@
     var s = document.currentScript && document.currentScript.src;
     return s ? s.replace(/assets\/js\/client\.js.*$/, "") : "";
   })();
-  var DB_KEY = "ravari:demo-db:v59";
+  var DB_KEY = "ravari:demo-db:v60";
   var DEMO_LOGIN = { email: "admin@ravaribd.com", password: "ravari-demo" };
 
   // The server stamps the current asset version on the page (cache busting); the demo uses the fixed one
@@ -71,7 +71,7 @@
       describeSettings: function (s) { s.payments.sslcommerz.serverReady = false; s.demo = true; }
     };
     var engine = RavariCore.create(host);
-    if (!readDb()) { var fresh = buildDemoDb(); try { sampleOrders(engine, fresh); } catch (e) {} writeDb(fresh); }
+    if (!readDb()) writeDb(buildDemoDb());
     demo = {
       call: function (method, path, body, token) {
         var db = readDb() || buildDemoDb();
@@ -93,47 +93,6 @@
     };
   }
 
-  // Sample orders for the demo admin, one in each state, so invoices, Pathao and partial returns can be tried
-  function sampleOrders(engine, db) {
-    var h = function (method, path, body, token, internal) { return engine.handle({ method: method, path: path, query: {}, body: body || {}, headers: token ? { authorization: "Bearer " + token } : {}, internal: !!internal }, db); };
-    var token = h("POST", "/api/auth/login", DEMO_LOGIN).body.token;
-    var inStock = db.products.filter(function (p) { return p.status === "published" && (p.variants || []).some(function (v) { return v.stock > 3; }); });
-    var pick = function (i, n) { var p = inStock[i % inStock.length], v = p.variants.filter(function (x) { return x.stock > 3; })[n || 0] || p.variants.filter(function (x) { return x.stock > 3; })[0]; return { productId: p.id, variantId: v.id, qty: 1 }; };
-    var people = [
-      ["Karim Ahmed", "01711234567", "House 14, Road 7, Block C, Mirpur 10", "Dhaka", "inside-dhaka"],
-      ["Nusrat Jahan", "01822345678", "Flat 5B, 23 Satmasjid Road, Dhanmondi", "Dhaka", "inside-dhaka"],
-      ["Tanvir Hasan", "01933456789", "Holding 112, Agrabad Commercial Area", "Chattogram", "outside-dhaka"],
-      ["Sadia Islam", "01544567890", "House 3, Lane 2, Bank Town", "Savar", "dhaka-sub"],
-      ["Rakib Chowdhury", "01655678901", "Zindabazar, near Al-Hamra Shopping City", "Sylhet", "outside-dhaka"],
-      ["Mahin Rahman", "01366789012", "Road 11, Banani", "Dhaka", "inside-dhaka"]
-    ];
-    var make = function (i, items, pay, daysAgo) {
-      var c = people[i];
-      var r = h("POST", "/api/orders", { items: items, customer: { name: c[0], phone: c[1], address: c[2], city: c[3] }, zone: c[4], paymentMethod: pay || "cod", agree: true, note: i === 1 ? "Please call before coming" : "" });
-      var o = db.orders.filter(function (x) { return x.number === r.body.order.number; })[0];
-      o.createdAt = o.history[0].at = Date.now() - daysAgo * 864e5 - i * 37e5;
-      return o;
-    };
-    var a = make(0, [pick(0)], "cod", 0);                                   // new, waiting for a call
-    var b = make(1, [pick(1), pick(2, 1)], "cod", 1);                       // confirmed
-    h("PATCH", "/api/orders/" + b.number, { status: "confirmed", note: "Called, size confirmed" }, token);
-    var c = make(2, [pick(3)], "cod", 1);                                   // on hold
-    h("PATCH", "/api/orders/" + c.number, { status: "hold", note: "Customer will confirm the size tomorrow" }, token);
-    var d = make(3, [pick(4), pick(5)], "cod", 2);                          // with Pathao, on the way
-    h("POST", "/api/internal/pathao-sent", { orderId: d.id, amount: d.total, data: { consignment_id: "DT1111" + d.number.slice(2) + "RV", order_status: "Pending", delivery_fee: 60 } }, null, true);
-    h("POST", "/api/internal/pathao", { event: "order.in-transit", consignment_id: d.pathao.consignmentId, updated_at: "1" }, null, true);
-    var e = make(4, [pick(6), pick(7, 1)], "cod", 4);                       // partly delivered: one item came back
-    h("POST", "/api/internal/pathao-sent", { orderId: e.id, amount: e.total, data: { consignment_id: "DT1111" + e.number.slice(2) + "RV", order_status: "Pending", delivery_fee: 110 } }, null, true);
-    h("POST", "/api/internal/pathao", { event: "order.partial-delivery", consignment_id: e.pathao.consignmentId, collected_amount: e.items[0].lineTotal + e.shipping, updated_at: "2" }, null, true);
-    h("POST", "/api/orders/" + e.id + "/partial-return", { items: [{ index: 1, qty: 1 }], collected: e.items[0].lineTotal + e.shipping, note: "Size didn't fit" }, token);
-    var f = make(5, [pick(8)], "cod", 6);                                   // delivered
-    h("POST", "/api/internal/pathao-sent", { orderId: f.id, amount: f.total, data: { consignment_id: "DT1111" + f.number.slice(2) + "RV", order_status: "Pending", delivery_fee: 60 } }, null, true);
-    h("POST", "/api/internal/pathao", { event: "order.delivered", consignment_id: f.pathao.consignmentId, collected_amount: f.total, updated_at: "3" }, null, true);
-    h("POST", "/api/auth/logout", {}, token);
-    db.orders.sort(function (x, y) { return x.createdAt - y.createdAt; });
-  }
-
-  // Demo database: products, pages and settings from the seed and one owner login, plus the sample orders above.
   function buildDemoDb() {
     var db = RavariCore.freshDb(window.RAVARI_SEED);
     db.demo = true;

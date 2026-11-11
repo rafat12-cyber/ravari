@@ -129,11 +129,20 @@
           const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
           const c = document.createElement("canvas");
           c.width = w; c.height = h;
-          c.getContext("2d").drawImage(img, 0, 0, w, h);
-          let out = c.toDataURL("image/webp", 0.86);
+          const g0 = c.getContext("2d"); g0.imageSmoothingQuality = "high"; g0.drawImage(img, 0, 0, w, h);
+          let out = c.toDataURL("image/webp", 0.88);
           if (out.indexOf("data:image/webp") !== 0) out = c.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.86);
+          // A 600 px wide copy for phones and product cards (saved next to the photo as <name>-s.webp)
+          let small = "";
+          if (w > 760 && out.indexOf("data:image/webp") === 0) {
+            const sw = 600, sh = Math.round(h * sw / w), c2 = document.createElement("canvas");
+            c2.width = sw; c2.height = sh;
+            const g = c2.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, sw, sh);
+            small = c2.toDataURL("image/webp", 0.84);
+          }
           // Keep the original when it is already smaller.
-          resolve({ dataUrl: out.length < fr.result.length || scale < 1 ? out : fr.result, width: w, height: h });
+          const keepOrig = !(out.length < fr.result.length || scale < 1);
+          resolve({ dataUrl: keepOrig ? fr.result : out, small: keepOrig && file.type !== "image/webp" ? "" : small, width: w, height: h });
         };
         img.src = fr.result;
       };
@@ -146,7 +155,7 @@
     for (const f of Array.from(files)) {
       try {
         const img = await readImage(f, max);
-        const r = await api("POST", "/api/media", { name: f.name, dataUrl: img.dataUrl, width: img.width, height: img.height, alt: f.name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ") });
+        const r = await api("POST", "/api/media", { name: f.name, dataUrl: img.dataUrl, small: img.small || "", width: img.width, height: img.height, alt: f.name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ") });
         out.push(r.item);
       } catch (err) { fail(err); }
     }
@@ -1991,7 +2000,7 @@
   // Pages: visual editor (live preview in an iframe of the store)
   // ---------------------------------------------------------------------------
   const PAGES = {
-    home: { title: "Home page", route: "home", sections: { hero: "Hero", tryLook: "Try the look", arrivals: "New arrivals", house: "Ticker + 3 cards", tiles: "Category tiles", poster: "Winter poster", insta: "Instagram row", categories: "Shop by category", footer: "Footer" } },
+    home: { title: "Home page", route: "home", sections: { hero: "Hero", tryLook: "Try the look", arrivals: "New arrivals", house: "Ticker + 3 cards", poster: "Winter poster", insta: "Instagram row", categories: "Shop by category", footer: "Footer" } },
     about: { title: "About us", route: "about" },
     contact: { title: "Contact us", route: "contact" },
     stores: { title: "Store locations", route: "store-locations" },
@@ -2070,6 +2079,7 @@
     const build = (obj, path, depth) => Object.keys(obj).map((k) => {
       const v = obj[k], p = path ? path + "." + k : k;
       if (!path && CARDS[key] && CARDS[key].skip.indexOf(k) > -1) return "";
+      if (!path && key === "home" && k === "tiles") return "";   // category tiles were taken off the home page
       if (typeof v === "string") return fieldFor(k, v, p);
       if (Array.isArray(v)) {
         return `<details class="group"${depth ? "" : " open"}><summary>${human(k)}</summary><div class="group__body">${v.map((item, i) =>

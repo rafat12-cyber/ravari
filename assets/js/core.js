@@ -2299,6 +2299,9 @@
       if (!m) fail(400, "Upload a PNG, JPG, WebP, GIF or AVIF image.");
       if (data.length > 14e6) fail(413, "That image is over 10 MB.");
       var saved = host.saveMedia(name, data, m[1]);
+      // the phone/card copy, when the browser made one
+      var small = String(c.body.small || "");
+      if (small && host.saveSmall && m[1] === "image/webp" && /^data:image\/webp;base64,/.test(small) && small.length < 4e6) host.saveSmall(saved.url, small);
       var item = { id: newId("med"), url: saved.url, name: name, alt: str(c.body.alt, 200), type: m[1], size: saved.size,
         width: int(c.body.width) || null, height: int(c.body.height) || null, createdAt: now() };
       c.db.media.push(item);

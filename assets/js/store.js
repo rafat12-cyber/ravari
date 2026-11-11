@@ -74,7 +74,8 @@
   // Smaller copies of the site's own photos sit next to them as "<name>-s.webp" (360 px wide for products,
   // 600 px tall for Try the Look models). Phones and small cards load those instead of the full photo.
   // If a small copy is missing the server sends the full photo, so a new photo never shows as broken.
-  var SMALL_RE = /^(\/?assets\/img\/(?:products\/[\w.-]+|home\/look-\d+))\.webp$/;
+  // Photos uploaded in the admin get a 600 px "-s" copy too (older uploads fall back to the full photo)
+  var SMALL_RE = /^(\/?assets\/img\/(?:products\/[\w.-]+|home\/look-\d+)|\/uploads\/(?:\d{4}\/\d{2}\/)?[\w-]+)\.webp$/;
   // The static demo has no small copies (file limit), so it always uses the full photo
   function smallOf(src) { if (window.RV_NO_SMALL) return ""; var m = SMALL_RE.exec(src || ""); return m && !/-s$/.test(m[1]) ? m[1] + "-s.webp" : ""; }
   function imgSet(src, smallW, fullW, sizes) {
@@ -2496,7 +2497,7 @@
       var m = e.data || {};
       if (m.type === "ravari:page" && m.key && m.page) {
         S.pages[m.key] = m.page;
-        if (m.key === "home") { bind(homeView, m.page); bind($("#footer"), m.page); drawLook(current); editable(homeView); }
+        if (m.key === "home") { drawHome(); bind($("#footer"), m.page); var nl = (m.page.footer || {}).newsletter; if (nl) $("#email").placeholder = nl; editable(homeView); }
         else {
           if (LIVE[m.key]) LIVE[m.key]();
           var root = document.querySelectorAll('[data-page="' + m.key + '"]');

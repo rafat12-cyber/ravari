@@ -427,6 +427,12 @@ function saveMedia(name, dataUrl, type) {
   fs.writeFileSync(path.join(dir, file), buf);
   return { url: "/uploads/" + path.relative(UPLOADS, path.join(dir, file)).split(path.sep).join("/"), size: buf.length };
 }
+// The 600 px copy of an uploaded photo: <name>-s.webp next to it (phones and product cards load it)
+function saveSmall(url, dataUrl) {
+  var p = mediaPaths(url); if (!p || !/\.webp$/.test(p.live)) return;
+  var buf = Buffer.from(String(dataUrl).split(",")[1] || "", "base64");
+  if (buf.length && looksLike(buf, "image/webp")) fs.writeFileSync(p.live.replace(/\.webp$/, "-s.webp"), buf);
+}
 var TRASH_DIR = path.join(DATA_DIR, "trash");
 function mediaPaths(url) {
   if (!/^\/uploads\/(\d{4}\/\d{2}\/)?[\w-]+\.\w+$/.test(url)) return null;
@@ -434,18 +440,23 @@ function mediaPaths(url) {
   return { live: path.join(UPLOADS, name), trash: path.join(TRASH_DIR, name) };
 }
 // Deleting an image moves the file to data/trash for 30 days; restoring moves it back
+// the photo and its -s copy move together
+var smallPath = function (f) { return f.replace(/\.webp$/, "-s.webp"); };
 function trashMedia(url) {
   var p = mediaPaths(url); if (!p || !fs.existsSync(p.live)) return;
   fs.mkdirSync(path.dirname(p.trash), { recursive: true }); fs.renameSync(p.live, p.trash);
+  if (/\.webp$/.test(p.live) && fs.existsSync(smallPath(p.live))) fs.renameSync(smallPath(p.live), smallPath(p.trash));
 }
 function restoreMedia(url) {
   var p = mediaPaths(url); if (!p || !fs.existsSync(p.trash)) return;
   fs.mkdirSync(path.dirname(p.live), { recursive: true }); fs.renameSync(p.trash, p.live);
+  if (/\.webp$/.test(p.trash) && fs.existsSync(smallPath(p.trash))) fs.renameSync(smallPath(p.trash), smallPath(p.live));
 }
 function deleteMedia(url, fromTrash) {
   var p = mediaPaths(url); if (!p) return;
   var file = fromTrash ? p.trash : p.live;
   if (fs.existsSync(file)) fs.unlinkSync(file);
+  if (/\.webp$/.test(file) && fs.existsSync(smallPath(file))) fs.unlinkSync(smallPath(file));
 }
 
 // ---------------------------------------------------------------------------
@@ -555,7 +566,7 @@ function nextEmail() {
 setInterval(function () { run({ method: "POST", path: "/api/internal/cart-reminders", internal: true, headers: {}, body: {}, query: {} }); }, +process.env.CART_SWEEP_MS || 60e3).unref();
 
 var core = Core.create({
-  now: Date.now, random: random, hashPassword: hashPassword, emit: emit, saveMedia: saveMedia, deleteMedia: deleteMedia, trashMedia: trashMedia, restoreMedia: restoreMedia,
+  now: Date.now, random: random, hashPassword: hashPassword, emit: emit, saveMedia: saveMedia, saveSmall: saveSmall, deleteMedia: deleteMedia, trashMedia: trashMedia, restoreMedia: restoreMedia,
   describeSettings: function (s) { s.payments.sslcommerz.serverReady = !!((SSLC_PASS || s.payments.sslcommerz.storePasswordSet) && (SSLC_ID || s.payments.sslcommerz.storeId)); s.payments.sslcommerz.envPassword = !!SSLC_PASS; s.payments.bkash.callbackUrl = PUBLIC_URL + "/api/payments/bkash/callback"; if (s.code) { s.code.capiStatus = capiStatus; s.code.gaStatus = gaStatus; s.code.catalogStatus = catalogStatus; } if (s.pathao) { s.pathao.lastSend = pathaoLast.send; s.pathao.lastWebhook = pathaoLast.webhook; s.pathao.webhookUrl = PUBLIC_URL + "/api/pathao/webhook"; } if (s.acore) { s.acore.lastSend = acoreLast.send; s.acore.lastWebhook = acoreLast.webhook; s.acore.webhookUrl = PUBLIC_URL + "/api/acore/webhook"; } },
   metaEvent: metaEvent, gaEvent: gaEvent, catalogSync: catalogSyncAll, acoreSend: acoreSend, pathao: true, sendEmail: sendEmail, publicUrl: PUBLIC_URL
 });
@@ -959,7 +970,7 @@ function serveStatic(req, res, p, search) {
   if (path.resolve(file).indexOf(inside + path.sep) !== 0) return text(res, 403, "Forbidden");
   fs.stat(file, function (err, st) {
     // A small copy of a site photo ("-s" / "-m") that doesn't exist yet: send the full photo instead
-    if ((err || !st.isFile()) && base === ROOT && /-[sm]\.webp$/i.test(file)) {
+    if ((err || !st.isFile()) && (base === ROOT ? /-[sm]\.webp$/i : /-s\.webp$/i).test(file)) {
       var full = file.replace(/-[sm]\.webp$/i, ".webp");
       return fs.stat(full, function (e2, st2) {
         if (e2 || !st2.isFile()) return text(res, 404, "Not found");
