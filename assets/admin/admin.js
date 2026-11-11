@@ -440,9 +440,20 @@
     $("#prodCsv").onclick = () => download(`ravari-products-${dashDays}d.csv`, csv([cols.map((c) => c[1]).concat(["SKU"])].concat(d.products.map((p) => [p.name, p.views, p.carts, p.orders, p.units, p.revenue, p.conversion, p.stock, p.sku]))));
   }
   // Pathao column: the parcel's live status, or a one-click Send button
+  // Pathao order (consignment) ID in its own column, next to Send to Pathao / status
+  function pathaoIdCell(o) {
+    const id = o.pathao && o.pathao.consignmentId;
+    return `<td class="nowrap">${id ? `<span class="mono">${esc(id)}</span> <button class="peek" type="button" data-copyid="${esc(id)}" title="Copy Pathao ID" aria-label="Copy Pathao ID ${esc(id)}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>` : `<span class="muted">—</span>`}</td>`;
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("[data-copyid]");
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    try { navigator.clipboard.writeText(b.dataset.copyid); toast("Copied " + b.dataset.copyid); } catch (_) { toast(b.dataset.copyid); }
+  }, true);
   function pathaoCell(o) {
     const pt = o.pathao;
-    if (pt) return `<td class="pt-cell"><span class="pill pill--pt${/deliver/.test(pt.status) && !/fail/.test(pt.status) ? " pill--pt-ok" : /return|fail|cancel/.test(pt.status) ? " pill--pt-bad" : ""}">${esc(String(pt.status || "sent").replace(/_/g, " "))}</span><br><small class="muted mono">${esc(pt.consignmentId)}</small>${o.trackingUrl ? ` · <a href="${esc(o.trackingUrl)}" target="_blank" rel="noopener" data-stop>Track</a>` : ""}</td>`;
+    if (pt) return `<td class="pt-cell"><span class="pill pill--pt${/deliver/.test(pt.status) && !/fail/.test(pt.status) ? " pill--pt-ok" : /return|fail|cancel/.test(pt.status) ? " pill--pt-bad" : ""}">${esc(String(pt.status || "sent").replace(/_/g, " "))}</span>${o.trackingUrl ? `<br><a class="small" href="${esc(o.trackingUrl)}" target="_blank" rel="noopener" data-stop>Track</a>` : ""}</td>`;
     if (o.status === "cancelled" || o.status === "returned" || o.status === "delivered") return `<td class="pt-cell"><span class="muted">—</span></td>`;
     return `<td class="pt-cell"><button class="btn btn--ghost btn--sm" type="button" data-pathao="${esc(o.id)}">Send to Pathao</button></td>`;
   }
@@ -450,13 +461,13 @@
   const withCourier = (o) => !!((o.pathao && o.pathao.consignmentId) || ["shipped", "delivered", "partial_return", "returned"].indexOf(o.status) > -1);
   const canDo = (o, s) => !withCourier(o) && (s === "hold" ? ["pending", "confirmed", "processing"].indexOf(o.status) > -1 : s === "cancelled" ? ["pending", "confirmed", "processing", "hold"].indexOf(o.status) > -1 : s === "confirmed" ? ["pending", "hold"].indexOf(o.status) > -1 : false);
   function rowActions(o) {
-    return [["confirmed", "Confirm"], ["hold", "Hold"], ["cancelled", "Cancel"]].filter((a) => canDo(o, a[0])).map((a) => `<button class="btn btn--ghost btn--sm" type="button" data-act="${a[0]}" data-num="${esc(o.number)}">${a[1]}</button>`).join(" ") || `<span class="muted">—</span>`;
+    return [["confirmed", "Confirm"], ["hold", "Hold"], ["cancelled", "Cancel"]].filter((a) => canDo(o, a[0])).map((a) => `<button class="btn btn--ghost btn--sm" type="button" data-act="${a[0]}" data-num="${esc(o.number)}">${a[1]}</button>`).join("").replace(/^(.+)$/, '<div class="row-acts">$1</div>') || `<span class="muted">—</span>`;
   }
   function ordersTable(list, courier) {
     if (!list.length) return `<p class="empty">No orders yet.</p>`;
-    return `<div class="table-wrap"><table class="t"><thead><tr>${courier ? `<th style="width:34px"><input type="checkbox" data-selall aria-label="Select all"></th>` : ""}<th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th>${courier ? "<th>Pathao</th>" : ""}<th class="right">Items</th><th class="right">Total</th>${courier ? `<th class="right">Actions</th>` : ""}</tr></thead><tbody>${list.map((o) => `
+    return `<div class="table-wrap"><table class="t${courier ? " t--tight" : ""}"><thead><tr>${courier ? `<th style="width:34px"><input type="checkbox" data-selall aria-label="Select all"></th>` : ""}<th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th>${courier ? "<th>Pathao</th><th>Pathao ID</th>" : ""}<th class="right">Items</th><th class="right">Total</th>${courier ? `<th class="right">Actions</th>` : ""}</tr></thead><tbody>${list.map((o) => `
       <tr class="is-link" data-href="#/orders/${esc(o.number)}">${courier ? `<td data-stop><input type="checkbox" data-sel="${esc(o.number)}" aria-label="Select ${esc(o.number)}"></td>` : ""}<td class="nowrap"><b>${esc(o.number)}</b> <button class="peek" type="button" data-peek="${esc(o.number)}" title="Quick view" aria-label="Quick view ${esc(o.number)}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></td><td class="nowrap">${dateTime(o.createdAt)}</td><td>${esc(o.customer.name)}<br><small class="muted">${esc(o.customer.phone)}</small></td>
-      <td>${pill(o.status)}</td><td>${pill(o.paymentStatus)}<br><small class="muted">${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</small></td>${courier ? pathaoCell(o) : ""}<td class="right num">${o.itemCount}</td><td class="right num"><b>${taka(o.total)}</b></td>${courier ? `<td class="right nowrap">${rowActions(o)}</td>` : ""}</tr>`).join("")}</tbody></table></div>`;
+      <td>${pill(o.status)}</td><td>${pill(o.paymentStatus)}<br><small class="muted">${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</small></td>${courier ? pathaoCell(o) + pathaoIdCell(o) : ""}<td class="right num">${o.itemCount}</td><td class="right num"><b>${taka(o.total)}</b></td>${courier ? `<td class="right">${rowActions(o)}</td>` : ""}</tr>`).join("")}</tbody></table></div>`;
   }
 
   // Quick view: the eye button next to an order number shows the customer, items and bill in a box, without leaving the list
@@ -805,6 +816,14 @@
     };
   }
 
+  // QR code as SVG (qrcode.js, MIT, Kazuhiko Arase)
+  function qr(text, px) {
+    if (!window.qrcode) return "";
+    const q = window.qrcode(0, "M"); q.addData(String(text)); q.make();
+    const n = q.getModuleCount(); let d = "";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + 2} ${r + 2}h1v1h-1z`;
+    return `<svg class="qr" viewBox="0 0 ${n + 4} ${n + 4}" width="${px}" height="${px}" shape-rendering="crispEdges" role="img" aria-label="QR ${esc(text)}"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  }
   // Code 128 (set B) barcode for order and parcel numbers, drawn as SVG
   function barcode(text, h) {
     const P = "212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131 211412 211214 211232 2331112".split(" ");
@@ -819,7 +838,7 @@
   function orderInvoiceHtml(o, st) {
     return `<div class="card inv-page" style="max-width:820px;padding:36px">
         <div class="flex flex--between" style="align-items:flex-start"><div><img src="assets/img/logo.webp" alt="Ravari" style="height:26px;width:auto"><p class="small muted">${esc(st.legalName || "")}<br>${esc(st.address || "")}<br>${esc(st.phone || "")} · ${esc(st.email || "")}${st.tradeLicense ? "<br>Trade license: " + esc(st.tradeLicense) : ""}${st.bin ? " · BIN: " + esc(st.bin) : ""}</p></div>
-          <div class="right"><h1 class="h1">Invoice</h1><p class="muted">${esc(o.number)}<br>${date(o.createdAt)}<br>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)} · ${esc(human(o.paymentStatus))}</p><div style="width:170px;margin-left:auto">${barcode(o.number, 34)}</div></div></div>
+          <div class="right"><h1 class="h1">Invoice</h1><p class="muted">${esc(o.number)}<br>${date(o.createdAt)}<br>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)} · ${esc(human(o.paymentStatus))}</p><div class="flex" style="justify-content:flex-end;align-items:center;gap:10px;margin-top:6px"><div style="width:150px">${barcode(o.number, 34)}</div>${qr((st.website || location.origin).replace(/\/$/, "") + "/order/" + o.number, 74)}</div><small class="muted">Scan to track ${esc(o.number)}</small></div></div>
         <div><p class="h3">Bill to</p><p style="margin:0">${esc(o.customer.name)}<br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p></div>
         <table class="t"><thead><tr><th>Item</th><th>SKU</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${o.items.map((it) => `<tr><td>${esc(it.name)}<br><small class="muted">${esc(optText(it.options))}</small>${kept(o, it) < it.qty ? `<br><small>Returned: ${it.qty - kept(o, it)}</small>` : ""}</td><td class="mono">${esc(it.sku)}</td><td class="right">${it.qty}</td><td class="right">${taka(it.price)}</td><td class="right">${taka(it.lineTotal)}</td></tr>`).join("")}</tbody></table>
         <div class="totals" style="margin-left:auto;width:min(300px,100%)"><div><span>Subtotal</span><span>${taka(o.subtotal)}</span></div>${o.discount ? `<div><span>Discount</span><span>−${taka(o.discount)}</span></div>` : ""}<div><span>Delivery</span><span>${taka(o.shipping)}</span></div><div class="grand"><span>Total</span><span>${taka(o.total)}</span></div>
@@ -834,7 +853,7 @@
     const qty = o.items.reduce((n, it) => n + it.qty, 0);
     return `<div class="slip inv-page">
       <div class="slip__top"><img src="assets/img/logo.webp" alt="Ravari"><div class="right"><b>${cid ? "Pathao" : "Courier"}</b><br><small>${date(o.createdAt)}</small></div></div>
-      <div class="slip__codes"><div><small>Order</small><b class="mono">${esc(o.number)}</b>${barcode(o.number, 46)}</div>${cid ? `<div><small>Consignment</small><b class="mono">${esc(cid)}</b>${barcode(cid, 46)}</div>` : ""}</div>
+      <div class="slip__codes"><div><small>Order</small><b class="mono">${esc(o.number)}</b>${barcode(o.number, 46)}</div>${cid ? `<div class="slip__pt"><div><small>Pathao ID</small><b class="mono">${esc(cid)}</b>${barcode(cid, 40)}</div>${qr(cid, 86)}</div>` : ""}</div>
       <div class="slip__to"><small>Deliver to</small><b class="slip__name">${esc(o.customer.name)}</b><b class="slip__phone">${esc(o.customer.phone)}</b>
         <p>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p>${o.shippingZone ? `<small>Area: ${esc(o.shippingZone.name)}</small>` : ""}</div>
       <div class="slip__cod"><span>${due ? "Collect cash" : "Paid · collect nothing"}</span><b>${taka(due)}</b></div>
