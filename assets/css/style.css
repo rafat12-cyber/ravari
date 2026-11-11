@@ -1784,3 +1784,14 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .card.no-img > .card__type { display: grid; }
 .card.is-out .card__img { filter: grayscale(.85); opacity: 1; }
 .card.is-out .card__img--alt { display: none; }
+/* Product page: name sits above the photos; then price, sizes, buttons; text lives in Product details */
+.pd__gallery > .pd__name { grid-column: 1 / -1; grid-row: 1; margin: 0 0 8px; font-family: var(--f-head); font-weight: 700; font-stretch: 100%; letter-spacing: .01em; font-size: clamp(26px, 3vw, 44px); }
+.pd__gallery > .pd__main { grid-row: 2; }
+.pd__gallery > .pd__thumbs { grid-row: 2; }
+.pd__info { padding-top: clamp(40px, 6vw, 92px); }
+.pd__info .pd__meta { margin: 0; }
+.acc .pd__about { margin: 0 0 14px; max-width: none; }
+@media (max-width: 960px) {
+  .pd__gallery > .pd__thumbs { grid-row: 3; }
+  .pd__info { padding-top: 0; }
+}

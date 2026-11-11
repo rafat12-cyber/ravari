@@ -953,6 +953,7 @@
     page.innerHTML =
       '<section class="pd">' +
         '<div class="pd__gallery">' +
+            '<h1 class="pd__name">' + esc(shortName(p)).replace(/Oversized/i, '<em class="alt" data-scramble>oversized</em>') + (p.color ? ' <span class="pd__color">' + esc(p.color) + "</span>" : "") + "</h1>" +
           '<div class="pd__main slat" data-fallback style="--tone:' + esc(p.hex || "#7b7e83") + '">' +
             (p.images[0] ? '<img id="pdMain" data-guard src="' + esc(p.images[0]) + '" alt="' + esc(p.name) + '" fetchpriority="high">' : "") +
             '<span class="card__type" aria-hidden="true">' + esc(p.line || p.name) + "<small>" + esc(p.color) + "</small></span>" +
@@ -966,11 +967,7 @@
           "</div>" +
         "</div>" +
         '<div class="pd__info">' +
-          '<p class="eyebrow">' + (cat ? crumbFor(cat) : '<a href="#shop">Shop</a>') + "</p>" +
-          '<h1 class="pd__name">' + esc(shortName(p)).replace(/Oversized/i, '<em class="alt" data-scramble>oversized</em>') + (p.color ? ' <span class="pd__color">' + esc(p.color) + "</span>" : "") + "</h1>" +
           '<p class="pd__price"><b id="pdPrice">' + taka(p.price) + "</b>" + (off ? "<s>" + taka(p.comparePrice) + '</s><span class="chip chip--sale">Save ' + taka(p.comparePrice - p.price) + "</span>" : "") + "</p>" +
-          '<p class="pd__meta mono"><span>SKU: <b id="pdSku">' + esc(p.sku) + '</b></span><span id="pdStock" class="stock"></span></p>' +
-          (p.description ? '<p class="pd__about">' + esc(p.description) + "</p>" : "") +
           p.attributes.map(function (a, ai) {
             var def = attrDefs[a.name] || {};
             var isSize = /size/i.test(a.name);
@@ -989,9 +986,11 @@
             '<button class="icon-btn icon-btn--line pd__save" type="button" data-save="' + p.id + '" aria-pressed="' + isSaved + '" aria-label="Save">' + heart(15) + "</button>" +
           "</div>" +
           '<button class="pill pill--dark pd__now" type="button" id="buyNow">Buy now · <span id="buyTotal">' + taka(p.price) + "</span></button>" +
+          '<p class="pd__meta mono"><span>SKU: <b id="pdSku">' + esc(p.sku) + '</b></span><span id="pdStock" class="stock"></span></p>' +
           '<ul class="pd__perks mono"><li>Cash on delivery</li><li>' + esc((ship.zones || []).map(function (z) { return z.name + " " + z.days; }).join(" · ")) + "</li><li>7-day exchange</li></ul>" +
           '<div class="acc">' +
-            (p.details.length ? '<details open><summary>Details &amp; fit</summary><ul class="ticks">' + p.details.map(function (d) { return "<li>" + esc(d) + "</li>"; }).join("") + "</ul></details>" : "") +
+            (p.description || p.details.length ? '<details open><summary>Product details</summary>' + (p.description ? '<p class="pd__about">' + esc(p.description) + "</p>" : "") +
+              (p.details.length ? '<ul class="ticks">' + p.details.map(function (d) { return "<li>" + esc(d) + "</li>"; }).join("") + "</ul>" : "") + "</details>" : "") +
             '<details><summary>Delivery</summary><p>' + (ship.zones || []).map(function (z) { return esc(z.name) + ": " + esc(z.days) + ", " + taka(z.fee); }).join("<br>") +
               (ship.processing ? "<br>" + esc(ship.processing) : "") + ' <a class="u" href="#delivery">Delivery policy</a></p></details>' +
             '<details><summary>Returns &amp; exchanges</summary><p>Exchange or return within 7 days of delivery, unworn with tags. <a class="u" href="#refund">Return &amp; refund policy</a></p></details>' +
