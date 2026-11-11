@@ -710,7 +710,7 @@ var server = http.createServer(function (req, res) {
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
   if (HTTPS_SITE) res.setHeader("Strict-Transport-Security", "max-age=31536000");
   try {
-    if (ADMIN_LOCK && (p === "/admin" || p === "/admin/") && !onSite(req)) { res.writeHead(301, { Location: PUBLIC_URL + "/admin" + u.search }); return res.end(); }
+    if (ADMIN_LOCK && (p === "/admin" || ADMIN_PAGE.test(p)) && !onSite(req)) { res.writeHead(301, { Location: PUBLIC_URL + p.replace(/\/+$/, "") + u.search }); return res.end(); }
     if (p.indexOf("/api/") === 0 || p === "/api") return api(req, res, u, p);
     return serveStatic(req, res, p, u.search);
   } catch (e) {
@@ -800,10 +800,12 @@ function versioned(html) {
 var ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; " +
   "img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' data: blob: https:; frame-src 'self' https://www.google.com https://maps.google.com; " +
   "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+// Admin pages have clean addresses (/admin/orders/RV1001); they all load the same admin app
+var ADMIN_PAGE = /^\/admin\/[a-z][\w.\/-]*$/;
 function serveAdmin(req, res) {
   fs.readFile(path.join(ROOT, "admin.html"), "utf8", function (err, html) {
     if (err) return text(res, 500, "Could not read the page.");
-    send(req, res, 200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Frame-Options": "DENY", "Content-Security-Policy": ADMIN_CSP }, versioned(html));
+    send(req, res, 200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Frame-Options": "DENY", "Content-Security-Policy": ADMIN_CSP }, versioned(html).replace("<head>", '<head>\n<base href="/">'));
   });
 }
 // Sends a reply, gzip-compressed when the browser accepts it (text files shrink by about 70%)
@@ -870,7 +872,7 @@ function serveStatic(req, res, p, search) {
   var file;
   if (p === "/index.html") { res.writeHead(301, { Location: "/" }); return res.end(); }
   else if (p === "/admin/") { res.writeHead(301, { Location: "/admin" }); return res.end(); }
-  else if (p === "/admin") return serveAdmin(req, res);
+  else if (p === "/admin" || ADMIN_PAGE.test(p)) return serveAdmin(req, res);
   else if (p === "/robots.txt") return send(req, res, 200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" }, Seo.robots(siteBase(req)));
   else if (p === "/sitemap.xml") return send(req, res, 200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" }, Seo.sitemap(db, siteBase(req)));
   // Product feeds for Meta Commerce Manager and Google Merchant Center (they fetch these on a schedule)

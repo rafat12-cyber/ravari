@@ -593,7 +593,7 @@
     };    if ($("#oDel")) $("#oDel").onclick = async () => {
       const live = !o.restocked && o.status !== "delivered";
       if (!(await confirmBox("Delete order " + o.number + "?", "It disappears from Orders and your sales numbers" + (live ? ", and its items go back into stock" : "") + ". It stays in Trash for 30 days, so you can restore it.", "Delete order", true))) return;
-      try { await api("DELETE", "/api/orders/" + o.id); toast("Order moved to Trash"); refreshCounts(); location.hash = "#/orders"; } catch (err) { fail(err); }
+      try { await api("DELETE", "/api/orders/" + o.id); toast("Order moved to Trash"); refreshCounts(); go("orders"); } catch (err) { fail(err); }
     };
   }
 
@@ -755,7 +755,7 @@
       const b = e.target.closest("[data-dup]");
       if (!b) return;
       e.stopPropagation();
-      try { const r = await api("POST", "/api/products/" + b.dataset.dup + "/duplicate"); toast("Duplicated as a draft"); location.hash = "#/products/" + r.product.id; } catch (err) { fail(err); }
+      try { const r = await api("POST", "/api/products/" + b.dataset.dup + "/duplicate"); toast("Duplicated as a draft"); go("products/" + r.product.id); } catch (err) { fail(err); }
     });
     $("#prdCsv").onclick = () => {
       const rows = [["Product", "SKU", "Variant SKU", "Options", "Price", "Compare at", "Stock", "Status", "Slug"]];
@@ -941,16 +941,16 @@
         const r = isNew ? await api("POST", "/api/products", body) : await api("PUT", "/api/products/" + p.id, body);
         toast(isNew ? "Product created" : "Product saved");
         store = null;
-        if (isNew) location.hash = "#/products/" + r.product.id; else viewProduct(p.id);
+        if (isNew) go("products/" + r.product.id); else viewProduct(p.id);
       } catch (err) { fail(err); busy(btn, false); }
     };
     if (!isNew) {
       $("#pDel").onclick = async () => {
         if (!(await confirmBox("Delete " + p.name + "?", "It's removed from the store and kept in Trash for 30 days, so you can restore it. Past orders keep their details.", "Move to Trash", true))) return;
-        try { await api("DELETE", "/api/products/" + p.id); store = null; toast("Moved to Trash"); location.hash = "#/products"; } catch (err) { fail(err); }
+        try { await api("DELETE", "/api/products/" + p.id); store = null; toast("Moved to Trash"); go("products"); } catch (err) { fail(err); }
       };
       $("#pDup").onclick = async () => {
-        try { const r = await api("POST", "/api/products/" + p.id + "/duplicate"); store = null; toast("Duplicated as a draft"); location.hash = "#/products/" + r.product.id; } catch (err) { fail(err); }
+        try { const r = await api("POST", "/api/products/" + p.id + "/duplicate"); store = null; toast("Duplicated as a draft"); go("products/" + r.product.id); } catch (err) { fail(err); }
       };
     }
   }
@@ -1802,7 +1802,7 @@
       if (hadUnread) refreshCounts(); // the side menu badge only changes when unread messages were just read
     };
     $("#chTabs").onclick = (e) => { const b = e.target.closest("[data-s]"); if (!b) return; status = b.dataset.s; $$("#chTabs .tab").forEach((x) => x.classList.toggle("is-on", x === b)); loadList(); };
-    $("#chList").onclick = (e) => { const b = e.target.closest("[data-id]"); if (!b) return; current = b.dataset.id; history.replaceState(null, "", "#/chat/" + current); loadList(); loadConv(); };
+    $("#chList").onclick = (e) => { const b = e.target.closest("[data-id]"); if (!b) return; current = b.dataset.id; history.replaceState(null, "", PATHS ? "/admin/chat/" + current : "#/chat/" + current); loadList(); loadConv(); };
     await loadList();
     if (!current && list[0]) current = list[0].id;
     loadConv();
@@ -2756,7 +2756,7 @@
   async function viewIntegrations() {
     setTitle("Integrations");
     const [k, w, lg] = await Promise.all([api("GET", "/api/keys"), api("GET", "/api/webhooks"), api("GET", "/api/webhooks-log")]).catch((err) => { fail(err); return [{ keys: [] }, { webhooks: [], events: [] }, { log: [] }]; });
-    const base = window.Ravari.mode === "demo" ? "https://your-domain.com" : location.origin + location.pathname.replace(/admin(\.html)?\/?$/, "").replace(/\/$/, "");
+    const base = window.Ravari.mode === "demo" ? "https://your-domain.com" : location.origin + (PATHS ? "" : location.pathname.replace(/admin(\.html)?\/?$/, "").replace(/\/$/, ""));
     view.innerHTML = `<div class="head"><div><h1 class="h1">Integrations</h1><p class="muted">Connect other software to your store: AI chat replies, courier and accounting tools, Google Sheets, Zapier or your own apps.</p></div><a class="btn btn--ghost" href="docs/API.md" target="_blank" rel="noopener">Full API guide ↗</a></div>
       ${window.Ravari.mode === "demo" ? `<div class="demo-hint">This is the browser demo. Keys and webhooks you make here only work once the store runs on your Node server.</div>` : ""}
       <div class="card"><div class="card__head"><div><h2 class="h2">API keys</h2><p class="muted small" style="margin:0">Send a key as <span class="code">Authorization: Bearer rk_…</span>. Read keys can only look; write keys can also change orders, stock, products and reply to chats.</p></div><button class="btn btn--dark btn--sm" id="kAdd">Create key</button></div>
@@ -2812,7 +2812,7 @@
       const t = e.target;
       const rv = t.closest("[data-revoke]"), te = t.closest("[data-test]"), he = t.closest("[data-hedit]"), hd = t.closest("[data-hdel]");
       if (rv && (await confirmBox("Revoke this key?", "Apps using it stop working right away.", "Revoke", true))) { await api("DELETE", "/api/keys/" + rv.dataset.revoke).catch(fail); viewIntegrations(); }
-      if (te) { await api("POST", "/api/webhooks/" + te.dataset.test + "/test").then(() => toast("Test sent. Check Recent deliveries in a moment."), fail); setTimeout(() => { if (location.hash === "#/integrations") viewIntegrations(); }, 2500); }
+      if (te) { await api("POST", "/api/webhooks/" + te.dataset.test + "/test").then(() => toast("Test sent. Check Recent deliveries in a moment."), fail); setTimeout(() => { if (cur() === "integrations") viewIntegrations(); }, 2500); }
       if (he) hookForm(w.webhooks.find((x) => x.id === he.dataset.hedit));
       if (hd && (await confirmBox("Delete this webhook?", "We'll stop sending events to it.", "Delete", true))) { await api("DELETE", "/api/webhooks/" + hd.dataset.hdel).catch(fail); viewIntegrations(); }
       if (t.closest("[data-reveal]")) { const s = t.parentElement.querySelector("[data-secret]"); s.textContent = s.dataset.secret; t.remove(); }
@@ -2850,11 +2850,11 @@
   ];
   const counts = { orders: 0, chat: 0, messages: 0, franchise: 0, carts: 0 };
   function drawSide() {
-    const cur = (location.hash.replace(/^#\/?/, "").split(/[/?]/)[0]) || "dashboard";
+    const curPage = (cur().split(/[/?]/)[0]) || "dashboard";
     $("#sideNav").innerHTML = NAV.map(([g, items]) => {
       const vis = items.filter((i) => can(i[2]));
       if (!vis.length) return "";
-      return (g ? `<p class="side__group mono">${g}</p>` : "") + vis.map(([k, l]) => `<a href="#/${k}"${k === cur ? ' aria-current="page"' : ""}><span>${l}</span>${counts[k] ? `<span class="side__count">${counts[k]}</span>` : ""}</a>`).join("");
+      return (g ? `<p class="side__group mono">${g}</p>` : "") + vis.map(([k, l]) => `<a href="#/${k}"${k === curPage ? ' aria-current="page"' : ""}><span>${l}</span>${counts[k] ? `<span class="side__count">${counts[k]}</span>` : ""}</a>`).join("");
     }).join("");
     $("#sideUser").innerHTML = `${esc(me.name)}<small>${esc(me.email)}</small>`;
   }
@@ -2874,6 +2874,15 @@
     // Admin views need drafts and every category too.
     return store;
   }
+  // Clean admin addresses (/admin/orders/RV1001) on the live server; the browser demo keeps #/ links
+  const PATHS = /^\/admin(\/|$)/.test(location.pathname);
+  function cur() { return PATHS ? location.pathname.replace(/^\/admin\/?/, "") + (location.search ? "?" + location.search.slice(1) : "") : location.hash.replace(/^#\/?/, ""); }
+  function go(r, replace) {
+    r = String(r || "").replace(/^#\/?/, "").replace(/^\/admin\/?/, "");
+    if (!PATHS) { if (replace) location.replace("#/" + r); else location.hash = "#/" + r; return; }
+    history[replace ? "replaceState" : "pushState"](null, "", "/admin/" + r);
+    route();
+  }
   function setTitle(t) { $("#topTitle").textContent = t; document.title = t + " · Ravari admin"; }
   function notFound() { view.innerHTML = `<p class="empty">That page doesn't exist. <a href="#/dashboard">Go to the dashboard</a></p>`; }
 
@@ -2889,17 +2898,17 @@
     [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"], [/^pathao$/, viewPathao, "settings"],
     [/^account$/, viewAccount, null]
   ];
-  let leaveGuard = null, cleanup = null, lastHash = location.hash;
+  let leaveGuard = null, cleanup = null, lastHash = location.href;
   function route() {
     if (!me) return;
-    if (leaveGuard && !leaveGuard()) { history.replaceState(null, "", lastHash); return; }
+    if (leaveGuard && !leaveGuard()) { history.pushState(null, "", lastHash); return; }
     leaveGuard = null;
     if (cleanup) { cleanup(); cleanup = null; }
     if (!$("#modal").hidden) closeModal();
-    lastHash = location.hash;
-    const raw = location.hash.replace(/^#\/?/, ""), path = raw.split("?")[0], query = raw.split("?")[1] || "";
+    lastHash = location.href;
+    const raw = cur(), path = raw.split("?")[0], query = raw.split("?")[1] || "";
     const first = NAV.flatMap((g) => g[1]).find((i) => can(i[2]));
-    if (!path) { location.replace("#/" + (first ? first[0] : "account")); return; }
+    if (!path) { go(first ? first[0] : "account", true); return; }
     drawSide();
     $("#side").classList.remove("is-open"); $("#sideScrim").hidden = true;
     view.onclick = null;
@@ -2917,11 +2926,24 @@
     }
     notFound();
   }
-  window.addEventListener("hashchange", route);
+  window.addEventListener("hashchange", () => { if (PATHS && /^#\//.test(location.hash)) return go(location.hash, true); route(); });
+  window.addEventListener("popstate", () => { if (PATHS) route(); });
+  if (PATHS && /^#\//.test(location.hash)) history.replaceState(null, "", "/admin/" + location.hash.replace(/^#\/?/, ""));
+  // Links written as #/page work as /admin/page: shown that way, and opened without reloading
+  if (PATHS) {
+    const fix = (root) => { (root.querySelectorAll ? root : document).querySelectorAll('a[href^="#/"]').forEach((a) => { a.setAttribute("href", "/admin/" + a.getAttribute("href").slice(2)); }); };
+    fix(document);
+    new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (n.matches && n.matches('a[href^="#/"]')) n.setAttribute("href", "/admin/" + n.getAttribute("href").slice(2)); fix(n); } }))).observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest && e.target.closest('a[href^="/admin/"], a[href^="#/"]');
+      if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === "_blank") return;
+      e.preventDefault(); go(a.getAttribute("href"));
+    });
+  }
   // Rows with data-href act as links
   document.addEventListener("click", (e) => {
     const r = e.target.closest("tr[data-href]");
-    if (r && !e.target.closest("a, button, input, select")) location.hash = r.dataset.href;
+    if (r && !e.target.closest("a, button, input, select")) go(r.dataset.href);
   });
 
   function showLogin(msg) {

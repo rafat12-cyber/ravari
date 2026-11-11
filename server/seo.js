@@ -296,6 +296,12 @@ function render(html, head) {
       .replace(/(<figure class="hero__model">\s*<img )([^>]*?)fetchpriority="high"/, '$1$2loading="lazy"')
       .replace('<main id="page" class="page"></main>', '<main id="page" class="page"><section class="ssr">' + head.body + "</section></main>");
   }
+  // Links in the page itself are written as #category/jacket for the browser demo; search engines skip
+  // anything after #, so give them the real addresses (/product-category/jacket, /shop) they can follow
+  html = html.replace(/href="#(category\/[\w-]+|shop|new-in|on-sale|about|contact|track-order|store-locations|franchise|home)"/g, function (m, r) {
+    if (r === "home") return 'href="/"';
+    return 'href="/' + (r.indexOf("category/") === 0 ? "product-category/" + r.slice(9) : r) + '"';
+  });
   return html
     .replace(/<meta charset="utf-8">/i, '<meta charset="utf-8">\n<base href="/">')
     .replace(/<title>[\s\S]*?<\/title>/i, "<title>" + esc(head.title) + "</title>")
@@ -306,17 +312,24 @@ function render(html, head) {
 function sitemap(db, base) {
   var day = function (t) { return new Date(t || Date.now()).toISOString().slice(0, 10); };
   var newest = published(db).reduce(function (m, p) { return Math.max(m, p.updatedAt || p.createdAt || 0); }, 0);
-  var urls = [{ loc: base + "/", mod: newest, pri: "1.0" }];
-  ["shop", "new-in", "on-sale"].forEach(function (k) { urls.push({ loc: base + "/" + k, mod: newest, pri: "0.8" }); });
-  (db.categories || []).forEach(function (c) { if (productsIn(db, c).length) urls.push({ loc: catUrl(base, c), mod: newest, pri: "0.8" }); });
+  var urls = [{ loc: base + "/", mod: newest, pri: "1.0", freq: "daily" }];
+  // Category pages come first and rank highest: they are the pages people search for ("men's winter jacket")
+  // Leaf categories (Jacket, Denim Pant) before the broad parents (Men, Winter Collection)
+  var cats = (db.categories || []).filter(function (c) { return productsIn(db, c).length; });
+  var isParent = function (c) { return cats.some(function (x) { return x.parentId === c.id; }); };
+  cats.slice().sort(function (a, b) { return (isParent(a) ? 1 : 0) - (isParent(b) ? 1 : 0); }).forEach(function (c) {
+    var mod = productsIn(db, c).reduce(function (m, p) { return Math.max(m, p.updatedAt || p.createdAt || 0); }, c.updatedAt || 0);
+    urls.push({ loc: catUrl(base, c), mod: mod || newest, pri: isParent(c) ? "0.9" : "0.95", freq: "daily" });
+  });
+  ["shop", "new-in", "on-sale"].forEach(function (k) { urls.push({ loc: base + "/" + k, mod: newest, pri: "0.7", freq: "daily" }); });
   published(db).forEach(function (p) {
-    urls.push({ loc: productUrl(base, p), mod: p.updatedAt || p.createdAt, pri: "0.9", images: (p.images || []).slice(0, 4).map(function (i) { return abs(base, i); }).filter(Boolean) });
+    urls.push({ loc: productUrl(base, p), mod: p.updatedAt || p.createdAt, pri: "0.8", freq: "weekly", images: (p.images || []).slice(0, 4).map(function (i) { return abs(base, i); }).filter(Boolean) });
   });
   ["about", "contact", "store-locations", "franchise"].forEach(function (k) { urls.push({ loc: base + "/" + k, pri: "0.5" }); });
   Object.keys(POLICIES).forEach(function (k) { if ((db.pages || {})[k]) urls.push({ loc: base + "/" + k, pri: "0.3" }); });
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
     urls.map(function (u) {
-      return "<url><loc>" + esc(u.loc) + "</loc>" + (u.mod ? "<lastmod>" + day(u.mod) + "</lastmod>" : "") + "<priority>" + u.pri + "</priority>" +
+      return "<url><loc>" + esc(u.loc) + "</loc>" + (u.mod ? "<lastmod>" + day(u.mod) + "</lastmod>" : "") + (u.freq ? "<changefreq>" + u.freq + "</changefreq>" : "") + "<priority>" + u.pri + "</priority>" +
         (u.images || []).map(function (i) { return "<image:image><image:loc>" + esc(i) + "</image:loc></image:image>"; }).join("") + "</url>";
     }).join("\n") + "\n</urlset>\n";
 }
