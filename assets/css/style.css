@@ -1779,3 +1779,8 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .hero--photo .nav__sub a { color: var(--ink); }
 .hero--photo .nav__sub a:hover { background: rgba(27,27,29,.07); color: var(--red); }
 @media (min-width: 961px) { .hero--photo .hero__panel { grid-template-rows: auto 1fr; } .hero--photo .nav { grid-row: 1; align-self: start; } .hero--photo .hero__copy { grid-row: 2; } }
+/* The typographic fallback only shows when a photo fails; sold-out photos stay solid, just greyed */
+.card > .card__img ~ .card__type { display: none; }
+.card.no-img > .card__type { display: grid; }
+.card.is-out .card__img { filter: grayscale(.85); opacity: 1; }
+.card.is-out .card__img--alt { display: none; }

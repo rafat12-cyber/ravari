@@ -44,6 +44,8 @@
   var variantOf = function (p, id) { return p.variants.filter(function (v) { return v.id === id; })[0] || null; };
   var optText = function (o) { return Object.keys(o || {}).map(function (k) { return k + " " + o[k]; }).join(" · "); };
   var soldOut = function (p) { return p.trackStock && p.stock === 0; };
+  // In-stock pieces first, sold-out ones at the end
+  var stockFirst = function (list) { return list.filter(function (p) { return !soldOut(p); }).concat(list.filter(soldOut)); };
 
   // ---------------------------------------------------------------------------
   // Shared pieces
@@ -437,15 +439,15 @@
     if (!slugs.length || slugs.indexOf("top-selling") > -1 || slugs.indexOf("all") > -1) {
       // Top selling: featured pieces first, then new arrivals, then the rest
       var rank = function (p) { return (p.featured ? 0 : 2) + (p.isNew ? 0 : 1); };
-      return S.products.slice().sort(function (a, b) { return rank(a) - rank(b); });
+      return S.products.filter(function (p) { return !soldOut(p); }).sort(function (a, b) { return rank(a) - rank(b); });
     }
     var out = [];
     slugs.forEach(function (sl) {
       var c = CAT_BY_SLUG[sl];
       if (c) productsIn(c).forEach(function (p) { if (out.indexOf(p) < 0) out.push(p); });
     });
-    // featured and new pieces lead within a category too
-    return out.sort(function (a, b) { return (b.featured ? 2 : 0) + (b.isNew ? 1 : 0) - (a.featured ? 2 : 0) - (a.isNew ? 1 : 0); });
+    // featured and new pieces lead within a category too; the home page never shows sold-out pieces
+    return out.filter(function (p) { return !soldOut(p); }).sort(function (a, b) { return (b.featured ? 2 : 0) + (b.isNew ? 1 : 0) - (a.featured ? 2 : 0) - (a.isNew ? 1 : 0); });
   }
   function drawArrivals(i) {
     var t = HOME_TABS[i], list = t ? tabProducts(t).slice(0, 8) : [];
@@ -821,7 +823,7 @@
       if (state.sort === "new") list.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
       if (state.sort === "featured") list.sort(function (a, b) { return a.order - b.order; });
       // Sold-out products always go to the end, whatever the sort
-      list = list.filter(function (p) { return !soldOut(p); }).concat(list.filter(soldOut));
+      list = stockFirst(list);
       $("#shopGrid").innerHTML = list.map(function (p, i) { return card(p, i, true); }).join("");
       $("#count").textContent = list.length + (list.length === 1 ? " product" : " products");
       $("#shopEmpty").hidden = list.length > 0;
@@ -870,7 +872,7 @@
     if (collections.length >= 3 && collections.length === kids.length) {
       head(crumbFor(cat), accent(cat.name), esc(cat.description || ""));
       page.innerHTML = '<section class="house house--page"><div class="house__grid">' + collections.map(collectionCard).join("") + "</div></section>" +
-        (list.length ? '<section class="related"><div class="section-head"><p class="eyebrow">Shop the House</p><h2 class="h2">All <em class="alt" data-scramble>pieces</em></h2></div><div class="grid">' + grid(list) + "</div></section>" : shopNow("While you wait", 'Shop the <em class="alt" data-scramble>summer</em> tees'));
+        (list.length ? '<section class="related"><div class="section-head"><p class="eyebrow">' + esc(cat.name) + '</p><h2 class="h2">All <em class="alt">pieces</em></h2></div><div class="grid">' + grid(stockFirst(list)) + "</div></section>" : shopNow("While you wait", 'New <em class="alt">arrivals</em>'));
       return;
     }
     if (!list.length) return viewSoon(cat);
@@ -892,7 +894,8 @@
       '<p class="notify__ok mono" hidden>You\'re on the list. We\'ll email you when it drops.</p>';
   }
   function shopNow(eyebrow, title) {
-    var list = S.products.filter(function (p) { return p.featured; }).concat(S.products.filter(function (p) { return !p.featured && p.isNew; })).slice(0, 4);
+    var inStock = S.products.filter(function (p) { return !soldOut(p); });
+    var list = inStock.filter(function (p) { return p.featured; }).concat(inStock.filter(function (p) { return !p.featured && p.isNew; })).slice(0, 4);
     return '<section class="related"><div class="section-head"><p class="eyebrow">' + eyebrow + '</p><h2 class="h2">' + title + "</h2>" +
       '<a class="eyebrow eyebrow--link" href="#shop">All products →</a></div><div class="grid">' + grid(list) + "</div></section>";
   }
