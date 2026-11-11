@@ -170,7 +170,7 @@
       ],
       freeOver: 0, processing: "Orders are confirmed by phone and packed within 24 hours."
     },
-    payments: { cod: true, sslcommerz: { enabled: true, sandbox: true, storeId: "" } },
+    payments: { cod: true, sslcommerz: { enabled: true, sandbox: false, storeId: "ravaribd0live" } },
     chat: { enabled: true, title: "Ravari", greeting: "Hi! Ask us anything about sizes, delivery or your order.",
       autoReply: true, autoReplyText: "Thanks for your message. We usually reply within a few minutes during store hours." },
     lowStock: 5,
