@@ -1855,3 +1855,16 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
   .cold__note { left: auto; right: 5%; top: 48px; text-align: right; max-width: 260px; }
 }
 .cold__h--bottom { color: #fff; -webkit-text-stroke: 0; }
+
+/* Hero: "winter" upright, note under the title, bigger title (Rafat, 2026-11-11) */
+.hero--photo .display .alt { font-style: normal; }
+@media (min-width: 961px) { .hero--photo .display { font-size: clamp(48px, 5.8vw, 92px); } }
+@media (max-width: 960px) { .hero--photo .display { font-size: clamp(42px, 12.5vw, 62px); } }
+.hero--photo .hero__copy .display + .hero__note { margin-top: 4px; }
+
+/* Hero photo edge to edge: no side margin, no rounded corners (Rafat, 2026-11-11) */
+.hero.hero--photo { padding: 0; }
+.hero--photo .hero__panel { border-radius: 0; }
+.hero--photo .hero__copy .hero__note { order: 0; }
+.hero--photo .display .line, .hero--photo .display .line > span { white-space: nowrap; }
+@media (min-width: 961px) { .hero--photo .hero__copy { max-width: none; } }

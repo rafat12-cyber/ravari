@@ -1371,7 +1371,7 @@
   // Pages: visual editor (live preview in an iframe of the store)
   // ---------------------------------------------------------------------------
   const PAGES = {
-    home: { title: "Home page", route: "home", sections: { hero: "Hero", tryLook: "Try the look", arrivals: "New arrivals", house: "Ticker + 3 cards", tiles: "Category tiles", poster: "Winter poster", insta: "Instagram row", categories: "Shop by category", footer: "Footer" } },
+    home: { title: "Home page", route: "home", sections: { hero: "Hero", arrivals: "New arrivals", tryLook: "Try the look", house: "Ticker + 3 cards", tiles: "Category tiles", poster: "Winter poster", insta: "Instagram row", categories: "Shop by category", footer: "Footer" } },
     about: { title: "About us", route: "about" },
     contact: { title: "Contact us", route: "contact" },
     stores: { title: "Store locations", route: "store-locations" },

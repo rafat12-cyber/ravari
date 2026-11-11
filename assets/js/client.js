@@ -9,7 +9,7 @@
     var s = document.currentScript && document.currentScript.src;
     return s ? s.replace(/assets\/js\/client\.js.*$/, "") : "";
   })();
-  var DB_KEY = "ravari:demo-db:v46";
+  var DB_KEY = "ravari:demo-db:v47";
   var DEMO_LOGIN = { email: "admin@ravaribd.com", password: "ravari-demo" };
 
   // The server stamps the current asset version on the page (cache busting); the demo uses the fixed one
