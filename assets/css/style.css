@@ -1951,3 +1951,6 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 
 /* Footer in the theme dark grey, same as the hero wall (Rafat, 2026-11-11) */
 .footer { background: #2b2c30; }
+/* Big winter line: flat see-through grey like frosted glass, thin light edge, no gradient (Rafat) */
+.wbig__track { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: rgba(110,113,119,.38); -webkit-text-fill-color: rgba(110,113,119,.38); -webkit-text-stroke: 1px rgba(255,255,255,.7); }
+.wbig__track i { -webkit-text-fill-color: rgba(110,113,119,.38); }
