@@ -1938,3 +1938,4 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .wbig { font-size: clamp(64px, 11vw, 190px); margin-bottom: -.28em; }
 .wbig__track { font-size: 1em; }
 @media (max-width: 960px) { .wbig { font-size: 64px; margin-bottom: -.25em; } .wbig__track { font-size: 1em; } }
+.wbig__track { opacity: .5; }
