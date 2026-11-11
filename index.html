@@ -22,7 +22,7 @@
 </style>
 <link rel="preload" as="image" href="assets/img/home/r-hero-sofa-m.webp" media="(max-width: 960px)" fetchpriority="high">
 <link rel="preload" as="image" href="assets/img/home/r-hero-sofa.webp" media="(min-width: 961px)" fetchpriority="high">
-<link rel="stylesheet" href="assets/css/style.css?v=1330">
+<link rel="stylesheet" href="assets/css/style.css?v=1340">
 <script>document.documentElement.classList.add("js");try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!/[?&](preview|edit)\b/.test(location.search))document.documentElement.classList.add("js-intro")}catch(e){}</script>
 </head>
 <body>
@@ -55,23 +55,7 @@
 
 <main id="main">
 
-<!-- 2. NEW ARRIVALS ------------------------------------------------------ -->
-<section class="arrivals" id="arrivals">
-  <div class="arrivals__head">
-    <h2 class="h2 rise"><span data-c="arrivals.titleStart">New</span> <em class="alt" data-c="arrivals.accent">arrivals</em> <span data-c="arrivals.titleEnd"></span></h2>
-    <a class="pill pill--line pill--sm" href="#shop">Shop all</a>
-  </div>
-
-  <div class="filters" id="homeFilters" role="tablist" aria-label="Shop by category"></div>
-
-  <div class="grid" id="grid"></div>
-
-  <div class="center">
-    <a class="pill pill--dark" href="#shop">See all products</a>
-  </div>
-</section>
-
-<!-- 3. TRY THE LOOK: models in full outfits, the pieces of the one in focus -->
+<!-- 2. TRY THE LOOK: models in full outfits, the pieces of the one in focus -->
 <section class="tl" id="try" aria-label="Try the look">
   <div class="tl__stage" id="tlStage">
     <div class="tl__head">
@@ -99,6 +83,22 @@
   </aside>
 </section>
 
+<!-- 3. NEW ARRIVALS ------------------------------------------------------ -->
+<section class="arrivals" id="arrivals">
+  <div class="arrivals__head">
+    <h2 class="h2 rise"><span data-c="arrivals.titleStart">New</span> <em class="alt" data-c="arrivals.accent">arrivals</em> <span data-c="arrivals.titleEnd"></span></h2>
+    <a class="pill pill--line pill--sm" href="#shop">Shop all</a>
+  </div>
+
+  <div class="filters" id="homeFilters" role="tablist" aria-label="Shop by category"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="center">
+    <a class="pill pill--dark" href="#shop">See all products</a>
+  </div>
+</section>
+
 <!-- 4. TICKER + THREE CARDS: a moving strip, then Jacket, Winter 26/27 and Sweat Shirt -->
 <div class="ticker" aria-hidden="true"><div class="ticker__track"><span data-c="house.ticker">New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ </span><span data-c="house.ticker">New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ </span></div></div>
 
@@ -122,7 +122,7 @@
   <div class="cold__stage">
     <p class="eyebrow cold__kicker" data-c="poster.kicker">Winter collection 2026</p>
     <h2 class="cold__h cold__h--top" data-c="poster.title">When the cold<br>hits, layer up.</h2>
-    <img class="cold__bg" src="assets/img/home/r-poster-bg.webp" srcset="assets/img/home/r-poster-bg-m.webp 800w, assets/img/home/r-poster-bg.webp 1600w" sizes="100vw" width="1600" height="2400" alt="Model in a blue check jacket" loading="lazy" decoding="async" data-ci="poster.image" data-calt="poster.imageAlt">
+    <picture><source media="(max-width: 960px)" srcset="assets/img/home/r-poster-bg-m.webp" width="900" height="1600"><img class="cold__bg" src="assets/img/home/r-poster-bg.webp" width="2400" height="1600" alt="Two models in grey and black check jackets" loading="lazy" decoding="async" data-ci="poster.image" data-calt="poster.imageAlt"></picture>
     <svg class="spin" viewBox="0 0 200 200" aria-hidden="true"><defs><path id="spinPath" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0"/></defs><circle cx="100" cy="100" r="98" /><text><textPath href="#spinPath">CASH ON DELIVERY ✱ ALL OVER BANGLADESH ✱ </textPath></text><text class="spin__mid" x="100" y="114" text-anchor="middle">✱</text></svg>
     <p class="cold__note" data-c="poster.marqueeTop">Made in Dhaka. Cut for the cooler months: suede, denim and corduroy you can wear all season.</p>
     <a class="cold__cta" href="#category/winter-collection" data-chref="poster.ctaLink"><span><small data-c="poster.cta">Shop winter</small><b data-c="poster.price">From ৳1,299</b></span></a>
@@ -269,7 +269,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/client.js?v=1330"></script>
-<script src="assets/js/store.js?v=1330"></script>
+<script src="assets/js/client.js?v=1340"></script>
+<script src="assets/js/store.js?v=1340"></script>
 </body>
 </html>
