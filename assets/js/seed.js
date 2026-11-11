@@ -160,7 +160,7 @@
       tradeLicense: "TRAD/DNCC/XXXXXX/2026", tin: "XXXXXXXXXXXX", dbid: "XXXXXXXXXX", bin: "", website: "https://ravaribd.com"
     },
     social: { facebook: "https://www.facebook.com/share/1DGsytccNU/", instagram: "https://www.instagram.com/ravari_bd", tiktok: "", youtube: "" },
-    seo: { title: "Ravari – A Life Style Brand", description: "Premium casual shirts, denim shirts and panjabis for men from Dhaka. Bold, edge & classy. Cash on delivery all over Bangladesh." },
+    seo: { title: "Ravari – Men's Winter Jackets, Shirts & Panjabis in Bangladesh", description: "Shop Ravari Winter 26/27: velvet and check jackets, sweatshirts, shirts and panjabis for men from Dhaka. Bold, edge & classy. Cash on delivery all over Bangladesh." },
     shipping: {
       zones: [
         { id: "inside-dhaka", name: "Inside Dhaka", fee: 70, days: "1–3 days" },

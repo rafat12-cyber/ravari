@@ -175,6 +175,7 @@ function resolve(db, base, pathname) {
     out.canonical = productUrl(base, pr);
     out.image = abs(base, (pr.images || [])[0]) || out.image;
     out.imageAlt = pr.name;
+    out.preload = (pr.images || [])[0] || "";
     out.type = "product";
     out.extra = [["product:price:amount", String(pr.price)], ["product:price:currency", "BDT"], ["product:availability", inStock(pr) ? "in stock" : "out of stock"],
       ["product:condition", "new"], ["product:brand", name], ["product:retailer_item_id", pr.sku]];
@@ -199,6 +200,7 @@ function resolve(db, base, pathname) {
     out.canonical = catUrl(base, c);
     out.image = abs(base, c.image || (list[0] && list[0].images[0])) || out.image;
     out.imageAlt = c.name;
+    out.preload = list[0] && list[0].images && list[0].images[0] ? list[0].images[0].replace(/\.webp$/, "-s.webp") : "";
     out.ld.push(breadcrumbs(crumbs2), itemList(base, list));
     out.body = crumbHtml(crumbs2) + "<h1>" + esc(c.name) + "</h1>" + (c.description ? "<p>" + esc(c.description) + "</p>" : "") + listHtml(list) +
       (c.seoText ? c.seoText.split(/\n{2,}/).map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("") : "");
@@ -288,7 +290,8 @@ function render(html, head) {
     // The store's JavaScript draws the full page over it a moment later.
     html = html.replace('<div data-view="home" data-page="home">', '<div data-view="home" data-page="home" hidden>')
       .replace('<div data-view="page" hidden>', '<div data-view="page">')
-      .replace(/<link rel="preload" as="image"[^>]*>\n?/, "")
+      .replace(/<link rel="preload" as="image"[^>]*>\n?/g, "")
+      .replace("</title>", "</title>" + (head.preload ? '\n<link rel="preload" as="image" href="/' + esc(head.preload.replace(/^\/+/, "")) + '" fetchpriority="high">' : ""))
       // the home page's hero photo is hidden on this page: don't download it
       .replace(/(<figure class="hero__model">\s*<img )([^>]*?)fetchpriority="high"/, '$1$2loading="lazy"')
       .replace('<main id="page" class="page"></main>', '<main id="page" class="page"><section class="ssr">' + head.body + "</section></main>");

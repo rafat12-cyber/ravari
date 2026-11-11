@@ -1969,3 +1969,13 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .footer__dev a:hover b { color: #fff; }
 .footer__dev[hidden] { display: none; }
 .ssl-banner img { width: min(100%, 620px); padding: 4px 6px; }
+
+/* ==========================================================================
+   Speed and readability pass (2026-11-11)
+   ========================================================================== */
+/* Pages drawn by JavaScript: hold the footer below the fold so it doesn't jump when the page fills in */
+.js #page:has(> .ssr) { min-height: 100vh; }
+/* Footer labels: enough contrast on the dark grey */
+.footer__cols .mono, .footer__pay > .mono, .ssl-banner figcaption, .footer__copy, .footer__legal, .footer__dev { color: #a9adb3; }
+/* Phones: product names at a readable size */
+@media (max-width: 960px) { .card__name b { font-size: 12px; } }
