@@ -318,6 +318,14 @@ table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
 .secret .code { flex: 1; background: var(--paper); }
 
 /* Invoice (print) */
+.peek { display: inline-grid; place-items: center; width: 26px; height: 26px; margin-left: 4px; vertical-align: middle; border: 1px solid var(--line, #ddd); border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.peek:hover, .peek:focus-visible { background: var(--ink, #111); color: #fff; border-color: transparent; }
+
+.peek-box .cols { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.peek-box .cols > * { min-width: 0; }
+.peek-box .modal__foot { flex-wrap: wrap; }
+@media (max-width: 700px) { .peek-box .cols { grid-template-columns: 1fr; } .peek-box .modal__foot .btn { flex: 1 1 auto; } }
+
 /* Courier invoice (parcel slip): 100 mm wide, several fit on a page */
 .inv-list { display: grid; gap: 18px; }
 .inv-list--courier { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }

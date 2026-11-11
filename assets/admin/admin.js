@@ -446,12 +446,54 @@
     if (o.status === "cancelled" || o.status === "returned" || o.status === "delivered") return `<td class="pt-cell"><span class="muted">—</span></td>`;
     return `<td class="pt-cell"><button class="btn btn--ghost btn--sm" type="button" data-pathao="${esc(o.id)}">Send to Pathao</button></td>`;
   }
+  // Hold and cancel straight from the list; not once the courier has the parcel
+  const withCourier = (o) => !!((o.pathao && o.pathao.consignmentId) || ["shipped", "delivered", "partial_return", "returned"].indexOf(o.status) > -1);
+  const canDo = (o, s) => !withCourier(o) && (s === "hold" ? ["pending", "confirmed", "processing"].indexOf(o.status) > -1 : s === "cancelled" ? ["pending", "confirmed", "processing", "hold"].indexOf(o.status) > -1 : s === "confirmed" ? ["pending", "hold"].indexOf(o.status) > -1 : false);
+  function rowActions(o) {
+    return [["confirmed", "Confirm"], ["hold", "Hold"], ["cancelled", "Cancel"]].filter((a) => canDo(o, a[0])).map((a) => `<button class="btn btn--ghost btn--sm" type="button" data-act="${a[0]}" data-num="${esc(o.number)}">${a[1]}</button>`).join(" ") || `<span class="muted">—</span>`;
+  }
   function ordersTable(list, courier) {
     if (!list.length) return `<p class="empty">No orders yet.</p>`;
-    return `<div class="table-wrap"><table class="t"><thead><tr>${courier ? `<th style="width:34px"><input type="checkbox" data-selall aria-label="Select all"></th>` : ""}<th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th>${courier ? "<th>Pathao</th>" : ""}<th class="right">Items</th><th class="right">Total</th></tr></thead><tbody>${list.map((o) => `
-      <tr class="is-link" data-href="#/orders/${esc(o.number)}">${courier ? `<td data-stop><input type="checkbox" data-sel="${esc(o.number)}" aria-label="Select ${esc(o.number)}"></td>` : ""}<td><b>${esc(o.number)}</b></td><td class="nowrap">${dateTime(o.createdAt)}</td><td>${esc(o.customer.name)}<br><small class="muted">${esc(o.customer.phone)}</small></td>
-      <td>${pill(o.status)}</td><td>${pill(o.paymentStatus)}<br><small class="muted">${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</small></td>${courier ? pathaoCell(o) : ""}<td class="right num">${o.itemCount}</td><td class="right num"><b>${taka(o.total)}</b></td></tr>`).join("")}</tbody></table></div>`;
+    return `<div class="table-wrap"><table class="t"><thead><tr>${courier ? `<th style="width:34px"><input type="checkbox" data-selall aria-label="Select all"></th>` : ""}<th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th>${courier ? "<th>Pathao</th>" : ""}<th class="right">Items</th><th class="right">Total</th>${courier ? `<th class="right">Actions</th>` : ""}</tr></thead><tbody>${list.map((o) => `
+      <tr class="is-link" data-href="#/orders/${esc(o.number)}">${courier ? `<td data-stop><input type="checkbox" data-sel="${esc(o.number)}" aria-label="Select ${esc(o.number)}"></td>` : ""}<td class="nowrap"><b>${esc(o.number)}</b> <button class="peek" type="button" data-peek="${esc(o.number)}" title="Quick view" aria-label="Quick view ${esc(o.number)}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></td><td class="nowrap">${dateTime(o.createdAt)}</td><td>${esc(o.customer.name)}<br><small class="muted">${esc(o.customer.phone)}</small></td>
+      <td>${pill(o.status)}</td><td>${pill(o.paymentStatus)}<br><small class="muted">${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</small></td>${courier ? pathaoCell(o) : ""}<td class="right num">${o.itemCount}</td><td class="right num"><b>${taka(o.total)}</b></td>${courier ? `<td class="right nowrap">${rowActions(o)}</td>` : ""}</tr>`).join("")}</tbody></table></div>`;
   }
+
+  // Quick view: the eye button next to an order number shows the customer, items and bill in a box, without leaving the list
+  async function orderPeek(num) {
+    const body = modal("Order " + num, `<p class="muted">Loading…</p>`, { wide: true, noFocus: true });
+    let o;
+    try { o = (await api("GET", "/api/orders/" + encodeURIComponent(num))).order; } catch (err) { closeModal(); return fail(err); }
+    const ret = (it) => (o.returns || []).filter((r) => r.productId === it.productId && (r.variantId || null) === (it.variantId || null)).reduce((n, r) => n + r.qty, 0);
+    const pt = o.pathao || {}, tel = o.customer.phone;
+    body.innerHTML = `<div class="stack peek-box">
+      <p class="muted" style="margin:0">${dateTime(o.createdAt)} · ${pill(o.status)} ${pill(o.paymentStatus)} · ${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</p>
+      <div class="cols" style="gap:16px">
+        <div class="stack" style="gap:8px">
+          <h3 class="h3" style="margin:0">Items</h3>
+          <div class="items">${o.items.map((it) => `<div class="item">${it.image ? `<img src="${esc(it.image)}" alt="">` : `<span class="ph"></span>`}<div><b>${esc(it.name)}</b><small>${esc(optText(it.options))} · SKU ${esc(it.sku)}</small><small>${it.qty} × ${taka(it.price)}</small>${ret(it) ? `<small style="color:var(--danger)">Returned: ${ret(it)}</small>` : ""}</div><b class="num">${taka(it.lineTotal)}</b></div>`).join("")}</div>
+          <div class="totals"><div><span>Subtotal</span><span class="num">${taka(o.subtotal)}</span></div>${o.discount ? `<div><span>Discount${o.coupon ? " (" + esc(o.coupon) + ")" : ""}</span><span class="num">−${taka(o.discount)}</span></div>` : ""}
+            <div><span>Delivery${o.shippingZone ? " · " + esc(o.shippingZone.name) : ""}</span><span class="num">${o.shipping ? taka(o.shipping) : "Free"}</span></div><div class="grand"><span>Total</span><span class="num">${taka(o.total)}</span></div>
+            ${o.returnedValue ? `<div style="color:var(--danger)"><span>Returned items</span><span class="num">−${taka(o.returnedValue)}</span></div><div><span>Kept by customer</span><span class="num">${taka(o.total - o.returnedValue)}</span></div>` : ""}
+            ${o.collected != null ? `<div><span>Cash collected</span><span class="num">${taka(o.collected)}</span></div>` : ""}</div>
+        </div>
+        <div class="stack" style="gap:8px">
+          <h3 class="h3" style="margin:0">Customer</h3>
+          <dl class="kv"><dt>Name</dt><dd>${esc(o.customer.name)}</dd><dt>Phone</dt><dd><a href="tel:${esc(tel)}">${esc(tel)}</a></dd>${o.customer.email ? `<dt>Email</dt><dd>${esc(o.customer.email)}</dd>` : ""}
+            <dt>Address</dt><dd>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</dd>${o.shippingZone ? `<dt>Area</dt><dd>${esc(o.shippingZone.name)}</dd>` : ""}</dl>
+          ${pt.consignmentId ? `<h3 class="h3" style="margin:6px 0 0">Pathao</h3><dl class="kv"><dt>Consignment</dt><dd class="mono">${esc(pt.consignmentId)}</dd><dt>Status</dt><dd>${esc(String(pt.status || "sent").replace(/_/g, " "))}</dd></dl>` : ""}
+          ${o.note ? `<h3 class="h3" style="margin:6px 0 0">Customer note</h3><p style="margin:0">${esc(o.note)}</p>` : ""}
+        </div>
+      </div>
+      <div class="modal__foot"><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/invoice" data-modal-close>Order invoice</a><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/courier-invoice" data-modal-close>Courier invoice</a><a class="btn btn--dark" href="#/orders/${esc(o.number)}" data-modal-close>Open order</a></div>
+    </div>`;
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("[data-peek]");
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    orderPeek(b.dataset.peek);
+  }, true);
 
   // ---------------------------------------------------------------------------
   // Orders
@@ -461,7 +503,7 @@
     const q = new URLSearchParams(query || "");
     const state = { status: q.get("status") || "", q: q.get("q") || "", from: "", to: "" };
     view.innerHTML = `<div class="head"><div><h1 class="h1">Orders</h1><p class="muted">Confirm, pack and ship orders. Cancelling or returning an order puts the stock back.</p></div>
-      <div class="flex"><span class="flex" id="ordBulk" hidden><small class="muted" id="ordSelN"></small><button class="btn btn--ghost" type="button" data-bulk="order">Print order invoices</button><button class="btn btn--dark" type="button" data-bulk="courier">Print courier invoices</button></span><button class="btn btn--ghost" id="ordCsv">Export CSV</button></div></div>
+      <div class="flex"><span class="flex" id="ordBulk" hidden><small class="muted" id="ordSelN"></small><button class="btn btn--ghost" type="button" data-bulkact="confirmed">Confirm</button><button class="btn btn--ghost" type="button" data-bulkact="hold">Hold</button><button class="btn btn--ghost" type="button" data-bulkact="cancelled">Cancel</button><button class="btn btn--ghost" type="button" data-bulk="order">Print order invoices</button><button class="btn btn--dark" type="button" data-bulk="courier">Print courier invoices</button></span><button class="btn btn--ghost" id="ordCsv">Export CSV</button></div></div>
       <div class="tabs" id="ordTabs"></div>
       <div class="toolbar"><div class="grow"><input class="input" id="ordQ" placeholder="Search by order number, name, phone or email" value="${esc(state.q)}"></div>
         <label class="flex small muted">From <input class="input input--sm" type="date" id="ordFrom"></label><label class="flex small muted">To <input class="input input--sm" type="date" id="ordTo"></label></div>
@@ -493,7 +535,36 @@
       else if (e.target.matches("[data-sel]")) { if (e.target.checked) picked.add(e.target.dataset.sel); else picked.delete(e.target.dataset.sel); }
       bulkBar();
     });
-    $("#ordBulk").onclick = (e) => { const b = e.target.closest("[data-bulk]"); if (b) go("invoices?type=" + b.dataset.bulk + "&orders=" + [...picked].join(",")); };
+    $("#ordBulk").onclick = (e) => {
+      const b = e.target.closest("[data-bulk]"); if (b) return go("invoices?type=" + b.dataset.bulk + "&orders=" + [...picked].join(","));
+      const a = e.target.closest("[data-bulkact]"); if (a) listStatus(all.filter((o) => picked.has(o.number)), a.dataset.bulkact);
+    };
+    // One order (row button) or many (ticked): confirm, hold or cancel with an optional note
+    const LABEL = { confirmed: ["Confirm", "confirmed", "btn--dark"], hold: ["Put on hold", "on hold", "btn--dark"], cancelled: ["Cancel", "cancelled", "btn--danger"] };
+    const listStatus = (orders, s) => {
+      const ok = orders.filter((o) => canDo(o, s)), skip = orders.length - ok.length, L = LABEL[s];
+      if (!ok.length) return toast(orders.length > 1 ? "None of these orders can be " + L[1] + " now." : "This order can't be " + L[1] + " now.", true);
+      const names = ok.length === 1 ? "order " + ok[0].number : ok.length + " orders";
+      const body = modal(L[0] + " " + names + "?", `<form class="stack" id="lsForm">
+        <p class="muted" style="margin:0">${ok.length > 1 ? esc(ok.map((o) => o.number).join(", ")) + "." : ""}${s === "cancelled" ? " The items go back into stock." : s === "hold" ? " The items stay reserved while the order is on hold." : ""}${skip ? ` ${skip} selected order${skip > 1 ? "s are" : " is"} skipped: already with the courier, or already in a status that can't change this way.` : ""}</p>
+        <label class="field"><span>Reason or note (optional)</span><input class="input" name="note" maxlength="300"></label>
+        ${s !== "confirmed" ? `<label class="check"><input type="checkbox" name="notifyCustomer"> Show this note to the customer on the order tracking page</label>` : ""}
+        <div class="modal__foot"><button class="btn btn--ghost" type="button" data-modal-close>Back</button><button class="btn ${L[2]}" type="submit">${L[0]}${ok.length > 1 ? " " + ok.length : ""}</button></div></form>`);
+      $("#lsForm", body).onsubmit = async (e) => {
+        e.preventDefault();
+        const f = formData(e.target), btn = $("button[type=submit]", e.target); busy(btn, true);
+        let done = 0; const bad = [];
+        for (const o of ok) { try { await api("PATCH", "/api/orders/" + o.number, { status: s, note: f.note, notifyCustomer: !!f.notifyCustomer }); done++; } catch (err) { bad.push(o.number + ": " + err.message); } }
+        closeModal(); picked.clear();
+        toast(bad.length ? done + " done. Not changed: " + bad.join("; ") : (done === 1 ? ok[0].number + " " + L[1] : done + " orders " + L[1]), !!bad.length);
+        load(); refreshCounts();
+      };
+    };
+    $("#ordList").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-act]"); if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      listStatus(all.filter((o) => o.number === b.dataset.num), b.dataset.act);
+    }, true);
     // One click: Send to Pathao guesses the city and zone from the address; if it can't, the full form opens
     $("#ordList").addEventListener("click", async (e) => {
       if (e.target.closest("[data-stop]")) { e.stopPropagation(); return; }
