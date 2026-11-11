@@ -39,7 +39,7 @@
     });
   }
   // "trash" isn't a module of its own: anyone who can delete products or images (and the owner, for orders) sees it
-  const can = (area) => area === "trash" ? (areas.indexOf("products") > -1 || areas.indexOf("content") > -1 || !!(me && me.role === "owner")) : areas.indexOf(area) > -1;
+  const can = (area) => area === "trash" ? (areas.indexOf("products") > -1 || areas.indexOf("content") > -1 || !!(me && (me.role === "owner" || me.orderTrash))) : areas.indexOf(area) > -1;
 
   // ---------------------------------------------------------------------------
   // Toast, modal, confirm
@@ -514,25 +514,49 @@
     const q = new URLSearchParams(query || "");
     const state = { status: q.get("status") || "", q: q.get("q") || "", from: "", to: "" };
     view.innerHTML = `<div class="head"><div><h1 class="h1">Orders</h1><p class="muted">Confirm, pack and ship orders. Cancelling or returning an order puts the stock back.</p></div>
-      <div class="flex"><span class="flex" id="ordBulk" hidden><small class="muted" id="ordSelN"></small><button class="btn btn--ghost" type="button" data-bulkact="confirmed">Confirm</button><button class="btn btn--ghost" type="button" data-bulkact="hold">Hold</button><button class="btn btn--ghost" type="button" data-bulkact="cancelled">Cancel</button><button class="btn btn--ghost" type="button" data-bulk="order">Print order invoices</button><button class="btn btn--dark" type="button" data-bulk="courier">Print courier invoices</button></span><button class="btn btn--ghost" id="ordCsv">Export CSV</button></div></div>
+      <button class="btn btn--ghost" id="ordCsv">Export CSV</button></div>
       <div class="tabs" id="ordTabs"></div>
-      <div class="toolbar"><div class="grow"><input class="input" id="ordQ" placeholder="Search by order number, name, phone or email" value="${esc(state.q)}"></div>
+      <div class="toolbar"><div class="flex ord-act"><select class="input" id="ordAct" aria-label="Action for ticked orders"><option value="">Action…</option>
+          <option value="confirmed">Confirm</option><option value="hold">Hold</option><option value="cancelled">Cancel</option><option value="pathao">Send to Pathao</option>
+          <option value="courier">Courier invoice</option><option value="order">Order invoice</option>${me.orderTrash ? `<option value="trash">Move to trash</option>` : ""}</select>
+          <button class="btn btn--dark" type="button" id="ordApply">Apply</button><small class="muted" id="ordSelN">Tick orders first</small></div>
+        <div class="ord-search"><input class="input" id="ordQ" placeholder="Search order, name or phone" value="${esc(state.q)}"></div>
         <label class="flex small muted">From <input class="input input--sm" type="date" id="ordFrom"></label><label class="flex small muted">To <input class="input input--sm" type="date" id="ordTo"></label></div>
       <div class="card card--flush" id="ordList"><p class="empty">Loading…</p></div>`;
-    let all = [];
+    let all = [], trash = [];
+    // Trash tab: deleted orders stay 30 days; restore them, or delete them for good
+    const drawTrash = () => {
+      const left = (t) => Math.max(0, Math.ceil((t - Date.now()) / 864e5));
+      $("#ordList").innerHTML = trash.length ? `<div class="table-wrap"><table class="t"><thead><tr><th>Order</th><th>Deleted</th><th></th></tr></thead><tbody>${trash.map((x) => `
+        <tr><td><b>${esc(x.label.replace(/^Order /, ""))}</b><br><small class="muted">${esc(x.detail || "")}</small></td><td class="nowrap">${dateTime(x.deletedAt)}${x.deletedBy ? ` · ${esc(x.deletedBy)}` : ""}<br><small class="muted">Deleted for good in ${left(x.expiresAt)} days</small></td>
+        <td class="right nowrap"><button class="btn btn--dark btn--sm" type="button" data-trestore="${esc(x.id)}">Restore</button> <button class="btn btn--danger btn--sm" type="button" data-tforever="${esc(x.id)}">Delete permanently</button></td></tr>`).join("")}</tbody></table></div>`
+        : `<p class="empty">No orders in the trash. Orders you move to the trash wait here for 30 days before they're deleted for good.</p>`;
+    };
+    $("#ordList").addEventListener("click", async (e) => {
+      const rs = e.target.closest("[data-trestore]"), fg = e.target.closest("[data-tforever]");
+      if (!rs && !fg) return;
+      e.preventDefault(); e.stopPropagation();
+      const x = trash.find((t) => t.id === (rs || fg).dataset[rs ? "trestore" : "tforever"]);
+      if (rs) { busy(rs, true); try { const out = await api("POST", "/api/trash/" + x.id + "/restore"); toast("Order " + (out.number || "") + " restored"); load(); refreshCounts(); } catch (err) { busy(rs, false); fail(err); } return; }
+      if (!(await confirmBox("Delete " + x.label + " permanently?", "It's removed for good and can't be restored.", "Delete permanently", true))) return;
+      try { await api("DELETE", "/api/trash/" + x.id); toast(x.label + " deleted permanently"); load(); } catch (err) { fail(err); }
+    }, true);
     const load = async () => {
       const params = new URLSearchParams();
       if (state.q) params.set("q", state.q);
       if (state.from) params.set("from", new Date(state.from + "T00:00:00").getTime());
       if (state.to) params.set("to", new Date(state.to + "T23:59:59").getTime());
       try { all = (await api("GET", "/api/orders?" + params)).orders; } catch (err) { return fail(err); }
+      if (me.orderTrash) { try { trash = (await api("GET", "/api/trash")).items.filter((x) => x.kind === "order"); } catch (_) { trash = []; } }
       draw();
     };
     const draw = () => {
       const counts = {};
       all.forEach((o) => { counts[o.status] = (counts[o.status] || 0) + 1; });
-      $("#ordTabs").innerHTML = [["", "All", all.length]].concat(STATUSES.map((s) => [s, human(s), counts[s] || 0]))
-        .map(([k, l, n]) => `<button class="tab${state.status === k ? " is-on" : ""}" data-s="${k}">${l}<small>${n}</small></button>`).join("");
+      $("#ordTabs").innerHTML = [["", "All", all.length]].concat(STATUSES.map((s) => [s, human(s), counts[s] || 0])).concat(me.orderTrash ? [["trash", "Trash", trash.length]] : [])
+        .map(([k, l, n]) => `<button class="tab${state.status === k ? " is-on" : ""}${k === "trash" ? " tab--trash" : ""}" data-s="${k}">${l}<small>${n}</small></button>`).join("");
+      $(".ord-act").hidden = state.status === "trash";
+      if (state.status === "trash") return drawTrash();
       const list = all.filter((o) => !state.status || o.status === state.status);
       $("#ordList").innerHTML = ordersTable(list, true);
       list.forEach((o) => { const b = $(`[data-sel="${o.number}"]`); if (b) b.checked = picked.has(o.number); });
@@ -540,15 +564,42 @@
     };
     // Tick orders, then print their order or courier invoices together
     const picked = new Set();
-    const bulkBar = () => { $("#ordBulk").hidden = !picked.size; $("#ordSelN").textContent = picked.size + " selected"; };
+    const bulkBar = () => { $("#ordSelN").textContent = picked.size ? picked.size + " selected" : "Tick orders first"; };
     $("#ordList").addEventListener("change", (e) => {
       if (e.target.matches("[data-selall]")) $$("[data-sel]").forEach((b) => { b.checked = e.target.checked; if (b.checked) picked.add(b.dataset.sel); else picked.delete(b.dataset.sel); });
       else if (e.target.matches("[data-sel]")) { if (e.target.checked) picked.add(e.target.dataset.sel); else picked.delete(e.target.dataset.sel); }
       bulkBar();
     });
-    $("#ordBulk").onclick = (e) => {
-      const b = e.target.closest("[data-bulk]"); if (b) return go("invoices?type=" + b.dataset.bulk + "&orders=" + [...picked].join(","));
-      const a = e.target.closest("[data-bulkact]"); if (a) listStatus(all.filter((o) => picked.has(o.number)), a.dataset.bulkact);
+    // Action box: the chosen action runs on the ticked orders
+    $("#ordApply").onclick = () => {
+      const act = $("#ordAct").value, sel = all.filter((o) => picked.has(o.number));
+      if (!act) return toast("Choose an action first.", true);
+      if (!sel.length) return toast("Tick the orders first.", true);
+      $("#ordAct").value = "";
+      if (act === "order" || act === "courier") return go("invoices?type=" + act + "&orders=" + sel.map((o) => o.number).join(","));
+      if (act === "pathao") return bulkPathao(sel);
+      if (act === "trash") return bulkTrash(sel);
+      listStatus(sel, act);
+    };
+    const bulkPathao = async (sel) => {
+      const ok = sel.filter((o) => !(o.pathao && o.pathao.consignmentId) && ["cancelled", "returned", "delivered", "partial_return", "shipped"].indexOf(o.status) < 0);
+      const skip = sel.length - ok.length;
+      if (!ok.length) return toast("These orders are already with Pathao, or closed.", true);
+      if (!(await confirmBox("Send " + (ok.length === 1 ? ok[0].number : ok.length + " orders") + " to Pathao?", "City and zone are picked from each address. If one can't be matched, a form opens for it." + (skip ? " " + skip + " ticked order" + (skip > 1 ? "s are" : " is") + " skipped: already sent or closed." : ""), "Send to Pathao"))) return;
+      const btn = $("#ordApply"); busy(btn, true);
+      let done = 0; const bad = [];
+      for (const o of ok) { try { if (await pathaoQuickSend(o)) done++; } catch (err) { bad.push(o.number + ": " + err.message); } }
+      busy(btn, false); picked.clear();
+      toast(done + " sent to Pathao" + (bad.length ? ". Not sent: " + bad.join("; ") : ""), !!bad.length);
+      load();
+    };
+    const bulkTrash = async (sel) => {
+      if (!(await confirmBox("Move " + (sel.length === 1 ? "order " + sel[0].number : sel.length + " orders") + " to the trash?", "They leave Orders and your sales numbers, and items of open orders go back into stock. They wait in the Trash tab for 30 days, so you can restore them.", "Move to trash", true))) return;
+      let done = 0; const bad = [];
+      for (const o of sel) { try { await api("DELETE", "/api/orders/" + o.id); done++; } catch (err) { bad.push(o.number + ": " + err.message); } }
+      picked.clear();
+      toast(done + " moved to trash" + (bad.length ? ". Not moved: " + bad.join("; ") : ""), !!bad.length);
+      load(); refreshCounts();
     };
     // One order (row button) or many (ticked): confirm, hold or cancel with an optional note
     const LABEL = { confirmed: ["Confirm", "confirmed", "btn--dark"], hold: ["Put on hold", "on hold", "btn--dark"], cancelled: ["Cancel", "cancelled", "btn--danger"] };
@@ -623,7 +674,7 @@
     const retOf = (it) => (o.returns || []).filter((r) => r.productId === it.productId && (r.variantId || null) === (it.variantId || null)).reduce((n, r) => n + r.qty, 0);
     view.innerHTML = `<div class="head"><div><a class="btn btn--link" href="#/orders">← Orders</a><h1 class="h1" style="margin-top:8px">Order ${esc(o.number)}</h1>
       <p class="muted">${dateTime(o.createdAt)} · ${pill(o.status)} ${pill(o.paymentStatus)}</p></div>
-      <div class="flex">${o.status === "pending" || o.status === "hold" ? `<button class="btn btn--dark" type="button" data-quick="confirmed">Confirm</button>` : ""}${!onCourier && ["pending", "confirmed", "processing"].indexOf(o.status) > -1 ? `<button class="btn btn--ghost" type="button" data-quick="hold">Hold</button>` : ""}${["cancelled", "returned", "delivered", "shipped", "partial_return"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" data-quick="cancelled">Cancel order</button>` : ""}${o.status === "partial_return" ? `<button class="btn btn--ghost" type="button" data-quick="delivered">Undo partial return</button>` : ""}${o.status === "cancelled" ? `<button class="btn btn--ghost" type="button" data-quick="pending">Reopen</button>` : ""}${onCourier ? "" : `<button class="btn btn--ghost" type="button" id="oEdit">Edit order</button>`}${onCourier && ["cancelled", "returned"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" id="oPartial">${o.status === "partial_return" ? "Change returned items" : "Partial return"}</button>` : ""}<a class="btn btn--ghost" href="#/orders/${esc(o.number)}/invoice">Order invoice</a><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/courier-invoice">Courier invoice</a><a class="btn btn--ghost" href="tel:${esc(tel)}">Call customer</a>${me.role === "owner" ? `<button class="btn btn--danger" type="button" id="oDel">Delete order</button>` : ""}</div></div>
+      <div class="flex">${o.status === "pending" || o.status === "hold" ? `<button class="btn btn--dark" type="button" data-quick="confirmed">Confirm</button>` : ""}${!onCourier && ["pending", "confirmed", "processing"].indexOf(o.status) > -1 ? `<button class="btn btn--ghost" type="button" data-quick="hold">Hold</button>` : ""}${["cancelled", "returned", "delivered", "shipped", "partial_return"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" data-quick="cancelled">Cancel order</button>` : ""}${o.status === "partial_return" ? `<button class="btn btn--ghost" type="button" data-quick="delivered">Undo partial return</button>` : ""}${o.status === "cancelled" ? `<button class="btn btn--ghost" type="button" data-quick="pending">Reopen</button>` : ""}${onCourier ? "" : `<button class="btn btn--ghost" type="button" id="oEdit">Edit order</button>`}${onCourier && ["cancelled", "returned"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" id="oPartial">${o.status === "partial_return" ? "Change returned items" : "Partial return"}</button>` : ""}<a class="btn btn--ghost" href="#/orders/${esc(o.number)}/invoice">Order invoice</a><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/courier-invoice">Courier invoice</a><a class="btn btn--ghost" href="tel:${esc(tel)}">Call customer</a>${me.orderTrash ? `<button class="btn btn--danger" type="button" id="oDel">Move to trash</button>` : ""}</div></div>
       <div class="cols">
         <div class="stack">
           <div class="card"><h2 class="h2">Items</h2><div class="items">${o.items.map((it) => `<div class="item">${it.image ? `<img src="${esc(it.image)}" alt="">` : `<span class="ph"></span>`}
@@ -2368,10 +2419,11 @@
     const areaNames = (list) => list.map((a) => AREA[a] || a).join(", ");
     view.innerHTML = `<div class="head"><div><h1 class="h1">Users</h1><p class="muted">People who can sign in to this admin panel with their email and password. Pick a role, or choose “Custom access” and tick exactly which modules they can open.</p></div><button class="btn btn--dark" id="usAdd">Add user</button></div>
       <div class="card card--flush"><div class="table-wrap"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Access</th><th>Last sign-in</th><th></th></tr></thead><tbody>${r.users.map((u) => `
-        <tr><td><b>${esc(u.name)}</b>${u.id === me.id ? ` <span class="tag">You</span>` : ""}</td><td>${esc(u.email)}</td><td>${esc((r.roles[u.role] || {}).label || u.role)}${u.role === "custom" ? `<br><small class="muted">${esc(areaNames(u.areas || []))}</small>` : ""}</td><td>${ago(u.lastLogin)}</td><td class="right"><button class="btn btn--ghost btn--sm" data-edit="${u.id}">Edit</button></td></tr>`).join("")}</tbody></table></div></div>
+        <tr><td><b>${esc(u.name)}</b>${u.id === me.id ? ` <span class="tag">You</span>` : ""}</td><td>${esc(u.email)}</td><td>${esc((r.roles[u.role] || {}).label || u.role)}${u.role === "custom" ? `<br><small class="muted">${esc(areaNames(u.areas || []))}</small>` : ""}${u.orderTrash ? `<br><small class="muted">Can delete orders</small>` : ""}</td><td>${ago(u.lastLogin)}</td><td class="right"><button class="btn btn--ghost btn--sm" data-edit="${u.id}">Edit</button></td></tr>`).join("")}</tbody></table></div></div>
       <div class="grid-3">${Object.keys(r.roles).map((k) => `<div class="card"><h2 class="h2">${esc(r.roles[k].label)}</h2><p class="muted small" style="margin:0">${r.roles[k].custom ? "Only the modules you tick for that person." : areaNames(r.roles[k].areas)}</p></div>`).join("")}</div>`;
     const roleOpts = (sel) => Object.keys(r.roles).map((k) => `<option value="${k}"${k === sel ? " selected" : ""}>${esc(r.roles[k].label)}</option>`).join("");
-    const areaBoxes = (u) => `<fieldset class="us-areas" data-areas ${u.role === "custom" ? "" : "hidden"}><legend class="small">Modules this person can open</legend>
+    const trashBox = (u) => me.role === "owner" ? `<label class="switch"><input type="checkbox" name="orderTrash" ${u.role === "owner" || u.orderTrash ? "checked" : ""}${u.role === "owner" ? " disabled" : ""}> Can move orders to the trash and delete them permanently</label><small class="muted" style="margin-top:-8px">Off: they can work on orders but can't delete them. Owners can always.</small>` : "";
+    const areaBoxes = (u) => trashBox(u) + `<fieldset class="us-areas" data-areas ${u.role === "custom" ? "" : "hidden"}><legend class="small">Modules this person can open</legend>
       <div class="us-areas__grid">${Object.keys(AREA).map((a) => `<label class="switch"><input type="checkbox" value="${a}" ${(u.areas || []).indexOf(a) > -1 ? "checked" : ""}> ${esc(AREA[a])}</label>`).join("")}</div>
       <div class="flex"><button class="btn btn--link btn--sm" type="button" data-all="1">Tick all</button><button class="btn btn--link btn--sm" type="button" data-all="0">Clear</button></div></fieldset>`;
     const wire = (form, u) => {

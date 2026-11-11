@@ -129,7 +129,7 @@
     };
   }
   function publicUser(u) {
-    return { id: u.id, name: u.name, email: u.email, role: u.role, areas: userAreas(u), createdAt: u.createdAt, lastLogin: u.lastLogin || null };
+    return { id: u.id, name: u.name, email: u.email, role: u.role, areas: userAreas(u), orderTrash: u.role === "owner" || (!!u.orderTrash && userAreas(u).indexOf("orders") > -1), createdAt: u.createdAt, lastLogin: u.lastLogin || null };
   }
   function orderSummary(o) {
     return { id: o.id, number: o.number, createdAt: o.createdAt, status: o.status, paymentStatus: o.paymentStatus, paymentMethod: o.paymentMethod,
@@ -1693,7 +1693,7 @@
       return { order: o, acoreOn: acoreSettings(c.db).enabled };
     }, { readonly: true });
     route("DELETE", "/api/orders/:id", "orders", function (c) {
-      needOwner(c, "delete orders");
+      if (!canTrashOrders(c.auth)) fail(403, "You don't have permission to delete orders. Ask the store owner.");
       var db = c.db, o = db.orders.filter(function (x) { return x.id === c.params.id || x.number === String(c.params.id).toUpperCase(); })[0];
       if (!o) fail(404, "Order not found.");
       var put = !o.restocked && o.status !== "delivered";
@@ -2266,7 +2266,7 @@
       db.trash = keep;
       return changed;
     }
-    function trashAllowed(c, x) { return x.kind === "order" ? isOwner(c.auth) : canSee(c.auth, TRASH_AREA[x.kind]); }
+    function trashAllowed(c, x) { return x.kind === "order" ? canTrashOrders(c.auth) : canSee(c.auth, TRASH_AREA[x.kind]); }
     function trashItem(c) {
       var x = (c.db.trash || []).filter(function (t) { return t.id === c.params.id; })[0];
       if (!x || !trashAllowed(c, x)) fail(404, "That item isn't in the trash any more.");
@@ -2451,6 +2451,8 @@
     }
     function isOwner(auth) { return !!(auth && auth.kind === "user" && auth.user.role === "owner"); }
     function needOwner(c, what) { if (!isOwner(c.auth)) fail(403, "Only the store owner can " + what + "."); }
+    // Moving orders to the trash and deleting them for good: the owner, and staff the owner allowed
+    function canTrashOrders(auth) { return isOwner(auth) || !!(auth && auth.kind === "user" && auth.user.orderTrash && userAreas(auth.user).indexOf("orders") > -1); }
     // A staff member who can open Users may not give anyone (or themselves) access they don't have
     function checkGrant(c, role, areas) {
       if (isOwner(c.auth)) return;
@@ -2469,6 +2471,7 @@
       var u = { id: newId("usr"), name: str(b.name, 80), email: email, role: b.role, createdAt: now() };
       if (b.role === "custom") u.areas = cleanAreas(b.areas);
       checkGrant(c, u.role, u.areas);
+      if (b.orderTrash) { needOwner(c, "let staff delete orders"); u.orderTrash = true; }
       setPassword(u, b.password);
       c.db.users.push(u);
       return { user: publicUser(u) };
@@ -2491,6 +2494,7 @@
       u.role = role;
       if (role === "custom") u.areas = areas; else delete u.areas;
       if (accessChanged) c.db.sessions = c.db.sessions.filter(function (s) { return s.userId !== u.id || (c.auth.user && c.auth.user.id === u.id); });
+      if (b.orderTrash !== undefined && !!b.orderTrash !== !!u.orderTrash && u.role !== "owner") { needOwner(c, "let staff delete orders"); u.orderTrash = !!b.orderTrash; }
       if (b.name) u.name = str(b.name, 80);
       if (b.password) { c.db.sessions = c.db.sessions.filter(function (s) { return s.userId !== u.id; }); }
       return { user: publicUser(u) };
