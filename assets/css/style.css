@@ -1923,3 +1923,6 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
   .house--page .drop__title { left: 14px; top: 38px; font-size: 18px !important; }
   .house--page .drop__meta { top: 12px; right: 12px; font-size: 8.5px; }
 }
+.hero--photo .hero__note { white-space: nowrap; line-height: 1.7; }
+.hero--photo .display { line-height: .82; }
+.hero--photo .display .line { padding-bottom: .02em; }

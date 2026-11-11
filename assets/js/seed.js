@@ -184,7 +184,7 @@
         line1: "Layer up", lead: "for", accent: "winter",
         cta1: "Shop now", cta1Link: "#shop",
         image: "assets/img/home/r-hero-sofa.webp", imageAlt: "Two models in a maroon and a grey velvet jacket on a pink sofa",
-        note: "Winter collection 2026 · Cash on delivery all over Bangladesh"
+        note: "Winter collection 2026\nCash on delivery all over Bangladesh"
       },
       tryLook: {
         title: "Try Winter Looks", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
