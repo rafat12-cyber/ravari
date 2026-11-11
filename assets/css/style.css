@@ -1874,3 +1874,12 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 @media (max-width: 960px) { .cold__bg { object-position: 50% 100%; } }
 /* Ticker sits right under the full-width hero, edge to edge (Rafat, 2026-11-11) */
 .ticker { margin: 0; border-radius: 0; }
+/* Try the Look: bigger models, four in view on desktop (Rafat, 2026-11-11) */
+.tl__stage { height: min(820px, 92vh); min-height: 660px; }
+.tl__model { --h: clamp(400px, 62vh, 560px); }
+@media (max-width: 960px) {
+  .tl__stage { height: 620px; }
+  .tl__model { --h: 390px; }
+}
+/* Darker, wider floor shadow under each model's feet (Rafat) */
+.tl__model::after { left: -24%; right: -24%; bottom: -18px; height: 46px; background: radial-gradient(closest-side, rgba(30,30,28,.5), rgba(30,30,28,.2) 55%, transparent); }

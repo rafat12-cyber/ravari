@@ -523,7 +523,7 @@
   // the right; the next looks queue up to its left, each one smaller and softer.
   function tlLayout() {
     var u = TL.unit, w = tlStage.clientWidth, n = TL.n, phone = w < 700;
-    var anchor = w * (phone ? 0.2 : 0.27), edge = phone ? 2.2 : 4.2;
+    var anchor = w * (phone ? 0.2 : 0.27), edge = phone ? 2.2 : 3.2;
     tlModels.forEach(function (m, k) {
       var r = (((k - TL.pos) % n) + n) % n;
       if (r > n - 1) r -= n; // the look that just left slides out to the right
