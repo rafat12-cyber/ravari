@@ -1956,3 +1956,7 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .wbig__track i { -webkit-text-fill-color: rgba(110,113,119,.38); }
 .wbig__track { -webkit-text-stroke: 0; }
 .footer__tel { white-space: nowrap; }
+
+/* Footer: wordmark readable on the dark grey, developer credit (Rafat, 2026-11-11) */
+.footer__word { color: rgba(242,240,236,.16); }
+.footer__dev { margin: 0; text-align: center; color: #8b9096; }
