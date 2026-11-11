@@ -144,7 +144,7 @@
   var LAYOUT_DEFAULTS = {
     header: { announce: true, announceBg: "#111214", announceColor: "#ffffff", logo: "", logoHeight: 18, sticky: true, showSearch: true, showAccount: true },
     footer: { newsletter: true, newsletterButton: "Notify me", showPayments: true, showWordmark: true, wordmark: "RAVARI", showContact: true,
-      showSocial: true, showLegal: true, copyright: "" }
+      showSocial: true, showLegal: true, copyright: "", devName: "ACORE", devLink: "" }
   };
   function siteLayout(s) {
     var l = (s && s.layout) || {}, out = {};

@@ -2206,6 +2206,7 @@
           ${sw("footer", "showLegal", "Show trade license, TIN and DBID", F.showLegal)}
           ${sw("footer", "showWordmark", "Show the big name at the bottom", F.showWordmark)}
           <div class="row row--2">${txt('data-l="footer"', "wordmark", "Big name text", F.wordmark, "", "RAVARI")}${txt('data-l="footer"', "copyright", "Copyright line", F.copyright, "Leave empty for the default. Write {year} for the current year.", "© {year} Ravari · Prices in BDT (৳)")}</div>
+          <div class="row row--2">${txt('data-l="footer"', "devName", "Developed by (name)", F.devName, "Shown at the very bottom of the footer. Leave empty to hide the line.", "ACORE")}${txt('data-l="footer"', "devLink", "Developed by (link)", F.devLink, "The website the name opens, for example https://acore.com.bd", "https://")}</div>
           <p class="muted small" style="margin:0">Footer link columns are in <a href="#/menus">Menus</a>. Address, phone and legal numbers are in <a href="#/settings">Settings</a>.</p></div>
         <div class="card"><h2 class="h2">Social links</h2><div class="row row--2">
           ${["facebook", "instagram", "tiktok", "youtube"].map((k) => txt('data-s="social"', k, k === "tiktok" ? "TikTok" : k === "youtube" ? "YouTube" : k.charAt(0).toUpperCase() + k.slice(1), (s.social || {})[k], "", `https://www.${k}.com/ravaribd`)).join("")}

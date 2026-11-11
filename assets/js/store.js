@@ -402,6 +402,10 @@
       "</ul>";
     var legal = [["Trade license", st.tradeLicense], ["TIN", st.tin], ["DBID", st.dbid], ["BIN", st.bin]].filter(function (x) { return x[1]; });
     $("#footerLegal").innerHTML = legal.map(function (x) { return "<span>" + x[0] + ": " + esc(x[1]) + "</span>"; }).join("");
+    // "Developed by ACORE": name and link are set in Admin > Header & footer
+    var dev = LAY().footer.devName, devUrl = LAY().footer.devLink;
+    $("#footerDev").hidden = !dev;
+    if (dev) $("#footerDev").innerHTML = "Developed by " + (devUrl ? '<a href="' + esc(safe(devUrl)) + '" target="_blank" rel="noopener"><b>' + esc(dev) + "</b></a>" : "<b>" + esc(dev) + "</b>");
     $("#footerCopy").innerHTML = LAY().footer.copyright ? esc(LAY().footer.copyright).replace(/\{year\}/g, new Date().getFullYear())
       : "© " + new Date().getFullYear() + " " + esc(st.legalName || "Ravari") + " · Prices in BDT (৳)";
     var payments = S.settings.payments || {};

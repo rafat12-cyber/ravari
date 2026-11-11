@@ -1962,3 +1962,10 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .footer__dev { margin: 0; text-align: center; color: #8b9096; }
 /* SSLCOMMERZ pay-with strip (local copy from Rafat) under the caption */
 .ssl-banner img { width: min(100%, 1020px); padding: 6px 8px; border-radius: 10px; background: #fff; box-sizing: border-box; }
+
+/* Developed by ACORE: name in bold, optional link from admin */
+.footer__dev b { font-weight: 700; color: #c9ccd1; }
+.footer__dev a { color: inherit; text-decoration: none; }
+.footer__dev a:hover b { color: #fff; }
+.footer__dev[hidden] { display: none; }
+.ssl-banner img { width: min(100%, 620px); padding: 4px 6px; }
