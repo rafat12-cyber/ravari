@@ -17,13 +17,16 @@
   // ---------------------------------------------------------------------------
   var CATS = [
     ["men", "Men", null, 1, "assets/img/home/r-hero-wide.webp", "Shirts and panjabis for men."],
-    ["winter-collection", "Winter Collection", null, 2, "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", "Denim and corduroy shirts for the cooler days."],
+    ["winter-collection", "Winter Collection", "men", 1, "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", "Denim and corduroy shirts for the cooler days."],
     ["denim-shirt", "Denim Shirt", "winter-collection", 1, "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", "Heavyweight denim and corduroy shirts."],
-    ["jacket", "Jacket", "winter-collection", 2, "assets/img/home/r-drop-2.webp", "Suede and check jackets to layer over a tee."],
-    ["sweat-shirt", "Sweat Shirt", "winter-collection", 3, "assets/img/home/r-tile-1.webp", "Half-zip sweatshirts, warm and easy to wear."],
-    ["full-shirt", "Full Sleeve Shirt", "men", 1, "assets/img/home/r-lb-1.webp", "Premium full sleeve casual shirts."],
-    ["half-shirt", "Half Sleeve Shirt", "men", 2, "assets/img/home/r-lb-3.webp", "Half sleeve casual shirts in bold prints."],
-    ["panjabi", "Premium Panjabi", "men", 3, "assets/img/home/r-lb-2.webp", "Embroidered, sequin and classic cotton panjabis."],
+    ["sweat-shirt", "Sweat Shirt", "winter-collection", 2, "assets/img/home/r-tile-1.webp", "Half-zip sweatshirts, warm and easy to wear."],
+    ["jacket", "Jacket", "winter-collection", 3, "assets/img/home/r-drop-2.webp", "Suede and check jackets to layer over a tee."],
+    ["summer", "Summer", "men", 2, "assets/img/home/r-lb-1.webp", "Full and half sleeve shirts for the warm months."],
+    ["ethnic-wear", "Ethnic Wear", "men", 3, "assets/img/home/r-lb-2.webp", "Panjabis and payjamas for Eid, weddings and every occasion."],
+    ["full-shirt", "Full Sleeve Shirt", "summer", 1, "assets/img/home/r-lb-1.webp", "Premium full sleeve casual shirts."],
+    ["half-shirt", "Half Sleeve Shirt", "summer", 2, "assets/img/home/r-lb-3.webp", "Half sleeve casual shirts in bold prints."],
+    ["panjabi", "Premium Panjabi", "ethnic-wear", 1, "assets/img/home/r-lb-2.webp", "Embroidered, sequin and classic cotton panjabis."],
+    ["payjama", "Payjama", "ethnic-wear", 2, "assets/img/home/r-lb-2.webp", "Cotton payjamas to wear with a panjabi."],
     ["on-sale", "On Sale", null, 3, "assets/img/home/r-panjabi-wide.webp", "Picks on sale now."]
   ];
   // A short paragraph under each category's products, written for search engines (Admin › Categories)
@@ -287,18 +290,21 @@
   var catLink = function (slug, label) { return { id: "mi_" + slug, label: label, url: "#category/" + slug, children: [] }; };
   var menus = {
     header: [
-      { id: "mi_winter", label: "Winter", url: "#category/winter-collection", image: "assets/img/menu-winter.webp", children: [
-        catLink("denim-shirt", "Denim Shirt"), catLink("jacket", "Jacket"), catLink("sweat-shirt", "Sweat Shirt")
+      { id: "mi_winter", label: "Winter 26/27", url: "#category/winter-collection", image: "assets/img/menu-winter.webp", children: [
+        catLink("denim-shirt", "Denim Shirt"), catLink("sweat-shirt", "Sweat Shirt"), catLink("jacket", "Jacket")
       ] },
-      { id: "mi_full", label: "Full sleeve", url: "#category/full-shirt", children: [] },
-      { id: "mi_half", label: "Half sleeve", url: "#category/half-shirt", children: [] },
-      { id: "mi_panjabi", label: "Panjabi", url: "#category/panjabi", image: "assets/img/menu-men.webp", children: [] },
+      { id: "mi_summer", label: "Summer", url: "#category/summer", image: "assets/img/home/r-lb-1-m.webp", children: [
+        catLink("full-shirt", "Full Sleeve Shirt"), catLink("half-shirt", "Half Sleeve Shirt")
+      ] },
+      { id: "mi_ethnic", label: "Ethnic Wear", url: "#category/ethnic-wear", image: "assets/img/home/r-lb-2-m.webp", children: [
+        catLink("panjabi", "Panjabi"), catLink("payjama", "Payjama")
+      ] },
       { id: "mi_sale", label: "On sale", url: "#category/on-sale", children: [] }
     ],
     footer: [
       { id: "fc_shop", title: "Shop", items: [
-        { id: "f1", label: "Winter Collection", url: "#category/winter-collection", children: [] }, { id: "f2", label: "Full Sleeve Shirt", url: "#category/full-shirt", children: [] },
-        { id: "f3", label: "Half Sleeve Shirt", url: "#category/half-shirt", children: [] }, { id: "f4", label: "Premium Panjabi", url: "#category/panjabi", children: [] },
+        { id: "f1", label: "Winter 26/27", url: "#category/winter-collection", children: [] }, { id: "f2", label: "Summer", url: "#category/summer", children: [] },
+        { id: "f3", label: "Ethnic Wear", url: "#category/ethnic-wear", children: [] }, { id: "f4", label: "Premium Panjabi", url: "#category/panjabi", children: [] },
         { id: "f5", label: "On Sale", url: "#category/on-sale", children: [] }
       ] },
       { id: "fc_company", title: "Company", items: [

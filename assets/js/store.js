@@ -425,7 +425,10 @@
     }).join("");
     drawArrivals(0);
     // Categories with products or children, top level first
-    var cats = S.categories.filter(function (c) { return c.parentId && CAT_BY_ID[c.parentId] && CAT_BY_ID[c.parentId].slug === "men"; });
+    // Every shoppable category (the ones with no sub-categories), grouped by their parent's order
+    var po = function (c) { var p = CAT_BY_ID[c.parentId]; return (p ? p.order || 0 : 0) * 100 + (c.order || 0); };
+    var cats = S.categories.filter(function (c) { return c.parentId && c.slug !== "on-sale" && !S.categories.some(function (k) { return k.parentId === c.id; }); })
+      .sort(function (a, b) { return po(a) - po(b); });
     $("#catList").innerHTML = cats.map(function (c) {
       var n = productsIn(c).length;
       return '<li><a href="#category/' + c.slug + '"><span>' + esc(c.name) + '</span><span class="mono">' + (n ? n + (n === 1 ? " style" : " styles") : "Soon") + "</span></a></li>";

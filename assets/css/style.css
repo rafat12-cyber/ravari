@@ -1795,3 +1795,5 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
   .pd__gallery > .pd__thumbs { grid-row: 3; }
   .pd__info { padding-top: 0; }
 }
+.cats__list a { position: relative; padding-right: 48px; }
+.cats__list a::after { position: absolute; right: 8px; top: 50%; translate: 0 -50%; }
