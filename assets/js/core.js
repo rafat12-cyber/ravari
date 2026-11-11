@@ -1723,6 +1723,99 @@
       if (changes.length) acoreSync(c, o);
       return { order: o };
     });
+    // Edit an order by hand: customer details, items (size, quantity, price, add or remove), delivery and discount.
+    // Stock follows the change: what came off the order goes back, what was added comes out.
+    route("PUT", "/api/orders/:id/edit", "orders", function (c) {
+      var db = c.db, b = c.body || {};
+      var o = db.orders.filter(function (x) { return x.id === c.params.id || x.number === String(c.params.id).toUpperCase(); })[0];
+      if (!o) fail(404, "Order not found.");
+      var changes = [], errors = {};
+      if (b.customer) {
+        var cu = b.customer, info = { name: str(cu.name, 80), phone: str(cu.phone, 20), email: str(cu.email, 120), address: str(cu.address, 300), city: str(cu.city, 60) };
+        if (!info.name) errors.name = "Enter the customer's name.";
+        if (!isPhone(info.phone)) errors.phone = "Enter a Bangladeshi mobile number, like 01712345678.";
+        if (info.email && !isEmail(info.email)) errors.email = "That email doesn't look right.";
+        if (info.address.length < 6) errors.address = "Enter the full delivery address.";
+        if (Object.keys(errors).length) fail(400, "Please check the highlighted fields.", errors);
+        info.phone = normPhone(info.phone);
+        ["name", "phone", "email", "address", "city"].forEach(function (k) { if ((o.customer[k] || "") !== info[k]) { changes.push(k === "phone" ? "Phone: " + info.phone : k.charAt(0).toUpperCase() + k.slice(1) + " changed"); o.customer[k] = info[k]; } });
+      }
+      var itemsChanged = false;
+      if (Array.isArray(b.items)) {
+        if (!b.items.length) fail(400, "Keep at least one item. To drop the whole order, cancel it.");
+        if (b.items.length > 50) fail(400, "Too many items in one order.");
+        if (o.status === "shipped" || o.status === "delivered") fail(400, "This order is " + o.status + ", so its items can't change.");
+        var held = !o.restocked; // a live order holds its stock; a cancelled or returned one doesn't
+        var key = function (pid, vid) { return pid + "|" + (vid || ""); };
+        var old = {};
+        o.items.forEach(function (it) { old[key(it.productId, it.variantId)] = it; });
+        var want = {}, lines = [];
+        b.items.forEach(function (it) {
+          var p = findProduct(db, it.productId);
+          if (!p) fail(400, "A product on this order no longer exists.");
+          var qty = int(it.qty, 1);
+          if (qty < 1 || qty > 50) fail(400, "Quantity must be between 1 and 50.");
+          var v = null;
+          if (p.variants && p.variants.length) {
+            v = p.variants.filter(function (x) { return x.id === it.variantId; })[0];
+            if (!v) fail(400, "Choose a size for " + p.name + ".");
+          }
+          var k = key(p.id, v ? v.id : null), was = old[k];
+          var price = it.price !== undefined && it.price !== "" && it.price !== null ? Math.max(0, int(it.price)) : was ? was.price : (v && v.price != null ? v.price : p.price);
+          if (want[k]) { want[k].qty += qty; want[k].lineTotal = want[k].price * want[k].qty; return; }
+          var line = { productId: p.id, variantId: v ? v.id : null, name: was ? was.name : p.name, sku: v ? v.sku : p.sku, options: v ? v.options : {}, color: p.color || "",
+            image: was ? was.image : (p.images || [])[0] || "", price: price, comparePrice: was ? was.comparePrice : p.comparePrice || 0, qty: qty, lineTotal: price * qty };
+          want[k] = line; lines.push(line);
+        });
+        // Stock check first, then move it, so a failed edit changes nothing
+        if (held) Object.keys(want).forEach(function (k) {
+          var l = want[k], p = findProduct(db, l.productId);
+          if (!p.trackStock) return;
+          var v = l.variantId ? p.variants.filter(function (x) { return x.id === l.variantId; })[0] : null;
+          var free = (v ? v.stock : int(p.stock)) + (old[k] ? old[k].qty : 0);
+          if (l.qty > free) fail(409, free > 0 ? "Only " + free + " available of " + p.name + (v ? " (" + optionText(v.options) + ")" : "") + "." : p.name + (v ? " (" + optionText(v.options) + ")" : "") + " is out of stock.");
+        });
+        var summary = [];
+        Object.keys(old).concat(Object.keys(want).filter(function (k) { return !old[k]; })).forEach(function (k) {
+          var a = old[k] ? old[k].qty : 0, n = want[k] ? want[k].qty : 0, l = want[k] || old[k];
+          var label = l.name + (l.options && Object.keys(l.options).length ? " (" + optionText(l.options) + ")" : "");
+          if (a !== n) {
+            summary.push(!a ? "added " + n + "× " + label : !n ? "removed " + label : label + " " + a + "→" + n);
+            if (held) {
+              var p = findProduct(db, l.productId);
+              if (p && p.trackStock) {
+                var v = l.variantId ? (p.variants || []).filter(function (x) { return x.id === l.variantId; })[0] : null;
+                if (v) v.stock += a - n; else p.stock = int(p.stock) + a - n;
+                if (n > a) lowStockCheck(db, p, v);
+              }
+            }
+          } else if (old[k] && want[k] && old[k].price !== want[k].price) summary.push(label + " price " + old[k].price + "→" + want[k].price);
+        });
+        if (summary.length) { itemsChanged = true; o.items = lines; changes.push("Items: " + summary.join(", ")); }
+      }
+      if (b.zone !== undefined && b.zone && (!o.shippingZone || o.shippingZone.id !== b.zone)) {
+        var z = ((db.settings.shipping || {}).zones || []).filter(function (x) { return x.id === b.zone; })[0];
+        if (!z) fail(400, "Choose a delivery area.");
+        o.shippingZone = { id: z.id, name: z.name, days: z.days };
+        if (b.shipping === undefined || b.shipping === "") b.shipping = int(z.fee);
+        changes.push("Delivery area: " + z.name);
+      }
+      if (b.shipping !== undefined && b.shipping !== "" && int(b.shipping) !== o.shipping) { o.shipping = Math.max(0, int(b.shipping)); changes.push("Delivery charge: ৳" + o.shipping); }
+      var subtotal = o.items.reduce(function (n, it) { return n + it.lineTotal; }, 0);
+      if (b.discount !== undefined && b.discount !== "" && int(b.discount) !== o.discount) { o.discount = Math.max(0, int(b.discount)); changes.push("Discount: ৳" + o.discount); }
+      if (o.discount > subtotal) o.discount = subtotal;
+      var total = subtotal - o.discount + o.shipping;
+      if (subtotal !== o.subtotal || total !== o.total) { if (total !== o.total) changes.push("Total: ৳" + o.total + " → ৳" + total); o.subtotal = subtotal; o.total = total; }
+      var note = str(b.note, 500);
+      if (!changes.length) return { order: o, changed: false };
+      if (o.pathao && o.pathao.consignmentId && (itemsChanged || changes.some(function (x) { return /^(Total|Phone|Address|Name)/.test(x); }))) changes.push("Already with Pathao: update the parcel in the Pathao panel too");
+      o.updatedAt = now();
+      o.history.push({ at: now(), status: o.status, note: "Order edited · " + changes.join(" · ") + (note ? " · " + note : ""), by: c.auth ? c.auth.name : "System", internal: true });
+      if (o.customerId) { var cust = db.customers.filter(function (x) { return x.id === o.customerId; })[0]; if (cust && b.customer) { cust.name = o.customer.name; cust.address = o.customer.address; cust.city = o.customer.city || cust.city; if (o.customer.email) cust.email = o.customer.email; } }
+      emit(db, "order.updated", o);
+      acoreSync(c, o);
+      return { order: o, changed: true };
+    });
     function setStatus(c, o, status) {
       var db = c.db;
       if (ORDER_STATUSES.indexOf(status) < 0) fail(400, "Unknown status.");

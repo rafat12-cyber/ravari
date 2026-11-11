@@ -527,7 +527,7 @@
     const tel = o.customer.phone;
     view.innerHTML = `<div class="head"><div><a class="btn btn--link" href="#/orders">← Orders</a><h1 class="h1" style="margin-top:8px">Order ${esc(o.number)}</h1>
       <p class="muted">${dateTime(o.createdAt)} · ${pill(o.status)} ${pill(o.paymentStatus)}</p></div>
-      <div class="flex"><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/invoice">Invoice</a><a class="btn btn--ghost" href="tel:${esc(tel)}">Call customer</a>${me.role === "owner" ? `<button class="btn btn--danger" type="button" id="oDel">Delete order</button>` : ""}</div></div>
+      <div class="flex">${o.status === "pending" || o.status === "hold" ? `<button class="btn btn--dark" type="button" data-quick="confirmed">Confirm</button>` : ""}${["pending", "confirmed", "processing"].indexOf(o.status) > -1 ? `<button class="btn btn--ghost" type="button" data-quick="hold">Hold</button>` : ""}${["cancelled", "returned", "delivered", "shipped"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" data-quick="cancelled">Cancel order</button>` : ""}${o.status === "cancelled" ? `<button class="btn btn--ghost" type="button" data-quick="pending">Reopen</button>` : ""}<button class="btn btn--ghost" type="button" id="oEdit">Edit order</button><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/invoice">Invoice</a><a class="btn btn--ghost" href="tel:${esc(tel)}">Call customer</a>${me.role === "owner" ? `<button class="btn btn--danger" type="button" id="oDel">Delete order</button>` : ""}</div></div>
       <div class="cols">
         <div class="stack">
           <div class="card"><h2 class="h2">Items</h2><div class="items">${o.items.map((it) => `<div class="item">${it.image ? `<img src="${esc(it.image)}" alt="">` : `<span class="ph"></span>`}
@@ -590,10 +590,104 @@
       busy(btn, true);
       try { await api("PATCH", "/api/orders/" + o.number, b); toast("Order updated"); viewOrder(o.number); refreshCounts(); }
       catch (err) { fail(err); busy(btn, false); }
-    };    if ($("#oDel")) $("#oDel").onclick = async () => {
+    };
+    // Quick status buttons: Confirm, Hold, Cancel, Reopen
+    $$("[data-quick]", view).forEach((b) => { b.onclick = async () => {
+      const s = b.dataset.quick, msg = { confirmed: ["Confirm order " + o.number + "?", "The order moves to Confirmed.", "Confirm"], hold: ["Put " + o.number + " on hold?", "Use this while you wait for the customer, for example to check the size or address. The items stay reserved.", "Put on hold"],
+        cancelled: ["Cancel order " + o.number + "?", "The items go back into stock." + (o.pathao && o.pathao.consignmentId ? " This order is already with Pathao, so cancel the parcel in the Pathao panel too." : ""), "Cancel order"], pending: ["Reopen order " + o.number + "?", "The items come out of stock again.", "Reopen"] }[s];
+      let note = "";
+      const body = modal(msg[0], `<form class="stack" id="qkForm"><p class="muted" style="margin:0">${esc(msg[1])}</p>
+        <label class="field"><span>Reason or note (optional)</span><input class="input" name="note" maxlength="300" placeholder="${s === "hold" ? "Waiting for the customer to confirm the size" : s === "cancelled" ? "Customer cancelled on the phone" : ""}"></label>
+        ${s === "cancelled" || s === "hold" ? `<label class="check"><input type="checkbox" name="notifyCustomer"> Show this note to the customer on the order tracking page</label>` : ""}
+        <div class="modal__foot"><button class="btn btn--ghost" type="button" data-modal-close>Back</button><button class="btn ${s === "cancelled" ? "btn--danger" : "btn--dark"}" type="submit">${msg[2]}</button></div></form>`);
+      $("#qkForm", body).onsubmit = async (e) => {
+        e.preventDefault();
+        const f = formData(e.target), btn = $("button[type=submit]", e.target); busy(btn, true);
+        try { await api("PATCH", "/api/orders/" + o.number, { status: s, note: f.note, notifyCustomer: !!f.notifyCustomer }); closeModal(); toast(o.number + ": " + human(s)); viewOrder(o.number); refreshCounts(); }
+        catch (err) { busy(btn, false); fail(err); }
+      };
+    }; });
+    $("#oEdit").onclick = () => orderEditDialog(o, () => { viewOrder(o.number); refreshCounts(); });
+    if ($("#oDel")) $("#oDel").onclick = async () => {
       const live = !o.restocked && o.status !== "delivered";
       if (!(await confirmBox("Delete order " + o.number + "?", "It disappears from Orders and your sales numbers" + (live ? ", and its items go back into stock" : "") + ". It stays in Trash for 30 days, so you can restore it.", "Delete order", true))) return;
       try { await api("DELETE", "/api/orders/" + o.id); toast("Order moved to Trash"); refreshCounts(); go("orders"); } catch (err) { fail(err); }
+    };
+  }
+
+  // Edit an order by hand: customer, items (size, quantity, price, add or remove), delivery and discount
+  async function orderEditDialog(o, done) {
+    let st;
+    try { st = await loadStore(true); } catch (err) { return fail(err); }
+    const prods = st.products.slice().sort((a, b) => a.name.localeCompare(b.name));
+    const zones = ((st.settings && st.settings.shipping) || {}).zones || [];
+    const locked = o.status === "shipped" || o.status === "delivered";
+    // Products on the order that are hidden from the store now still need to be choosable
+    o.items.forEach((it) => { if (!prods.some((p) => p.id === it.productId)) prods.unshift({ id: it.productId, name: it.name + " (hidden)", price: it.price, variants: it.variantId ? [{ id: it.variantId, options: it.options, stock: null }] : [], trackStock: false }); });
+    let rows = o.items.map((it) => ({ productId: it.productId, variantId: it.variantId, qty: it.qty, price: it.price, was: it.qty, orig: it }));
+    const held = !o.restocked;
+    const free = (p, v, r) => { if (!p.trackStock) return null; const s = v ? v.stock : p.stock; const back = held && r.orig && r.orig.productId === p.id && (r.orig.variantId || null) === (v ? v.id : null) ? r.orig.qty : 0; return s == null ? null : s + back; };
+    const body = modal("Edit order " + o.number, `<form class="stack" id="oeForm">
+      ${locked ? `<p class="muted small" style="margin:0">This order is ${esc(o.status)}, so only the customer details can change.</p>` : ""}
+      ${o.pathao && o.pathao.consignmentId ? `<p class="small" style="margin:0;color:var(--danger)">Already sent to Pathao (${esc(o.pathao.consignmentId)}). Changes here don't update the Pathao parcel, so change it in the Pathao panel too.</p>` : ""}
+      <h3 class="h3" style="margin:4px 0 0">Customer</h3>
+      <div class="row row--2"><label class="field"><span>Name</span><input class="input" name="name" value="${esc(o.customer.name)}" maxlength="80" required></label>
+      <label class="field"><span>Phone</span><input class="input" name="phone" value="${esc(o.customer.phone)}" maxlength="20" required></label></div>
+      <label class="field"><span>Address</span><input class="input" name="address" value="${esc(o.customer.address)}" maxlength="300" required></label>
+      <div class="row row--2"><label class="field"><span>City</span><input class="input" name="city" value="${esc(o.customer.city || "")}" maxlength="60"></label>
+      <label class="field"><span>Email (optional)</span><input class="input" name="email" type="email" value="${esc(o.customer.email || "")}" maxlength="120"></label></div>
+      <h3 class="h3" style="margin:8px 0 0">Items</h3>
+      <div id="oeItems" class="stack" style="gap:8px"></div>
+      ${locked ? "" : `<button class="btn btn--ghost btn--sm" type="button" id="oeAdd" style="align-self:flex-start">+ Add product</button>`}
+      <div class="row row--3"><label class="field"><span>Delivery area</span><select class="input" name="zone"${locked ? " disabled" : ""}>${zones.map((z) => `<option value="${esc(z.id)}" data-fee="${z.fee}"${o.shippingZone && o.shippingZone.id === z.id ? " selected" : ""}>${esc(z.name)} · ${taka(z.fee)}</option>`).join("")}</select></label>
+      <label class="field"><span>Delivery charge (৳)</span><input class="input" name="shipping" type="number" min="0" step="1" value="${o.shipping}"${locked ? " disabled" : ""}></label>
+      <label class="field"><span>Discount (৳)</span><input class="input" name="discount" type="number" min="0" step="1" value="${o.discount || 0}"${locked ? " disabled" : ""}></label></div>
+      <div class="totals" id="oeTotals"></div>
+      <label class="field"><span>Why (optional, staff only)</span><input class="input" name="note" maxlength="300" placeholder="Customer asked for size L instead of M"></label>
+      <div class="modal__foot"><button class="btn btn--ghost" type="button" data-modal-close>Cancel</button><button class="btn btn--dark" type="submit">Save changes</button></div></form>`, { wide: true, noFocus: true });
+    const f = $("#oeForm", body), box = $("#oeItems", body);
+    const pOf = (id) => prods.filter((p) => p.id === id)[0];
+    const draw = () => {
+      box.innerHTML = rows.map((r, i) => {
+        const p = pOf(r.productId), vs = (p && p.variants) || [];
+        const v = vs.filter((x) => x.id === r.variantId)[0], left = p ? free(p, v, r) : null;
+        return `<div class="flex" data-i="${i}" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <label class="field" style="flex:2 1 220px"><span>Product</span><select class="input" data-k="productId"${locked ? " disabled" : ""}>${prods.map((x) => `<option value="${esc(x.id)}"${x.id === r.productId ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
+          ${vs.length ? `<label class="field" style="flex:1 1 110px"><span>Size</span><select class="input" data-k="variantId"${locked ? " disabled" : ""}><option value="">Choose…</option>${vs.map((x) => { const l = free(p, x, r); return `<option value="${esc(x.id)}"${x.id === r.variantId ? " selected" : ""}>${esc(optText(x.options))}${l != null ? " · " + l + " left" : ""}</option>`; }).join("")}</select></label>` : ""}
+          <label class="field" style="flex:0 1 80px"><span>Qty</span><input class="input" type="number" min="1" max="50" data-k="qty" value="${r.qty}"${locked ? " disabled" : ""}></label>
+          <label class="field" style="flex:0 1 110px"><span>Price (৳)</span><input class="input" type="number" min="0" data-k="price" value="${r.price}"${locked ? " disabled" : ""}></label>
+          ${locked ? "" : `<button class="btn btn--ghost btn--sm" type="button" data-rm title="Remove" style="margin-bottom:4px">Remove</button>`}
+          ${left != null && r.qty > left ? `<small style="flex-basis:100%;color:var(--danger)">Only ${left} in stock</small>` : ""}</div>`;
+      }).join("") || `<p class="muted">No items.</p>`;
+      totals();
+    };
+    const totals = () => {
+      const sub = rows.reduce((n, r) => n + (+r.price || 0) * (+r.qty || 0), 0), ship = +f.shipping.value || 0, disc = Math.min(sub, +f.discount.value || 0);
+      $("#oeTotals", body).innerHTML = `<div><span>Subtotal</span><span class="num">${taka(sub)}</span></div>${disc ? `<div><span>Discount</span><span class="num">−${taka(disc)}</span></div>` : ""}<div><span>Delivery</span><span class="num">${taka(ship)}</span></div>
+        <div class="grand"><span>New total</span><span class="num">${taka(sub - disc + ship)}</span></div>${sub - disc + ship !== o.total ? `<small class="muted">Was ${taka(o.total)}</small>` : ""}`;
+    };
+    box.addEventListener("change", (e) => {
+      const row = e.target.closest("[data-i]"); if (!row) return;
+      const r = rows[+row.dataset.i], k = e.target.dataset.k;
+      if (k === "productId") { const p = pOf(e.target.value); r.productId = p.id; r.variantId = null; r.price = p.price; r.orig = null; const first = (p.variants || []).filter((v) => v.stock == null || v.stock > 0)[0]; if (first) { r.variantId = first.id; if (first.price != null) r.price = first.price; } draw(); }
+      else if (k === "variantId") { r.variantId = e.target.value || null; const v = (pOf(r.productId).variants || []).filter((x) => x.id === r.variantId)[0]; if (v && v.price != null && !r.orig) r.price = v.price; draw(); }
+      else { r[k] = Math.max(k === "qty" ? 1 : 0, Math.round(+e.target.value || 0)); draw(); }
+    });
+    box.addEventListener("input", (e) => { const row = e.target.closest("[data-i]"); if (row && (e.target.dataset.k === "qty" || e.target.dataset.k === "price")) { rows[+row.dataset.i][e.target.dataset.k] = +e.target.value || 0; totals(); } });
+    box.addEventListener("click", (e) => { if (!e.target.closest("[data-rm]")) return; rows.splice(+e.target.closest("[data-i]").dataset.i, 1); draw(); });
+    if ($("#oeAdd", body)) $("#oeAdd", body).onclick = () => { const p = prods.filter((x) => !x.trackStock || x.stock > 0)[0] || prods[0]; const v = (p.variants || []).filter((x) => x.stock == null || x.stock > 0)[0]; rows.push({ productId: p.id, variantId: v ? v.id : null, qty: 1, price: v && v.price != null ? v.price : p.price, orig: null }); draw(); };
+    f.zone.onchange = () => { const opt = f.zone.selectedOptions[0]; if (opt) f.shipping.value = opt.dataset.fee; totals(); };
+    f.shipping.oninput = totals; f.discount.oninput = totals;
+    draw();
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      if (!locked && !rows.length) return toast("Keep at least one item. To drop the whole order, cancel it.", true);
+      if (rows.some((r) => { const p = pOf(r.productId); return p && (p.variants || []).length && !r.variantId; })) return toast("Choose a size for every item.", true);
+      const b = { customer: { name: f.name.value, phone: f.phone.value, email: f.email.value, address: f.address.value, city: f.city.value }, note: f.note.value };
+      if (!locked) Object.assign(b, { items: rows.map((r) => ({ productId: r.productId, variantId: r.variantId, qty: +r.qty, price: +r.price })), zone: f.zone.value, shipping: f.shipping.value, discount: f.discount.value });
+      const btn = $("button[type=submit]", f); busy(btn, true);
+      try { const r = await api("PUT", "/api/orders/" + o.id + "/edit", b); closeModal(); toast(r.changed ? "Order " + o.number + " updated" : "Nothing changed"); done(); }
+      catch (err) { busy(btn, false); fail(err); }
     };
   }
 
