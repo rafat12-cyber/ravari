@@ -1894,3 +1894,8 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .tl__price, .tl__sum { font-family: var(--f-head); font-weight: 600; letter-spacing: .02em; color: var(--ink); }
 .tl__all { font-family: var(--f-mono); font-weight: 600; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; border-radius: 10px; background: var(--ink); }
 .tl__all:hover { background: #000; }
+
+/* Header logo: 2px smaller, 5px further right on desktop (Rafat, 2026-11-11) */
+.nav__brand img, .topbar .nav__brand img { height: calc(var(--logo-h, 18px) - 2px); }
+@media (max-width: 960px) { .nav__brand img, .topbar .nav__brand img { height: calc(min(var(--logo-h, 18px), 14px) - 2px); } }
+@media (min-width: 961px) { .nav__brand { margin-left: 5px; } }
