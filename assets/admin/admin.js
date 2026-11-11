@@ -1112,7 +1112,7 @@
     let draft = clone(p);
     draft.details = (draft.details || []).join("\n");
     view.innerHTML = `<div class="head"><div><a class="btn btn--link" href="#/products">← Products</a><h1 class="h1" style="margin-top:8px">${isNew ? "Add product" : esc(p.name)}</h1>
-      ${isNew ? "" : `<p class="muted">SKU ${esc(p.sku)} · ${pill(p.status)} · <a href="./#product/${esc(p.slug)}" target="_blank" rel="noopener">View on store ↗</a></p>`}</div></div>
+      ${isNew ? "" : `<p class="muted">SKU ${esc(p.sku)} · ${pill(p.status)} · <a href="./#product/${esc(p.slug)}" target="_blank" rel="noopener">View on store ↗</a> · <a href="#/labels?product=${esc(p.id)}">Print price tags</a></p>`}</div></div>
       <form class="cols" id="pForm" novalidate>
         <div class="stack">
           <div class="card"><label class="field"><span>Product name</span><input class="input" name="name" required value="${esc(draft.name)}" placeholder="Premium Casual Shirt – Blue"></label>
@@ -1632,6 +1632,168 @@
       <tbody>${rows.map((r) => `<tr>${cols.map((_, i) => i ? `<td>${esc(r[i] || "")}</td>` : `<th scope="row">${esc(r[i] || "")}</th>`).join("")}</tr>`).join("")}</tbody></table></div>
       <div class="szc__foot">${ch.note ? `<span><b>Tip</b> ${esc(ch.note)}</span>` : "<span></span>"}<span class="szc__logo">${esc(label || "Ravari")}</span></div></div>`;
   }
+  // ---------------------------------------------------------------------------
+  // Price tags: labels with brand, name, barcode of the SKU, the number and the price
+  // ---------------------------------------------------------------------------
+  const BC_TYPES = { code128: "Code 128 (best for SKUs)", code39: "Code 39", code93: "Code 93", ean13: "EAN-13 (numbers only)", upca: "UPC-A (numbers only)", qrcode: "QR code" };
+  let bwipLoad = null;
+  const loadBwip = () => bwipLoad || (bwipLoad = new Promise((ok, no) => {
+    if (window.bwipjs) return ok();
+    const sc = document.createElement("script");
+    sc.src = "assets/admin/bwip-js.min.js?v=4.5.1";
+    sc.onload = () => ok(); sc.onerror = () => { bwipLoad = null; no(new Error("The barcode maker didn't load. Check the connection and open the page again.")); };
+    document.head.appendChild(sc);
+  }));
+  // One barcode as SVG. EAN-13 and UPC-A only take numbers, so a SKU with letters gets a clear message instead
+  function labelBarcode(t, code) {
+    const digits = /^\d+$/.test(code);
+    if (t.type === "ean13" && !(digits && (code.length === 12 || code.length === 13))) return { err: "EAN-13 needs a 12 or 13 digit number. Use Code 128 for SKUs like " + code + "." };
+    if (t.type === "upca" && !(digits && (code.length === 11 || code.length === 12))) return { err: "UPC-A needs an 11 or 12 digit number. Use Code 128 for SKUs like " + code + "." };
+    try {
+      const o = { bcid: t.type, text: code, scale: 2, paddingwidth: 0, paddingheight: 0 };
+      if (t.type !== "qrcode") o.height = t.barHeight;
+      if (t.type === "code39" || t.type === "code93") o.text = code.toUpperCase();
+      if (t.type === "code39") o.text = o.text.replace(/[^0-9A-Z\-. $\/+%]/g, "-");
+      return { svg: window.bwipjs.toSVG(o).replace("<svg ", '<svg preserveAspectRatio="none" ') };
+    } catch (e) { return { err: "This code can't be made as " + BC_TYPES[t.type] + ": " + String(e.message || e).replace(/^bwipp\.\w+#?\d*:\s*/, "") }; }
+  }
+  const LABEL_FONT = "Arial, Helvetica, sans-serif";
+  function labelHtml(t, it) {
+    const line = (k, html, extra) => t.show[k] ? `<div class="lb-${k}" style="font-size:${t.font[k]}pt;font-weight:${t.bold[k] ? 700 : 400}${extra || ""}">${html}</div>` : "";
+    const bc = t.show.barcode ? labelBarcode(t, it.sku) : null;
+    const bar = bc ? (bc.err ? `<div class="lb-err">${esc(bc.err)}</div>` : t.type === "qrcode"
+      ? `<div class="lb-bar" style="height:${t.barHeight}mm;width:${t.barHeight}mm">${bc.svg}</div>`
+      : `<div class="lb-bar" style="height:${t.barHeight}mm;width:${t.barWidth}%">${bc.svg}</div>`) : "";
+    const price = (t.show.oldPrice && it.oldPrice > it.price ? `<s style="font-weight:400;font-size:.75em;margin-right:4px">${esc(t.pricePrefix)}${it.oldPrice.toLocaleString("en-IN")}</s>` : "") + esc(t.pricePrefix) + Number(it.price || 0).toLocaleString("en-IN");
+    const just = t.align === "left" ? "flex-start" : t.align === "right" ? "flex-end" : "center";
+    return `<div class="lb" style="width:${t.width}mm;height:${t.height}mm;padding:${t.padding}mm;text-align:${t.align};align-items:${just};${t.border ? "outline:0.2mm solid #000;outline-offset:-0.2mm;" : ""}font-family:${LABEL_FONT}">
+      ${line("brand", esc(t.brand || "RAVARI"), ";letter-spacing:.08em")}
+      ${line("name", esc(it.name) + (t.show.size && it.size ? ` <span style="font-weight:700">· ${esc(it.size)}</span>` : ""), ";overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical")}
+      ${bar}${line("code", esc(it.sku), ";letter-spacing:.06em")}${line("price", price)}</div>`;
+  }
+  const LABEL_CSS = `.lb{box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:0.6mm;overflow:hidden;background:#fff;color:#000;line-height:1.15}
+    .lb>div{max-width:100%}.lb-bar svg{display:block;width:100%;height:100%}.lb-err{font:6pt/1.2 Arial,sans-serif;color:#b00020;border:0.2mm dashed #b00020;padding:1mm}`;
+  function labelPrintDoc(t, items) {
+    const list = [];
+    items.forEach((it) => { for (let i = 0; i < it.qty; i++) list.push(labelHtml(t, it)); });
+    const page = t.sheet === "a4"
+      ? `@page{size:A4;margin:8mm}.sheet{display:grid;grid-template-columns:repeat(${t.columns},${t.width}mm);gap:${t.gap}mm}.lb{break-inside:avoid}`
+      : `@page{size:${t.width}mm ${t.height}mm;margin:0}.lb{break-after:page}`;
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Price tags</title><style>html,body{margin:0;background:#fff}${LABEL_CSS}${page}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><div class="sheet">${list.join("")}</div></body></html>`;
+  }
+  async function viewLabels(_, query) {
+    setTitle("Price tags");
+    const q = new URLSearchParams(query || "");
+    let t, prods;
+    view.innerHTML = `<p class="muted">Loading…</p>`;
+    try {
+      const [tr, pr] = await Promise.all([api("GET", "/api/label-template"), api("GET", "/api/products"), loadBwip()]);
+      t = tr.template; prods = pr.products;
+    } catch (err) { return fail(err); }
+    if (!t.brand) t.brand = ((store && store.settings && store.settings.store && store.settings.store.name) || "RAVARI").toUpperCase();
+    // every size of every product is one row
+    // serial order: by product SKU (RV-1001, RV-1002…), then sizes in their own order (M, L, XL…)
+    const rows = [];
+    prods.slice().sort((a, b) => String(a.sku || "").localeCompare(String(b.sku || ""), "en", { numeric: true })).forEach((p) => {
+      const old = +p.comparePrice || 0;
+      if (p.variants && p.variants.length) p.variants.forEach((v) => rows.push({ key: p.id + "|" + v.id, pid: p.id, name: p.name, size: Object.values(v.options || {}).join(" / "), sku: v.sku || p.sku, price: v.price != null ? +v.price : +p.price, oldPrice: old, stock: v.stock, qty: 0 }));
+      else rows.push({ key: p.id, pid: p.id, name: p.name, size: "", sku: p.sku, price: +p.price, oldPrice: old, stock: p.stock, qty: 0 });
+    });
+    let search = "";
+    const only = q.get("product");
+    if (only) { const p = prods.find((x) => x.id === only); if (p) { search = p.name; rows.filter((r) => r.pid === only).forEach((r) => { r.qty = 1; }); } }
+    const num = (id, label, v, min, max, step, unit) => `<label class="field"><span>${label}</span><div class="lb-unit"><input class="input" type="number" data-t="${id}" value="${v}" min="${min}" max="${max}" step="${step || 1}"><small>${unit || ""}</small></div></label>`;
+    const chk = (id, label, on) => `<label class="switch"><input type="checkbox" data-t="${id}" ${on ? "checked" : ""}> ${label}</label>`;
+    const lineRow = (k, title, extra) => `<div class="lb-row"><div class="lb-row__head">${chk("show." + k, `<b>${title}</b>`, t.show[k])}</div>
+      <div class="lb-row__opts">${t.font[k] != null ? num("font." + k, "Text size", t.font[k], 4, 40, 0.5, "pt") + `<label class="switch"><input type="checkbox" data-t="bold.${k}" ${t.bold[k] ? "checked" : ""}> Bold</label>` : ""}${extra || ""}</div></div>`;
+    view.innerHTML = `<div class="head"><div><h1 class="h1">Price tags</h1><p class="muted">Design the label once, pick products and how many of each, then print. The barcode is the size's SKU.</p></div></div>
+      <div class="lb-cols">
+        <form class="stack" id="lbForm">
+          <div class="card"><h2 class="h2">Label size</h2>
+            <div class="row row--3">${num("width", "Width", t.width, 15, 210, 1, "mm")}${num("height", "Height", t.height, 10, 297, 1, "mm")}${num("padding", "Inner margin", t.padding, 0, 10, 0.5, "mm")}</div>
+            <div class="row row--3"><label class="field"><span>Paper</span><select class="input" data-t="sheet"><option value="roll">Label printer roll (one label per page)</option><option value="a4"${t.sheet === "a4" ? " selected" : ""}>A4 sticker sheet</option></select></label>
+              <span data-a4 class="lb-a4">${num("columns", "Labels across", t.columns, 1, 8, 1, "")}${num("gap", "Gap", t.gap, 0, 20, 0.5, "mm")}</span></div>
+            <div class="row row--2"><label class="field"><span>Text alignment</span><select class="input" data-t="align">${["left", "center", "right"].map((a) => `<option value="${a}"${t.align === a ? " selected" : ""}>${a[0].toUpperCase() + a.slice(1)}</option>`).join("")}</select></label>
+              <div class="field"><span>&nbsp;</span>${chk("border", "Print a border (to test the size)", t.border)}</div></div></div>
+          <div class="card"><h2 class="h2">Barcode</h2>
+            <div class="row row--3"><label class="field"><span>Barcode type</span><select class="input" data-t="type">${Object.keys(BC_TYPES).map((k) => `<option value="${k}"${t.type === k ? " selected" : ""}>${BC_TYPES[k]}</option>`).join("")}</select></label>
+              ${num("barHeight", "Barcode height", t.barHeight, 3, 60, 0.5, "mm")}<span data-linear>${num("barWidth", "Barcode width", t.barWidth, 20, 100, 1, "% of label")}</span></div>
+            <p class="muted small" style="margin:0">Code 128 reads SKUs with letters and dashes, like RV-1001-M, and works with every scanner. EAN-13 and UPC-A only take numbers.</p></div>
+          <div class="card"><h2 class="h2">On the label, top to bottom</h2>
+            ${lineRow("brand", "1. Brand name", `<label class="field"><span>Text</span><input class="input" data-t="brand" value="${esc(t.brand)}"></label>`)}
+            ${lineRow("name", "2. Product name", chk("show.size", "Add the size", t.show.size))}
+            <div class="lb-row"><div class="lb-row__head">${chk("show.barcode", "<b>3. Barcode</b>", t.show.barcode)}</div><div class="lb-row__opts"><small class="muted">Size and type are set above.</small></div></div>
+            ${lineRow("code", "4. Number under the barcode (SKU)")}
+            ${lineRow("price", "5. Price", `<label class="field"><span>Before the price</span><input class="input" data-t="pricePrefix" value="${esc(t.pricePrefix)}" style="width:80px"></label>` + chk("show.oldPrice", "Show old price crossed out", t.show.oldPrice))}
+          </div>
+          <div class="flex"><button class="btn btn--dark" type="submit">Save label design</button><button class="btn btn--ghost" type="button" id="lbReset">Back to default</button></div>
+        </form>
+        <div class="lb-side"><div class="card"><h2 class="h2">Preview</h2><p class="muted small" style="margin:0 0 10px" id="lbPrevNote"></p><div class="lb-prev" id="lbPrev"></div></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><div class="card__head"><div><h2 class="h2">Products to print</h2><p class="muted small" style="margin:0">Type how many tags you need for each size.</p></div>
+          <div class="flex"><button class="btn btn--ghost btn--sm" type="button" id="lbStock">Quantity = stock</button><button class="btn btn--ghost btn--sm" type="button" id="lbClear">Clear</button><button class="btn btn--dark" type="button" id="lbPrint">Print</button></div></div>
+        <input class="input" id="lbQ" placeholder="Search product, SKU or size" value="${esc(search)}" style="max-width:340px;margin-bottom:10px">
+        <div class="table-wrap" id="lbList"></div></div>
+      <style>${LABEL_CSS}</style>`;
+    const form = $("#lbForm");
+    const shown = () => { const w = search.toLowerCase(); return rows.filter((r) => !w || (r.name + " " + r.sku + " " + r.size).toLowerCase().indexOf(w) > -1); };
+    const total = () => rows.reduce((n, r) => n + r.qty, 0);
+    const drawList = () => {
+      const list = shown();
+      $("#lbList").innerHTML = list.length ? `<table class="t t--tight"><thead><tr><th>Product</th><th>Size</th><th>SKU</th><th class="right">Price</th><th class="right">Stock</th><th class="right">Tags</th></tr></thead><tbody>${list.slice(0, 300).map((r) => `
+        <tr><td>${esc(r.name)}</td><td>${esc(r.size || "–")}</td><td class="mono">${esc(r.sku)}</td><td class="right">${taka(r.price)}</td><td class="right">${r.stock == null ? "–" : r.stock}</td>
+        <td class="right"><input class="input lb-qty" type="number" min="0" max="999" data-k="${esc(r.key)}" value="${r.qty || ""}" placeholder="0"></td></tr>`).join("")}</tbody></table>` : `<p class="empty">No products match.</p>`;
+      count();
+    };
+    const count = () => { const n = total(); $("#lbPrint").textContent = n ? "Print " + n + " tag" + (n > 1 ? "s" : "") : "Print"; };
+    const sample = () => rows.find((r) => r.qty) || shown()[0] || rows[0] || { name: "Product name", size: "M", sku: "RV-1001-M", price: 1499, oldPrice: 1999 };
+    const drawPrev = () => {
+      $("#lbPrev").innerHTML = labelHtml(t, sample());
+      $("#lbPrevNote").textContent = `Real size ${t.width} × ${t.height} mm, shown bigger. ` + (rows.find((r) => r.qty) ? "Showing the first product you picked." : "Pick products below to see them here.");
+      $$("[data-a4]", view).forEach((el) => { el.hidden = t.sheet !== "a4"; });
+      $$("[data-linear]", view).forEach((el) => { el.hidden = t.type === "qrcode"; });
+    };
+    const read = (el) => {
+      const [a, b] = el.dataset.t.split(".");
+      const v = el.type === "checkbox" ? el.checked : el.type === "number" ? +el.value : el.value;
+      if (el.type === "number" && (el.value === "" || isNaN(v))) return;
+      if (b) t[a][b] = v; else t[a] = v;
+    };
+    form.addEventListener("input", (e) => { const el = e.target.closest("[data-t]"); if (el) { read(el); drawPrev(); } });
+    form.addEventListener("change", (e) => { const el = e.target.closest("[data-t]"); if (el) { read(el); drawPrev(); } });
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = e.submitter; busy(btn, true);
+      try { t = (await api("PUT", "/api/label-template", { template: t })).template; toast("Label design saved"); } catch (err) { fail(err); }
+      busy(btn, false);
+    };
+    $("#lbReset").onclick = async () => {
+      if (!(await confirmBox("Go back to the default label?", "Size 50 × 30 mm, Code 128, brand, name, barcode, SKU and price.", "Use default"))) return;
+      try { await api("PUT", "/api/label-template", { template: { width: 50, height: 30, padding: 2, type: "code128", barHeight: 10, barWidth: 90, pricePrefix: "৳", align: "center", border: false, sheet: "roll", columns: 3, gap: 2,
+        show: { brand: true, name: true, size: true, barcode: true, code: true, price: true, oldPrice: false }, font: { brand: 9, name: 7, code: 6, price: 11 }, bold: { brand: true, name: false, code: false, price: true } } }); viewLabels(_, query); } catch (err) { fail(err); }
+    };
+    $("#lbQ").oninput = (e) => { search = e.target.value; drawList(); };
+    $("#lbList").addEventListener("input", (e) => { const el = e.target.closest("[data-k]"); if (!el) return; const r = rows.find((x) => x.key === el.dataset.k); r.qty = Math.max(0, Math.min(999, parseInt(el.value, 10) || 0)); count(); drawPrev(); });
+    $("#lbStock").onclick = () => { shown().forEach((r) => { r.qty = Math.max(0, Math.min(999, r.stock || 0)); }); drawList(); drawPrev(); };
+    $("#lbClear").onclick = () => { rows.forEach((r) => { r.qty = 0; }); drawList(); drawPrev(); };
+    $("#lbPrint").onclick = () => {
+      const pick = rows.filter((r) => r.qty);
+      if (!pick.length) return toast("Type how many tags you need next to a product first.", true);
+      if (total() > 2000) return toast("That's more than 2000 tags. Print them in smaller batches.", true);
+      const bad = pick.map((r) => t.show.barcode && labelBarcode(t, r.sku).err).filter(Boolean);
+      if (bad.length) return toast(bad[0], true);
+      let fr = $("#lbFrame");
+      if (fr) fr.remove();
+      fr = document.createElement("iframe");
+      fr.id = "lbFrame"; fr.title = "Price tags"; fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+      document.body.appendChild(fr);
+      const d = fr.contentWindow.document;
+      d.open(); d.write(labelPrintDoc(t, pick)); d.close();
+      setTimeout(() => { fr.contentWindow.focus(); fr.contentWindow.print(); }, 300);
+    };
+    drawList(); drawPrev();
+  }
+
   async function viewSizeCharts() {
     setTitle("Size charts");
     let list, prods = [];
@@ -3305,7 +3467,7 @@
   const NAV = [
     ["", [["dashboard", "Dashboard", "dashboard"], ["analytics", "Analytics", "dashboard"]]],
     ["Sales", [["orders", "Orders", "orders"], ["carts", "Abandoned carts", "orders"], ["customers", "Customers", "customers"], ["subscribers", "Subscribers", "customers"], ["coupons", "Coupons & offers", "coupons"]]],
-    ["Catalog", [["products", "Products", "products"], ["stock", "Stock", "products"], ["bulk", "Bulk edit", "products"], ["categories", "Categories", "catalog"], ["variations", "Variations", "catalog"], ["sizecharts", "Size charts", "catalog"]]],
+    ["Catalog", [["products", "Products", "products"], ["stock", "Stock", "products"], ["bulk", "Bulk edit", "products"], ["categories", "Categories", "catalog"], ["variations", "Variations", "catalog"], ["sizecharts", "Size charts", "catalog"], ["labels", "Price tags", "products"]]],
     ["Website", [["pages", "Pages", "content"], ["menus", "Menus", "content"], ["layout", "Header & footer", "settings"], ["tracking", "Pixel & Analytics", "settings"], ["popup", "Popup banner", "content"], ["media", "Media library", "content"]]],
     ["Inbox", [["chat", "Live chat", "chat"], ["messages", "Messages", "messages"], ["franchise", "Franchise requests", "franchise"]]],
     ["Admin", [["users", "Users", "users"], ["settings", "Settings", "settings"], ["payments", "Payments", "settings"], ["email", "Email & reminders", "settings"], ["integrations", "API & webhooks", "integrations"], ["acore", "Acore", "settings"], ["pathao", "Pathao", "settings"], ["trash", "Trash", "trash"]]]
@@ -3357,7 +3519,7 @@
     [/^categories$/, viewCategories, "catalog"], [/^variations$/, viewVariations, "catalog"], [/^sizecharts$/, viewSizeCharts, "catalog"], [/^sizecharts\/([^/]+)$/, viewSizeChart, "catalog"],
     [/^pages$/, viewPages, "content"], [/^pages\/([^/]+)$/, viewPageEditor, "content"], [/^menus$/, viewMenus, "content"], [/^media$/, viewMedia, "content"], [/^trash$/, viewTrash, "trash"],
     [/^chat$/, viewChat, "chat"], [/^chat\/([^/]+)$/, viewChat, "chat"], [/^messages$/, viewMessages, "messages"],
-    [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^payments$/, viewPayments, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"], [/^pathao$/, viewPathao, "settings"],
+    [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^labels$/, viewLabels, "products"], [/^payments$/, viewPayments, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"], [/^pathao$/, viewPathao, "settings"],
     [/^account$/, viewAccount, null]
   ];
   let leaveGuard = null, cleanup = null, lastHash = location.href;

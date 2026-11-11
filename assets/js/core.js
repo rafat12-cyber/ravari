@@ -1697,6 +1697,40 @@
       return a;
     }, { publicRead: true });
     // Size chart templates: a title, columns (Size, Chest, Length…) and one row per size
+    // Price tag labels: one saved design (size, barcode type, which lines show, font sizes) used by Catalog › Price tags
+    var LABEL_DEFAULTS = {
+      width: 50, height: 30, padding: 2, type: "code128", barHeight: 10, barWidth: 90, brand: "", pricePrefix: "৳", align: "center", border: false,
+      sheet: "roll", columns: 3, gap: 2,
+      show: { brand: true, name: true, size: true, barcode: true, code: true, price: true, oldPrice: false },
+      font: { brand: 9, name: 7, code: 6, price: 11 },
+      bold: { brand: true, name: false, code: false, price: true }
+    };
+    var LABEL_RANGES = { width: [15, 210], height: [10, 297], padding: [0, 10], barHeight: [3, 60], barWidth: [20, 100], columns: [1, 8], gap: [0, 20] };
+    var LABEL_TYPES = ["code128", "code39", "code93", "ean13", "upca", "qrcode"];
+    function labelTemplate(db) {
+      var t = clone(LABEL_DEFAULTS), saved = db.settings.labels || {};
+      Object.keys(t).forEach(function (k) {
+        if (saved[k] === undefined) return;
+        if (t[k] && typeof t[k] === "object") Object.keys(t[k]).forEach(function (f) { if (saved[k][f] !== undefined) t[k][f] = saved[k][f]; });
+        else t[k] = saved[k];
+      });
+      return t;
+    }
+    route("GET", "/api/label-template", "products", function (c) { return { template: labelTemplate(c.db), types: LABEL_TYPES }; }, { readonly: true });
+    route("PUT", "/api/label-template", "products", function (c) {
+      var b = c.body.template || {}, t = labelTemplate(c.db);
+      Object.keys(LABEL_RANGES).forEach(function (k) { if (b[k] !== undefined) t[k] = Math.min(LABEL_RANGES[k][1], Math.max(LABEL_RANGES[k][0], Math.round(num(b[k], t[k]) * 10) / 10)); });
+      if (b.type !== undefined) t.type = LABEL_TYPES.indexOf(b.type) > -1 ? b.type : "code128";
+      if (b.brand !== undefined) t.brand = str(b.brand, 40);
+      if (b.pricePrefix !== undefined) t.pricePrefix = str(b.pricePrefix, 6);
+      if (b.align !== undefined) t.align = ["left", "center", "right"].indexOf(b.align) > -1 ? b.align : "center";
+      if (b.border !== undefined) t.border = bool(b.border);
+      if (b.sheet !== undefined) t.sheet = b.sheet === "a4" ? "a4" : "roll";
+      ["show", "bold"].forEach(function (k) { if (b[k]) Object.keys(t[k]).forEach(function (f) { if (b[k][f] !== undefined) t[k][f] = bool(b[k][f]); }); });
+      if (b.font) Object.keys(t.font).forEach(function (f) { if (b.font[f] !== undefined) t.font[f] = Math.min(40, Math.max(4, Math.round(num(b.font[f], t.font[f]) * 2) / 2)); });
+      c.db.settings.labels = t;
+      return { template: t, types: LABEL_TYPES };
+    });
     crud("size-charts", "sizeCharts", "catalog", function (db, b, ex) {
       var x = ex ? clone(ex) : { id: newId("sc"), createdAt: now() };
       if (b.name !== undefined) x.name = str(b.name, 60);
