@@ -1948,3 +1948,6 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .wbig__track { opacity: 1; color: transparent; background: linear-gradient(180deg, rgba(255,255,255,.75) 0%, rgba(160,163,168,.55) 55%, rgba(110,113,119,.45) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.55); filter: drop-shadow(0 6px 18px rgba(30,30,34,.12)); }
 .wbig__track i { -webkit-text-fill-color: transparent; }
 .wbig__track { filter: none; }
+
+/* Footer in the theme dark grey, same as the hero wall (Rafat, 2026-11-11) */
+.footer { background: #2b2c30; }
