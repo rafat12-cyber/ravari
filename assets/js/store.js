@@ -519,25 +519,32 @@
     TL.unit = w < 700 ? w * 0.34 : Math.max(96, Math.min(300, w * 0.245));
   }
   function tlWrapD(d) { var n = TL.n; d = ((d % n) + n) % n; return d > n / 2 ? d - n : d; }
-  // Place every model from the current position
+  // Place every model from the current position. The look in focus stands on
+  // the right; the next looks queue up to its left, each one smaller and softer.
   function tlLayout() {
-    var u = TL.unit;
+    var u = TL.unit, w = tlStage.clientWidth, n = TL.n, phone = w < 700;
+    var anchor = w * (phone ? 0.2 : 0.27), edge = phone ? 2.2 : 4.2;
     tlModels.forEach(function (m, k) {
-      var d = tlWrapD(k - TL.pos), a = Math.abs(d), sg = d < 0 ? -1 : 1;
-      // Each step back adds less sideways distance, so the rows tuck in behind
-      var x = sg * (Math.min(a, 1) * u + Math.max(0, Math.min(a, 2) - 1) * u * (TL.edge > 2 ? 0.74 : 0.86) + Math.max(0, Math.min(a, 4) - 2) * u * 0.6);
-      var sc = 1 - Math.min(a, 4) * 0.13;
-      var y = -Math.min(a, 4) * 16;
-      // Five on stage: the middle one and two either side; the rest fade out behind
-      var op = a > TL.edge ? Math.max(0, 1 - (a - TL.edge) / 0.6) : 1;
+      var r = (((k - TL.pos) % n) + n) % n;
+      if (r > n - 1) r -= n; // the look that just left slides out to the right
+      var x, sc, op, blur, y;
+      if (r >= 0) {
+        x = anchor - u * (0.95 * Math.min(r, 1) + 0.66 * Math.max(0, Math.min(r, 2) - 1) + 0.5 * Math.max(0, Math.min(r, 3) - 2) + 0.42 * Math.max(0, r - 3));
+        sc = 1 - Math.min(r, 4.5) * 0.15;
+        blur = Math.min(r, 5) * 1.8;
+        op = r > edge ? Math.max(0, 1 - (r - edge) / 0.7) : 1;
+        y = -Math.min(r, 4) * 10;
+      } else {
+        x = anchor - r * u * 0.9; sc = 1; blur = 0; y = 0;
+        op = Math.max(0, 1 + r * 1.6);
+      }
       m.style.transform = "translate3d(calc(-50% + " + x.toFixed(1) + "px)," + y.toFixed(1) + "px,0) scale(" + sc.toFixed(3) + ")";
-      m.style.zIndex = String(100 - Math.round(a * 10));
+      m.style.zIndex = String(100 - Math.round(r * 10));
       m.style.opacity = op.toFixed(3);
       m.style.visibility = op <= 0.01 ? "hidden" : "visible";
-      // No CSS filters on the photos: some browsers paint a filtered photo's
-      // transparent box as a faint tinted rectangle. Models further back just fade.
       var img = m._img || (m._img = m.querySelector(".tl__img"));
-      img.style.opacity = (1 - Math.min(a, 3) * 0.12).toFixed(3);
+      img.style.filter = blur > 0.05 ? "blur(" + blur.toFixed(2) + "px)" : "none";
+      img.style.opacity = "1";
     });
   }
   function tlSelect(i) {
@@ -623,7 +630,7 @@
     var g = TL.drag, now = performance.now(), dx = x - g.px;
     g.moved = Math.max(g.moved, Math.abs(dx));
     if (now > g.lt) { g.v = 0.8 * g.v + 0.2 * ((x - g.lx) / (now - g.lt)); g.lx = x; g.lt = now; }
-    TL.pos = TL.target = g.p0 - dx / TL.unit;
+    TL.pos = TL.target = g.p0 + dx / TL.unit;
     tlLayout();
   }
   function tlUp(t) {
@@ -637,7 +644,7 @@
       return;
     }
     tlStop();
-    TL.target = Math.round(TL.pos - g.v * 260 / TL.unit);
+    TL.target = Math.round(TL.pos + g.v * 260 / TL.unit);
     tlSelect(((TL.target % TL.n) + TL.n) % TL.n);
   }
   // Mouse and pen use pointer events

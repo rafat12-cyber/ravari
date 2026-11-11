@@ -188,7 +188,18 @@
       },
       tryLook: {
         title: "Try the Look.", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
-        looks: []
+        looks: [
+          { name: "Tan velvet", image: "assets/img/home/look-1.webp", imageAlt: "Model in a tan velvet jacket and black denim", products: "solid-velvet-jacket-tan, baggy-denim-pant-black" },
+          { name: "Navy velvet", image: "assets/img/home/look-2.webp", imageAlt: "Model in a navy velvet jacket and off-white denim", products: "solid-velvet-jacket-navy, baggy-denim-pant-off-white" },
+          { name: "Grey check", image: "assets/img/home/look-3.webp", imageAlt: "Model in a grey check jacket and black denim", products: "checked-jacket-grey, baggy-denim-pant-black" },
+          { name: "Beige half-zip", image: "assets/img/home/look-4.webp", imageAlt: "Model in a beige sweat shirt and off-white denim", products: "solid-sweat-shirt-beige, baggy-denim-pant-off-white" },
+          { name: "Stone velvet", image: "assets/img/home/look-5.webp", imageAlt: "Model in a stone velvet jacket and black denim", products: "solid-velvet-jacket-stone, baggy-denim-pant-black" },
+          { name: "Olive half-zip", image: "assets/img/home/look-6.webp", imageAlt: "Model in an olive sweat shirt and off-white denim", products: "solid-sweat-shirt-olive, baggy-denim-pant-off-white" },
+          { name: "Blue check", image: "assets/img/home/look-7.webp", imageAlt: "Model in a blue check jacket and off-white denim", products: "checked-jacket-blue, baggy-denim-pant-off-white" },
+          { name: "Maroon half-zip", image: "assets/img/home/look-8.webp", imageAlt: "Model in a maroon sweat shirt and off-white denim", products: "solid-sweat-shirt-maroon, baggy-denim-pant-off-white" },
+          { name: "Black check", image: "assets/img/home/look-9.webp", imageAlt: "Model in a black check jacket and black denim", products: "checked-jacket-black, baggy-denim-pant-black" },
+          { name: "Brown half-zip", image: "assets/img/home/look-10.webp", imageAlt: "Model in a brown sweat shirt and off-white denim", products: "solid-sweat-shirt-brown, baggy-denim-pant-off-white" }
+        ]
       },
       // Moving strip under the hero, then a bento: big photo, sticker card, two more photos
       house: {
