@@ -1905,3 +1905,4 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 @media (max-width: 960px) {
   .hero--photo .hero__photo { aspect-ratio: auto; height: clamp(360px, 62svh, 135vw); object-fit: cover; object-position: 36% 30%; }
 }
+.cold__h--top:empty { display: none; }
