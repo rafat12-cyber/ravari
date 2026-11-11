@@ -120,7 +120,7 @@
     return {
       id: p.id, slug: p.slug, sku: p.sku, name: p.name, line: p.line, color: p.color, hex: p.hex, colorGroup: p.colorGroup || "",
       price: p.price, comparePrice: p.comparePrice || 0, description: p.description, details: p.details || [], seoTitle: p.seoTitle || "",
-      images: p.images || [], sizeGuide: p.sizeGuide || "", categoryIds: p.categoryIds || [],
+      images: p.images || [], sizeGuide: p.sizeGuide || "", sizeChartId: p.sizeChartId || "", categoryIds: p.categoryIds || [],
       attributes: p.attributes || [], isNew: !!p.isNew, featured: !!p.featured, trackStock: !!p.trackStock,
       stock: productStock(p), createdAt: p.createdAt,
       variants: (p.variants || []).map(function (v) {
@@ -246,6 +246,7 @@
       if (b.details !== undefined) p.details = (Array.isArray(b.details) ? b.details : String(b.details).split("\n")).map(function (d) { return str(d, 300); }).filter(Boolean).slice(0, 20);
       if (b.images !== undefined) p.images = (b.images || []).map(function (u) { return str(u, 4000000); }).filter(Boolean).slice(0, 20);
       if (b.sizeGuide !== undefined) p.sizeGuide = str(b.sizeGuide, 4000000);
+      if (b.sizeChartId !== undefined) p.sizeChartId = (db.sizeCharts || []).some(function (x) { return x.id === b.sizeChartId; }) ? b.sizeChartId : "";
       if (b.categoryIds !== undefined) p.categoryIds = (b.categoryIds || []).filter(function (id, i, all) { return all.indexOf(id) === i && db.categories.some(function (c) { return c.id === id; }); });
       ["isNew", "featured", "trackStock"].forEach(function (k) { if (b[k] !== undefined) p[k] = bool(b[k]); });
       if (p.trackStock === undefined) p.trackStock = true;
@@ -824,6 +825,7 @@
         settings: publicSettings(db.settings),
         categories: db.categories.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); }),
         attributes: db.attributes,
+        sizeCharts: (db.sizeCharts || []).filter(function (x) { return db.products.some(function (p) { return p.status === "published" && p.sizeChartId === x.id; }); }),
         products: db.products.filter(function (p) { return p.status === "published"; }).map(publicProduct),
         pages: publicPages(db.pages),
         menus: db.menus,
@@ -1664,6 +1666,23 @@
       if (!a.values || !a.values.length) fail(400, "Add at least one option.");
       return a;
     }, { publicRead: true });
+    // Size chart templates: a title, columns (Size, Chest, Length…) and one row per size
+    crud("size-charts", "sizeCharts", "catalog", function (db, b, ex) {
+      var x = ex ? clone(ex) : { id: newId("sc"), createdAt: now() };
+      if (b.name !== undefined) x.name = str(b.name, 60);
+      if (!x.name) fail(400, "Give the template a name, like Jacket or Baggy Denim.");
+      if ((db.sizeCharts || []).some(function (y) { return y.name.toLowerCase() === x.name.toLowerCase() && y.id !== x.id; })) fail(400, "There is already a size chart called " + x.name + ".");
+      if (b.title !== undefined) x.title = str(b.title, 60);
+      if (b.unit !== undefined) x.unit = str(b.unit, 20);
+      if (b.note !== undefined) x.note = str(b.note, 300);
+      if (b.columns !== undefined) x.columns = (Array.isArray(b.columns) ? b.columns : []).slice(0, 10).map(function (v) { return str(v, 30); });
+      if (!x.columns || x.columns.length < 2) fail(400, "Add at least two columns, like Size and Chest.");
+      if (b.rows !== undefined) x.rows = (Array.isArray(b.rows) ? b.rows : []).slice(0, 30).map(function (r) { return x.columns.map(function (_, i) { return str((Array.isArray(r) ? r : [])[i], 30); }); }).filter(function (r) { return r.some(Boolean); });
+      x.rows = (x.rows || []).map(function (r) { return x.columns.map(function (_, i) { return r[i] || ""; }); });
+      if (!x.rows.length) fail(400, "Add at least one size row.");
+      x.updatedAt = now();
+      return x;
+    }, { beforeDelete: function (db, x) { db.products.forEach(function (p) { if (p.sizeChartId === x.id) p.sizeChartId = ""; }); } });
     route("PUT", "/api/categories-order", "catalog", function (c) {
       (c.body.order || []).forEach(function (o) {
         var cat = c.db.categories.filter(function (x) { return x.id === o.id; })[0];
@@ -2698,6 +2717,27 @@
     if (!db.emailLog) db.emailLog = [];
     if (!db.subscribers) db.subscribers = [];
     if (!db.trash) db.trash = [];
+    // Size chart templates: add the seed ones once, and link products that used those chart images
+    if (done.indexOf("size-charts") < 0) {
+      if (!db.sizeCharts) db.sizeCharts = clone(seed.sizeCharts || []);
+      var byImg = { "assets/img/size/jacket-size-chart.webp": "sc_jacket", "assets/img/size/denim-size-chart.webp": "sc_denim" };
+      db.products.forEach(function (p) { if (!p.sizeChartId && byImg[p.sizeGuide] && db.sizeCharts.some(function (x) { return x.id === byImg[p.sizeGuide]; })) p.sizeChartId = byImg[p.sizeGuide]; });
+      done.push("size-charts");
+      changed = true;
+    }
+    if (!db.sizeCharts) db.sizeCharts = [];
+    // Every option a product uses shows in Variations too (pant waist sizes 28–36 were missing from Size)
+    if (done.indexOf("attr-values") < 0) {
+      (db.attributes || []).forEach(function (a) {
+        var have = (a.values || []).map(function (v) { return String(v.label).toLowerCase(); });
+        db.products.forEach(function (p) { (p.attributes || []).forEach(function (pa) {
+          if (pa.name !== a.name) return;
+          (pa.values || []).forEach(function (v) { if (have.indexOf(String(v).toLowerCase()) < 0) { have.push(String(v).toLowerCase()); a.values.push({ label: String(v) }); } });
+        }); });
+      });
+      done.push("attr-values");
+      changed = true;
+    }
     if (done.indexOf("stores-franchise") < 0) {
       ["stores", "franchise"].forEach(function (k) { if (!db.pages[k] && seed.pages[k]) db.pages[k] = clone(seed.pages[k]); });
       var col = ((db.menus || {}).footer || []).filter(function (f) { return f.id === "fc_company"; })[0] || ((db.menus || {}).footer || [])[1];

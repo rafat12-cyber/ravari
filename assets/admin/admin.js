@@ -1107,6 +1107,7 @@
     const isNew = id === "new";
     setTitle(isNew ? "New product" : p.name);
     const attrs = store.attributes;
+    const charts = ((await api("GET", "/api/size-charts").catch(() => null)) || {})["size-charts"] || [];
     let draft = clone(p);
     draft.details = (draft.details || []).join("\n");
     view.innerHTML = `<div class="head"><div><a class="btn btn--link" href="#/products">← Products</a><h1 class="h1" style="margin-top:8px">${isNew ? "Add product" : esc(p.name)}</h1>
@@ -1127,8 +1128,11 @@
             <div id="varBox"></div>
             <label class="check"><input type="checkbox" name="trackStock" ${draft.trackStock ? "checked" : ""}> Track stock (sold-out sizes can't be ordered)</label>
             <label class="field" id="simpleStock" style="max-width:200px"><span>Stock</span><input class="input" name="stock" type="number" min="0" value="${esc(draft.stock == null ? 0 : draft.stock)}"></label></div>
-          <div class="card"><h2 class="h2">Size guide</h2><p class="muted small" style="margin:0">Upload a size chart image. Customers see a “Size guide” button above the sizes; it opens this image in a popup.</p>
-            ${imgField("sizeGuide", draft.sizeGuide, "Size guide image", "Ratio 3:2 landscape, 1200 × 800 px (1200 × 900 also fine). Shown in full, never cropped. Put sizes in rows and chest, length, sleeve in columns, with big text so it reads on phones.", true)}</div>
+          <div class="card"><div class="card__head"><div><h2 class="h2">Size guide</h2><p class="muted small" style="margin:0">Pick a size chart template. Customers see a “Size guide” button above the sizes; it opens the chart in a popup.</p></div><a class="btn btn--link" href="#/sizecharts">Manage size charts</a></div>
+            <label class="field"><span>Size chart template</span><select class="input" name="sizeChartId"><option value="">None</option>${charts.map((c) => `<option value="${esc(c.id)}"${c.id === draft.sizeChartId ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
+            <small>${charts.length ? "Made in Catalog › Size charts. Change a template there and every product using it updates." : "No templates yet. Make one in Catalog › Size charts."}</small></label>
+            <details${draft.sizeGuide && !draft.sizeChartId ? " open" : ""}><summary class="small muted">Or upload a chart image instead (used only when no template is picked)</summary>
+            ${imgField("sizeGuide", draft.sizeGuide, "Size guide image", "Ratio 3:2 landscape, 1200 × 800 px (1200 × 900 also fine). Shown in full, never cropped. Put sizes in rows and chest, length, sleeve in columns, with big text so it reads on phones.", true)}</details></div>
         </div>
         <div class="stack">
           <div class="card"><h2 class="h2">Status</h2>
@@ -1256,7 +1260,7 @@
       const b = formData(form);
       const body = {
         name: b.name, slug: b.slug, sku: b.sku, status: b.status, line: b.line, color: b.color, hex: b.hex, colorGroup: b.colorGroup || "", price: b.price, comparePrice: b.comparePrice || 0,
-        description: b.description, details: b.details, seoTitle: b.seoTitle, seoDescription: b.seoDescription, images: draft.images, sizeGuide: $("[name=sizeGuide]", form).value,
+        description: b.description, details: b.details, seoTitle: b.seoTitle, seoDescription: b.seoDescription, images: draft.images, sizeGuide: $("[name=sizeGuide]", form).value, sizeChartId: $("[name=sizeChartId]", form).value,
         categoryIds: $$("[name=cat]:checked", form).map((x) => x.value), isNew: b.isNew, featured: b.featured, trackStock: b.trackStock, stock: b.stock,
         attributes: draft.attributes.filter((a) => a.values.length), variants: draft.variants
       };
@@ -1617,6 +1621,90 @@
   }
 
   // Variation types (attributes)
+  // ---------------------------------------------------------------------------
+  // Size charts: templates with columns and size rows; products pick one by name
+  // ---------------------------------------------------------------------------
+  function sizeChartHtml(ch, label) {
+    const cols = ch.columns || [], rows = ch.rows || [];
+    return `<div class="szc"><div class="szc__top"><h3 class="szc__title">${esc(ch.title || ch.name || "Title")}<span>Size chart</span></h3>${ch.unit ? `<p class="szc__unit">Measurements<br>in ${esc(ch.unit)}</p>` : ""}</div>
+      <div class="szc__wrap"><table class="szc__t"><thead><tr>${cols.map((c, i) => `<th>${esc(c)}${i && ch.unit ? `<small>${esc(ch.unit)}</small>` : ""}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map((r) => `<tr>${cols.map((_, i) => i ? `<td>${esc(r[i] || "")}</td>` : `<th scope="row">${esc(r[i] || "")}</th>`).join("")}</tr>`).join("")}</tbody></table></div>
+      <div class="szc__foot">${ch.note ? `<span><b>Tip</b> ${esc(ch.note)}</span>` : "<span></span>"}<span class="szc__logo">${esc(label || "Ravari")}</span></div></div>`;
+  }
+  async function viewSizeCharts() {
+    setTitle("Size charts");
+    let list, prods = [];
+    try { list = (await api("GET", "/api/size-charts"))["size-charts"]; } catch (err) { return fail(err); }
+    try { prods = (await api("GET", "/api/products")).products; } catch (_) { try { prods = (await loadStore(true)).products; } catch (__) {} }
+    const used = (id) => prods.filter((p) => p.sizeChartId === id).length;
+    view.innerHTML = `<div class="head"><div><h1 class="h1">Size charts</h1><p class="muted">Make a chart once, then pick it on each product (Products › product › Size guide). Edit it here and every product using it updates.</p></div><a class="btn btn--dark" href="#/sizecharts/new">New size chart</a></div>
+      ${list.length ? `<div class="sc-grid">${list.map((c) => `<div class="card sc-card"><div class="sc-card__prev">${sizeChartHtml(c)}</div>
+        <div class="flex flex--between"><div><b>${esc(c.name)}</b><br><small class="muted">${c.rows.length} sizes · used on ${used(c.id)} product${used(c.id) === 1 ? "" : "s"}</small></div>
+        <div class="flex"><a class="btn btn--ghost btn--sm" href="#/sizecharts/${esc(c.id)}">Edit</a><button class="btn btn--ghost btn--sm" type="button" data-dup="${esc(c.id)}">Duplicate</button><button class="btn btn--ghost btn--sm" type="button" data-del="${esc(c.id)}">Delete</button></div></div></div>`).join("")}</div>`
+        : `<div class="card"><p class="empty">No size charts yet. Press New size chart to make one.</p></div>`}`;
+    view.onclick = async (e) => {
+      const d = e.target.closest("[data-dup]"), x = e.target.closest("[data-del]");
+      if (d) {
+        const c = list.find((y) => y.id === d.dataset.dup);
+        let name = c.name + " copy", n = 2; while (list.some((y) => y.name === name)) name = c.name + " copy " + n++;
+        try { const r = await api("POST", "/api/size-charts", { name, title: c.title, unit: c.unit, note: c.note, columns: c.columns, rows: c.rows }); toast("Duplicated"); go("sizecharts/" + r.item.id); } catch (err) { fail(err); }
+      }
+      if (x) {
+        const c = list.find((y) => y.id === x.dataset.del), n = used(c.id);
+        if (!(await confirmBox("Delete " + c.name + "?", n ? n + " product" + (n > 1 ? "s use" : " uses") + " it. They'll show no size guide until you pick another chart." : "No product uses it.", "Delete", true))) return;
+        try { await api("DELETE", "/api/size-charts/" + c.id); toast("Deleted"); viewSizeCharts(); } catch (err) { fail(err); }
+      }
+    };
+  }
+  async function viewSizeChart(id) {
+    const isNew = id === "new";
+    let c;
+    if (isNew) c = { name: "", title: "", unit: "inch", note: "", columns: ["Size", "Chest", "Length", "Sleeve"], rows: [["M", "", "", ""], ["L", "", "", ""], ["XL", "", "", ""], ["XXL", "", "", ""]] };
+    else { try { c = ((await api("GET", "/api/size-charts"))["size-charts"] || []).find((x) => x.id === id); } catch (err) { return fail(err); } if (!c) { view.innerHTML = `<p class="empty">That size chart doesn't exist any more.</p>`; return; } c = clone(c); }
+    setTitle(isNew ? "New size chart" : c.name);
+    view.innerHTML = `<div class="head"><div><a class="btn btn--link" href="#/sizecharts">← Size charts</a><h1 class="h1" style="margin-top:8px">${isNew ? "New size chart" : esc(c.name)}</h1></div></div>
+      <form class="cols sc-edit" id="scForm"><div class="stack">
+        <div class="card"><div class="row row--2"><label class="field"><span>Template name</span><input class="input" name="name" value="${esc(c.name)}" placeholder="Jacket" required maxlength="60"><small>You pick it by this name on products.</small></label>
+          <label class="field"><span>Title on the chart</span><input class="input" name="title" value="${esc(c.title)}" placeholder="Jacket" maxlength="60"></label></div>
+          <div class="row row--2"><label class="field"><span>Unit</span><input class="input" name="unit" value="${esc(c.unit)}" placeholder="inch" maxlength="20" list="scUnits"><datalist id="scUnits"><option value="inch"><option value="cm"></datalist></label>
+          <label class="field"><span>Tip under the chart (optional)</span><input class="input" name="note" value="${esc(c.note || "")}" maxlength="300" placeholder="Between two sizes? Take the bigger one."></label></div></div>
+        <div class="card"><div class="card__head"><div><h2 class="h2">Table</h2><p class="muted small" style="margin:0">First column is the size. Type the column titles in the dark row and the measurements below.</p></div>
+          <div class="flex"><button class="btn btn--ghost btn--sm" type="button" id="scAddCol">+ Column</button><button class="btn btn--ghost btn--sm" type="button" id="scAddRow">+ Row</button></div></div>
+          <div class="table-wrap"><table class="sc-grid-ed" id="scTable"></table></div></div>
+        <div class="flex"><button class="btn btn--dark" type="submit">${isNew ? "Save size chart" : "Save changes"}</button><a class="btn btn--ghost" href="#/sizecharts">Cancel</a></div>
+      </div>
+      <div class="stack"><div class="card sc-preview"><h2 class="h2">Preview</h2><p class="muted small" style="margin:0 0 10px">How customers see it in the Size guide popup.</p><div id="scPrev"></div></div></div></form>`;
+    const f = $("#scForm"), tb = $("#scTable");
+    const draw = () => {
+      tb.innerHTML = `<thead><tr><th class="sc-x"></th>${c.columns.map((h, i) => `<th><div class="flex" style="gap:4px;flex-wrap:nowrap"><input class="input input--sm" data-col="${i}" value="${esc(h)}" maxlength="30" aria-label="Column ${i + 1} title">${c.columns.length > 2 ? `<button class="sc-del" type="button" data-delcol="${i}" title="Remove column" aria-label="Remove column ${i + 1}">×</button>` : ""}</div></th>`).join("")}</tr></thead>
+        <tbody>${c.rows.map((r, ri) => `<tr><td class="sc-x">${c.rows.length > 1 ? `<button class="sc-del" type="button" data-delrow="${ri}" title="Remove row" aria-label="Remove row ${ri + 1}">×</button>` : ""}</td>${c.columns.map((_, ci) => `<td><input class="input input--sm${ci ? "" : " sc-size"}" data-cell="${ri}:${ci}" value="${esc(r[ci] || "")}" maxlength="30"></td>`).join("")}</tr>`).join("")}</tbody>`;
+      prev();
+    };
+    const read = () => { c.name = f.name.value; c.title = f.title.value; c.unit = f.unit.value; c.note = f.note.value; };
+    const prev = () => { read(); $("#scPrev").innerHTML = sizeChartHtml(c); };
+    f.addEventListener("input", (e) => {
+      const t = e.target;
+      if (t.dataset.col !== undefined) c.columns[+t.dataset.col] = t.value;
+      if (t.dataset.cell) { const [r, k] = t.dataset.cell.split(":").map(Number); c.rows[r][k] = t.value; }
+      prev();
+    });
+    tb.addEventListener("click", (e) => {
+      const dc = e.target.closest("[data-delcol]"), dr = e.target.closest("[data-delrow]");
+      if (dc) { const i = +dc.dataset.delcol; c.columns.splice(i, 1); c.rows.forEach((r) => r.splice(i, 1)); draw(); }
+      if (dr) { c.rows.splice(+dr.dataset.delrow, 1); draw(); }
+    });
+    $("#scAddCol").onclick = () => { if (c.columns.length >= 10) return toast("Up to 10 columns.", true); c.columns.push("New"); c.rows.forEach((r) => r.push("")); draw(); const ins = $$("[data-col]", tb); ins[ins.length - 1].select(); };
+    $("#scAddRow").onclick = () => { if (c.rows.length >= 30) return toast("Up to 30 rows.", true); c.rows.push(c.columns.map(() => "")); draw(); const ins = $$(".sc-size", tb); ins[ins.length - 1].focus(); };
+    f.onsubmit = async (e) => {
+      e.preventDefault(); read();
+      const body = { name: c.name.trim(), title: c.title.trim() || c.name.trim(), unit: c.unit.trim(), note: c.note.trim(), columns: c.columns.map((x) => x.trim()), rows: c.rows };
+      const btn = $("button[type=submit]", f); busy(btn, true);
+      try { isNew ? await api("POST", "/api/size-charts", body) : await api("PUT", "/api/size-charts/" + id, body); store = null; toast("Size chart saved"); go("sizecharts"); }
+      catch (err) { busy(btn, false); fail(err); }
+    };
+    draw();
+  }
+
   async function viewVariations() {
     setTitle("Variations");
     const list = ((await api("GET", "/api/attributes").catch(fail)) || {}).attributes || [];
@@ -3171,7 +3259,7 @@
   const NAV = [
     ["", [["dashboard", "Dashboard", "dashboard"], ["analytics", "Analytics", "dashboard"]]],
     ["Sales", [["orders", "Orders", "orders"], ["carts", "Abandoned carts", "orders"], ["customers", "Customers", "customers"], ["subscribers", "Subscribers", "customers"], ["coupons", "Coupons & offers", "coupons"]]],
-    ["Catalog", [["products", "Products", "products"], ["stock", "Stock", "products"], ["bulk", "Bulk edit", "products"], ["categories", "Categories", "catalog"], ["variations", "Variations", "catalog"]]],
+    ["Catalog", [["products", "Products", "products"], ["stock", "Stock", "products"], ["bulk", "Bulk edit", "products"], ["categories", "Categories", "catalog"], ["variations", "Variations", "catalog"], ["sizecharts", "Size charts", "catalog"]]],
     ["Website", [["pages", "Pages", "content"], ["menus", "Menus", "content"], ["layout", "Header & footer", "settings"], ["tracking", "Pixel & Analytics", "settings"], ["popup", "Popup banner", "content"], ["media", "Media library", "content"]]],
     ["Inbox", [["chat", "Live chat", "chat"], ["messages", "Messages", "messages"], ["franchise", "Franchise requests", "franchise"]]],
     ["Admin", [["users", "Users", "users"], ["settings", "Settings", "settings"], ["email", "Email & reminders", "settings"], ["integrations", "API & webhooks", "integrations"], ["acore", "Acore", "settings"], ["pathao", "Pathao", "settings"], ["trash", "Trash", "trash"]]]
@@ -3220,7 +3308,7 @@
     [/^customers$/, viewCustomers, "customers"], [/^customers\/([^/]+)$/, viewCustomer, "customers"], [/^subscribers$/, viewSubscribers, "customers"],
     [/^coupons$/, viewCoupons, "coupons"], [/^franchise$/, viewFranchise, "franchise"], [/^carts$/, viewCarts, "orders"], [/^email$/, viewEmail, "settings"],
     [/^products$/, viewProducts, "products"], [/^products\/([^/]+)$/, viewProduct, "products"], [/^stock$/, viewStock, "products"], [/^bulk$/, viewBulk, "products"],
-    [/^categories$/, viewCategories, "catalog"], [/^variations$/, viewVariations, "catalog"],
+    [/^categories$/, viewCategories, "catalog"], [/^variations$/, viewVariations, "catalog"], [/^sizecharts$/, viewSizeCharts, "catalog"], [/^sizecharts\/([^/]+)$/, viewSizeChart, "catalog"],
     [/^pages$/, viewPages, "content"], [/^pages\/([^/]+)$/, viewPageEditor, "content"], [/^menus$/, viewMenus, "content"], [/^media$/, viewMedia, "content"], [/^trash$/, viewTrash, "trash"],
     [/^chat$/, viewChat, "chat"], [/^chat\/([^/]+)$/, viewChat, "chat"], [/^messages$/, viewMessages, "messages"],
     [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"], [/^pathao$/, viewPathao, "settings"],

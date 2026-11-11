@@ -29,6 +29,14 @@
   var S = { settings: {}, categories: [], attributes: [], products: [], pages: {}, menus: { header: [], footer: [] } };
   var BY_ID = {}, BY_SLUG = {}, CAT_BY_SLUG = {}, CAT_BY_ID = {};
   var cart = [], saved = store.get("saved", []);
+  // Size chart made in Admin › Size charts (a table), picked on the product; an uploaded chart image is the fallback
+  function chartOf(p) { return p && p.sizeChartId ? ((S && S.sizeCharts) || []).filter(function (x) { return x.id === p.sizeChartId; })[0] || null : null; }
+  function sizeChartHtml(ch, label) {
+    return '<div class="szc"><div class="szc__top"><h3 class="szc__title">' + esc(ch.title || ch.name) + '<span>Size chart</span></h3>' + (ch.unit ? '<p class="szc__unit">Measurements<br>in ' + esc(ch.unit) + "</p>" : "") + "</div>" +
+      '<div class="szc__wrap"><table class="szc__t"><thead><tr>' + ch.columns.map(function (c, i) { return "<th>" + esc(c) + (i && ch.unit ? "<small>" + esc(ch.unit) + "</small>" : "") + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      ch.rows.map(function (r) { return "<tr>" + r.map(function (v, i) { return i ? "<td>" + esc(v) + "</td>" : "<th scope=\"row\">" + esc(v) + "</th>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>" +
+      '<div class="szc__foot">' + (ch.note ? "<span><b>Tip</b> " + esc(ch.note) + "</span>" : "<span></span>") + '<span class="szc__logo">' + esc(label || "") + "</span></div></div>";
+  }
 
   function index() {
     BY_ID = {}; BY_SLUG = {}; CAT_BY_SLUG = {}; CAT_BY_ID = {};
@@ -996,7 +1004,7 @@
             var isSize = /size/i.test(a.name);
             return '<div class="pd__block" data-attr="' + esc(a.name) + '">' +
               '<div class="pd__label-row"><p class="pd__label mono">' + esc(a.name) + ' · <span data-attr-label>Choose one</span></p>' +
-                (isSize && p.sizeGuide ? '<button class="guide-btn" type="button" data-size-guide>' + ICON.ruler + "Size guide</button>" : "") + "</div>" +
+                (isSize && (p.sizeGuide || chartOf(p)) ? '<button class="guide-btn" type="button" data-size-guide>' + ICON.ruler + "Size guide</button>" : "") + "</div>" +
               '<div class="sizes' + (def.type === "color" ? " sizes--color" : "") + '" role="radiogroup" aria-label="' + esc(a.name) + '">' + a.values.map(function (val) {
                 var hex = def.type === "color" ? ((def.values || []).filter(function (x) { return x.label === val; })[0] || {}).hex : "";
                 return '<button class="size" type="button" role="radio" aria-checked="false" data-value="' + esc(val) + '"' + (hex ? ' style="--sw:' + esc(hex) + '"' : "") + ">" + esc(val) + "</button>";
@@ -1106,6 +1114,8 @@
     });
     var guide = $("[data-size-guide]", page);
     if (guide) guide.addEventListener("click", function () {
+      var ch = chartOf(p);
+      if (ch) return openModal(sizeChartHtml(ch, shortName(p)), "Size guide");
       openModal('<figure class="guide"><img src="' + esc(p.sizeGuide) + '" alt="Size guide for ' + esc(shortName(p)) + '"><figcaption class="mono">' + esc(shortName(p)) + " · size guide</figcaption></figure>", "Size guide");
     });
     var main = $(".pd__main");

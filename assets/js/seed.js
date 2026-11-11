@@ -48,7 +48,7 @@
   });
 
   var attributes = [
-    { id: "att_size", name: "Size", type: "button", values: ["M", "L", "XL", "XXL"].map(function (v) { return { label: v }; }), createdAt: T0 },
+    { id: "att_size", name: "Size", type: "button", values: ["M", "L", "XL", "XXL", "28", "30", "32", "34", "36"].map(function (v) { return { label: v }; }), createdAt: T0 },
     { id: "att_color", name: "Color", type: "color", values: [{"label": "Blue", "hex": "#3b5677"}, {"label": "Gray", "hex": "#8a8d91"}, {"label": "Black", "hex": "#1f2022"}, {"label": "Brown", "hex": "#6b4a35"}, {"label": "Off-White", "hex": "#ece6d8"}, {"label": "Yellow", "hex": "#d8b84a"}, {"label": "Coffee", "hex": "#5b4335"}, {"label": "White", "hex": "#f4f4f2"}, {"label": "Olive", "hex": "#6b6b3a"}, {"label": "Black (Mixed)", "hex": "#2b2c2e"}, {"label": "Light Pink", "hex": "#e8b9c0"}, {"label": "Bronze", "hex": "#8c6a3f"}, {"label": "Maroon", "hex": "#6d1f2a"}, {"label": "Bottle Green", "hex": "#1f4a3a"}, {"label": "Peach", "hex": "#f0b99a"}, {"label": "Red", "hex": "#b52a45"}, {"label": "Red (Mixed)", "hex": "#a3343f"}], createdAt: T0 }
   ];
 
@@ -136,13 +136,23 @@
   ];
   var NEW = { "jacket": 1, "sweat-shirt": 1, "denim-pant": 1 };
   var SIZE_CHART = { "jacket": "assets/img/size/jacket-size-chart.webp", "denim-pant": "assets/img/size/denim-size-chart.webp" };
+  var SIZE_CHART_ID = { "jacket": "sc_jacket", "denim-pant": "sc_denim" };
+  // Size chart templates (Admin › Size charts); products pick one by name
+  var sizeCharts = [
+    { id: "sc_jacket", name: "Jacket", title: "Jacket", unit: "inch", columns: ["Size", "Length", "Chest", "Sleeve"],
+      rows: [["M", "25.5", "42", "23"], ["L", "26.5", "44", "23.5"], ["XL", "27.5", "46", "24"], ["XXL", "28.5", "48", "24.5"]],
+      note: "Between two sizes? Take the bigger one for an easy layered fit.", createdAt: T0, updatedAt: T0 },
+    { id: "sc_denim", name: "Baggy Denim", title: "Baggy Denim", unit: "inch", columns: ["Size", "Waist", "Length", "Leg opening"],
+      rows: [["28", "28", "39", "16"], ["30", "30", "39", "17"], ["32", "32", "40", "18"], ["34", "34", "41", "19"], ["36", "36", "42", "19"]],
+      note: "Pick your usual waist size. The leg is cut wide and loose.", createdAt: T0, updatedAt: T0 }
+  ];
   var products = P.map(function (r, i) {
     var sku = "RV-" + String(1001 + i);
     var cats = ["cat_men"].concat(r[6].filter(function (c) { return c !== "men"; }).map(function (c) { return "cat_" + c.replace(/-/g, "_"); }));
     return {
       id: "prd_" + r[0].replace(/-/g, "_").slice(0, 60), slug: r[0], sku: sku, status: "published",
       name: r[1], color: r[2], hex: r[3], price: r[4], comparePrice: r[5] || null,
-      description: r[8], details: r[9].slice(), images: photos(r[0], r[7]), sizeGuide: SIZE_CHART[r[6][0]] || "",
+      description: r[8], details: r[9].slice(), images: photos(r[0], r[7]), sizeGuide: SIZE_CHART[r[6][0]] || "", sizeChartId: SIZE_CHART_ID[r[6][0]] || "",
       categoryIds: cats, isNew: r[6].some(function (c) { return NEW[c]; }), featured: i < 8, trackStock: true, stock: 0,
       attributes: [{ name: "Size", values: r[10].map(function (v) { return v[0]; }) }],
       variants: r[10].map(function (v) { return { id: "var_" + i + "_" + v[0].toLowerCase(), sku: sku + "-" + v[0], options: { Size: v[0] }, price: null, stock: v[1] }; }),
@@ -359,7 +369,7 @@
   ];
 
   return {
-    version: 2, settings: settings, categories: categories, attributes: attributes, products: products,
+    version: 2, settings: settings, categories: categories, attributes: attributes, products: products, sizeCharts: sizeCharts,
     pages: pages, menus: menus, coupons: coupons, counters: { order: 1000 }
   };
 });
