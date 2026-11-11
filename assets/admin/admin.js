@@ -19,7 +19,7 @@
     if (s < 86400) return Math.floor(s / 3600) + " h ago";
     return Math.floor(s / 86400) + " d ago";
   };
-  const human = (k) => String(k).replace(/([a-z])([A-Z0-9])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase()).replace(/ (\d)$/, " $1");
+  const human = (k) => String(k).replace(/_/g, " ").replace(/([a-z])([A-Z0-9])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase()).replace(/ (\d)$/, " $1");
   const optText = (o) => Object.keys(o || {}).map((k) => o[k]).join(" / ");
   const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
@@ -108,7 +108,7 @@
     }).join(",")).join("\n");
   }
   const pill = (s) => `<span class="pill pill--${esc(s)}">${esc(human(s))}</span>`;
-  const STATUSES = ["pending", "confirmed", "hold", "processing", "shipped", "delivered", "cancelled", "returned"];
+  const STATUSES = ["pending", "confirmed", "hold", "processing", "shipped", "delivered", "partial_return", "cancelled", "returned"];
   const PAY_STATUSES = ["unpaid", "paid", "refunded", "failed"];
   const PAY_LABEL = { cod: "Cash on delivery", sslcommerz: "SSLCOMMERZ" };
 
@@ -448,8 +448,8 @@
   }
   function ordersTable(list, courier) {
     if (!list.length) return `<p class="empty">No orders yet.</p>`;
-    return `<div class="table-wrap"><table class="t"><thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th>${courier ? "<th>Pathao</th>" : ""}<th class="right">Items</th><th class="right">Total</th></tr></thead><tbody>${list.map((o) => `
-      <tr class="is-link" data-href="#/orders/${esc(o.number)}"><td><b>${esc(o.number)}</b></td><td class="nowrap">${dateTime(o.createdAt)}</td><td>${esc(o.customer.name)}<br><small class="muted">${esc(o.customer.phone)}</small></td>
+    return `<div class="table-wrap"><table class="t"><thead><tr>${courier ? `<th style="width:34px"><input type="checkbox" data-selall aria-label="Select all"></th>` : ""}<th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th>${courier ? "<th>Pathao</th>" : ""}<th class="right">Items</th><th class="right">Total</th></tr></thead><tbody>${list.map((o) => `
+      <tr class="is-link" data-href="#/orders/${esc(o.number)}">${courier ? `<td data-stop><input type="checkbox" data-sel="${esc(o.number)}" aria-label="Select ${esc(o.number)}"></td>` : ""}<td><b>${esc(o.number)}</b></td><td class="nowrap">${dateTime(o.createdAt)}</td><td>${esc(o.customer.name)}<br><small class="muted">${esc(o.customer.phone)}</small></td>
       <td>${pill(o.status)}</td><td>${pill(o.paymentStatus)}<br><small class="muted">${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</small></td>${courier ? pathaoCell(o) : ""}<td class="right num">${o.itemCount}</td><td class="right num"><b>${taka(o.total)}</b></td></tr>`).join("")}</tbody></table></div>`;
   }
 
@@ -461,7 +461,7 @@
     const q = new URLSearchParams(query || "");
     const state = { status: q.get("status") || "", q: q.get("q") || "", from: "", to: "" };
     view.innerHTML = `<div class="head"><div><h1 class="h1">Orders</h1><p class="muted">Confirm, pack and ship orders. Cancelling or returning an order puts the stock back.</p></div>
-      <button class="btn btn--ghost" id="ordCsv">Export CSV</button></div>
+      <div class="flex"><span class="flex" id="ordBulk" hidden><small class="muted" id="ordSelN"></small><button class="btn btn--ghost" type="button" data-bulk="order">Print order invoices</button><button class="btn btn--dark" type="button" data-bulk="courier">Print courier invoices</button></span><button class="btn btn--ghost" id="ordCsv">Export CSV</button></div></div>
       <div class="tabs" id="ordTabs"></div>
       <div class="toolbar"><div class="grow"><input class="input" id="ordQ" placeholder="Search by order number, name, phone or email" value="${esc(state.q)}"></div>
         <label class="flex small muted">From <input class="input input--sm" type="date" id="ordFrom"></label><label class="flex small muted">To <input class="input input--sm" type="date" id="ordTo"></label></div>
@@ -482,7 +482,18 @@
         .map(([k, l, n]) => `<button class="tab${state.status === k ? " is-on" : ""}" data-s="${k}">${l}<small>${n}</small></button>`).join("");
       const list = all.filter((o) => !state.status || o.status === state.status);
       $("#ordList").innerHTML = ordersTable(list, true);
+      list.forEach((o) => { const b = $(`[data-sel="${o.number}"]`); if (b) b.checked = picked.has(o.number); });
+      bulkBar();
     };
+    // Tick orders, then print their order or courier invoices together
+    const picked = new Set();
+    const bulkBar = () => { $("#ordBulk").hidden = !picked.size; $("#ordSelN").textContent = picked.size + " selected"; };
+    $("#ordList").addEventListener("change", (e) => {
+      if (e.target.matches("[data-selall]")) $$("[data-sel]").forEach((b) => { b.checked = e.target.checked; if (b.checked) picked.add(b.dataset.sel); else picked.delete(b.dataset.sel); });
+      else if (e.target.matches("[data-sel]")) { if (e.target.checked) picked.add(e.target.dataset.sel); else picked.delete(e.target.dataset.sel); }
+      bulkBar();
+    });
+    $("#ordBulk").onclick = (e) => { const b = e.target.closest("[data-bulk]"); if (b) go("invoices?type=" + b.dataset.bulk + "&orders=" + [...picked].join(",")); };
     // One click: Send to Pathao guesses the city and zone from the address; if it can't, the full form opens
     $("#ordList").addEventListener("click", async (e) => {
       if (e.target.closest("[data-stop]")) { e.stopPropagation(); return; }
@@ -525,15 +536,19 @@
     let acoreOn = false;
     try { const r = await api("GET", "/api/orders/" + encodeURIComponent(id)); o = r.order; acoreOn = !!r.acoreOn; } catch (err) { view.innerHTML = `<p class="empty">${esc(err.message)}</p>`; return; }
     const tel = o.customer.phone;
+    // Once the courier has the parcel, the order can't be edited here any more
+    const onCourier = !!((o.pathao && o.pathao.consignmentId) || (o.courier && o.courier.consignmentId) || ["shipped", "delivered", "partial_return", "returned"].indexOf(o.status) > -1);
+    const retOf = (it) => (o.returns || []).filter((r) => r.productId === it.productId && (r.variantId || null) === (it.variantId || null)).reduce((n, r) => n + r.qty, 0);
     view.innerHTML = `<div class="head"><div><a class="btn btn--link" href="#/orders">← Orders</a><h1 class="h1" style="margin-top:8px">Order ${esc(o.number)}</h1>
       <p class="muted">${dateTime(o.createdAt)} · ${pill(o.status)} ${pill(o.paymentStatus)}</p></div>
-      <div class="flex">${o.status === "pending" || o.status === "hold" ? `<button class="btn btn--dark" type="button" data-quick="confirmed">Confirm</button>` : ""}${["pending", "confirmed", "processing"].indexOf(o.status) > -1 ? `<button class="btn btn--ghost" type="button" data-quick="hold">Hold</button>` : ""}${["cancelled", "returned", "delivered", "shipped"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" data-quick="cancelled">Cancel order</button>` : ""}${o.status === "cancelled" ? `<button class="btn btn--ghost" type="button" data-quick="pending">Reopen</button>` : ""}<button class="btn btn--ghost" type="button" id="oEdit">Edit order</button><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/invoice">Invoice</a><a class="btn btn--ghost" href="tel:${esc(tel)}">Call customer</a>${me.role === "owner" ? `<button class="btn btn--danger" type="button" id="oDel">Delete order</button>` : ""}</div></div>
+      <div class="flex">${o.status === "pending" || o.status === "hold" ? `<button class="btn btn--dark" type="button" data-quick="confirmed">Confirm</button>` : ""}${["pending", "confirmed", "processing"].indexOf(o.status) > -1 ? `<button class="btn btn--ghost" type="button" data-quick="hold">Hold</button>` : ""}${["cancelled", "returned", "delivered", "shipped", "partial_return"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" data-quick="cancelled">Cancel order</button>` : ""}${o.status === "partial_return" ? `<button class="btn btn--ghost" type="button" data-quick="delivered">Undo partial return</button>` : ""}${o.status === "cancelled" ? `<button class="btn btn--ghost" type="button" data-quick="pending">Reopen</button>` : ""}${onCourier ? "" : `<button class="btn btn--ghost" type="button" id="oEdit">Edit order</button>`}${onCourier && ["cancelled", "returned"].indexOf(o.status) < 0 ? `<button class="btn btn--ghost" type="button" id="oPartial">${o.status === "partial_return" ? "Change returned items" : "Partial return"}</button>` : ""}<a class="btn btn--ghost" href="#/orders/${esc(o.number)}/invoice">Order invoice</a><a class="btn btn--ghost" href="#/orders/${esc(o.number)}/courier-invoice">Courier invoice</a><a class="btn btn--ghost" href="tel:${esc(tel)}">Call customer</a>${me.role === "owner" ? `<button class="btn btn--danger" type="button" id="oDel">Delete order</button>` : ""}</div></div>
       <div class="cols">
         <div class="stack">
           <div class="card"><h2 class="h2">Items</h2><div class="items">${o.items.map((it) => `<div class="item">${it.image ? `<img src="${esc(it.image)}" alt="">` : `<span class="ph"></span>`}
-            <div><a href="#/products/${esc(it.productId)}"><b>${esc(it.name)}</b></a><small>${esc(optText(it.options))} · SKU ${esc(it.sku)}</small><small>${it.qty} × ${taka(it.price)}</small></div><b class="num">${taka(it.lineTotal)}</b></div>`).join("")}</div>
+            <div><a href="#/products/${esc(it.productId)}"><b>${esc(it.name)}</b></a><small>${esc(optText(it.options))} · SKU ${esc(it.sku)}</small><small>${it.qty} × ${taka(it.price)}</small>${retOf(it) ? `<small style="color:var(--danger)">Returned: ${retOf(it)} of ${it.qty}</small>` : ""}</div><b class="num">${taka(it.lineTotal)}</b></div>`).join("")}</div>
             <div class="totals"><div><span>Subtotal</span><span class="num">${taka(o.subtotal)}</span></div>${o.discount ? `<div><span>Discount${o.coupon ? " (" + esc(o.coupon) + ")" : ""}</span><span class="num">−${taka(o.discount)}</span></div>` : ""}
-              <div><span>Delivery${o.shippingZone ? " · " + esc(o.shippingZone.name) : ""}</span><span class="num">${o.shipping ? taka(o.shipping) : "Free"}</span></div><div class="grand"><span>Total</span><span class="num">${taka(o.total)}</span></div></div></div>
+              <div><span>Delivery${o.shippingZone ? " · " + esc(o.shippingZone.name) : ""}</span><span class="num">${o.shipping ? taka(o.shipping) : "Free"}</span></div><div class="grand"><span>Total</span><span class="num">${taka(o.total)}</span></div>${o.returnedValue ? `<div style="color:var(--danger)"><span>Returned items</span><span class="num">−${taka(o.returnedValue)}</span></div><div><span>Kept by customer</span><span class="num">${taka(o.total - o.returnedValue)}</span></div>` : ""}${o.collected != null ? `<div><span>Cash collected by courier</span><span class="num">${taka(o.collected)}</span></div>` : ""}</div>
+            ${onCourier && o.status !== "cancelled" ? `<p class="muted small" style="margin:10px 0 0">With the courier: the order can't be edited any more. Status updates from Pathao change it here by themselves.</p>` : ""}</div>
           <div class="card"><h2 class="h2">Update order</h2>
             <form class="stack" id="ordForm">
               <div class="row row--3"><label class="field"><span>Order status</span><select class="input" name="status">${STATUSES.map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${human(s)}</option>`).join("")}</select></label>
@@ -594,7 +609,7 @@
     // Quick status buttons: Confirm, Hold, Cancel, Reopen
     $$("[data-quick]", view).forEach((b) => { b.onclick = async () => {
       const s = b.dataset.quick, msg = { confirmed: ["Confirm order " + o.number + "?", "The order moves to Confirmed.", "Confirm"], hold: ["Put " + o.number + " on hold?", "Use this while you wait for the customer, for example to check the size or address. The items stay reserved.", "Put on hold"],
-        cancelled: ["Cancel order " + o.number + "?", "The items go back into stock." + (o.pathao && o.pathao.consignmentId ? " This order is already with Pathao, so cancel the parcel in the Pathao panel too." : ""), "Cancel order"], pending: ["Reopen order " + o.number + "?", "The items come out of stock again.", "Reopen"] }[s];
+        cancelled: ["Cancel order " + o.number + "?", "The items go back into stock." + (o.pathao && o.pathao.consignmentId ? " This order is already with Pathao, so cancel the parcel in the Pathao panel too." : ""), "Cancel order"], pending: ["Reopen order " + o.number + "?", "The items come out of stock again.", "Reopen"], delivered: ["Undo the partial return?", "The order goes back to Delivered and the returned items come out of stock again.", "Undo"] }[s];
       let note = "";
       const body = modal(msg[0], `<form class="stack" id="qkForm"><p class="muted" style="margin:0">${esc(msg[1])}</p>
         <label class="field"><span>Reason or note (optional)</span><input class="input" name="note" maxlength="300" placeholder="${s === "hold" ? "Waiting for the customer to confirm the size" : s === "cancelled" ? "Customer cancelled on the phone" : ""}"></label>
@@ -607,7 +622,8 @@
         catch (err) { busy(btn, false); fail(err); }
       };
     }; });
-    $("#oEdit").onclick = () => orderEditDialog(o, () => { viewOrder(o.number); refreshCounts(); });
+    if ($("#oEdit")) $("#oEdit").onclick = () => orderEditDialog(o, () => { viewOrder(o.number); refreshCounts(); });
+    if ($("#oPartial")) $("#oPartial").onclick = () => partialReturnDialog(o, () => { viewOrder(o.number); refreshCounts(); });
     if ($("#oDel")) $("#oDel").onclick = async () => {
       const live = !o.restocked && o.status !== "delivered";
       if (!(await confirmBox("Delete order " + o.number + "?", "It disappears from Orders and your sales numbers" + (live ? ", and its items go back into stock" : "") + ". It stays in Trash for 30 days, so you can restore it.", "Delete order", true))) return;
@@ -691,21 +707,96 @@
     };
   }
 
-  async function viewInvoice(id) {
-    setTitle("Invoice " + id);
-    let o;
-    try { o = (await api("GET", "/api/orders/" + encodeURIComponent(id))).order; await loadStore(); } catch (err) { return fail(err); }
-    const st = (store && store.settings && store.settings.store) || {};
-    view.innerHTML = `<div class="head no-print"><a class="btn btn--link" href="#/orders/${esc(o.number)}">← Order ${esc(o.number)}</a><button class="btn btn--dark" data-print>Print invoice</button></div>
-      <div class="card" style="max-width:820px;padding:36px">
+  // Partial return: pick which items (and how many) came back; they go back into stock
+  function partialReturnDialog(o, done) {
+    const prev = (it) => (o.returns || []).filter((r) => r.productId === it.productId && (r.variantId || null) === (it.variantId || null)).reduce((n, r) => n + r.qty, 0);
+    const body = modal("Partial return · " + o.number, `<form class="stack" id="prForm">
+      <p class="muted small" style="margin:0">The customer kept some items and sent the rest back with the courier. Enter how many of each item came back. Those go back into stock.</p>
+      <div class="table-wrap"><table class="t"><thead><tr><th>Item</th><th class="right">Ordered</th><th class="right" style="width:120px">Came back</th></tr></thead><tbody>
+      ${o.items.map((it, i) => `<tr><td><b>${esc(it.name)}</b><br><small class="muted">${esc(optText(it.options))} · ${taka(it.price)} each</small></td><td class="right num">${it.qty}</td>
+        <td class="right"><input class="input input--sm" type="number" min="0" max="${it.qty}" step="1" data-ri="${i}" value="${prev(it)}" style="width:80px;text-align:right"></td></tr>`).join("")}</tbody></table></div>
+      <div class="row row--2"><label class="field"><span>Cash the courier collected (৳)</span><input class="input" name="collected" type="number" min="0" step="1" value="${o.collected != null ? o.collected : ""}" placeholder="${o.paymentStatus === "paid" ? "Paid online" : ""}"></label>
+      <div class="totals" id="prSum" style="align-self:end"></div></div>
+      <label class="field"><span>Note (optional)</span><input class="input" name="note" maxlength="300" placeholder="Size didn't fit"></label>
+      <div class="modal__foot"><button class="btn btn--ghost" type="button" data-modal-close>Cancel</button><button class="btn btn--dark" type="submit">Save partial return</button></div></form>`, { wide: true });
+    const f = $("#prForm", body);
+    const picks = () => $$("[data-ri]", f).map((el) => ({ index: +el.dataset.ri, qty: Math.max(0, Math.min(+el.max, Math.round(+el.value || 0))) }));
+    const sum = () => {
+      const ret = picks().reduce((n, p) => n + p.qty * o.items[p.index].price, 0);
+      $("#prSum", body).innerHTML = `<div><span>Returned</span><span class="num">${taka(ret)}</span></div><div class="grand"><span>Customer keeps</span><span class="num">${taka(o.total - ret)}</span></div>`;
+    };
+    f.addEventListener("input", sum); sum();
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = $("button[type=submit]", f); busy(btn, true);
+      try { await api("POST", "/api/orders/" + o.id + "/partial-return", { items: picks().filter((p) => p.qty), collected: f.collected.value, note: f.note.value }); closeModal(); toast(o.number + " marked partly returned"); done(); }
+      catch (err) { busy(btn, false); fail(err); }
+    };
+  }
+
+  // Code 128 (set B) barcode for order and parcel numbers, drawn as SVG
+  function barcode(text, h) {
+    const P = "212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131 211412 211214 211232 2331112".split(" ");
+    const codes = [104].concat([...String(text)].map((ch) => Math.max(0, Math.min(94, ch.charCodeAt(0) - 32))));
+    codes.push(codes.reduce((s, c, i) => s + c * (i || 1), 0) % 103, 106);
+    let x = 10, bars = "";
+    codes.forEach((c) => { [...P[c]].forEach((w, i) => { if (i % 2 === 0) bars += `<rect x="${x}" y="0" width="${w}" height="${h}"/>`; x += +w; }); });
+    return `<svg viewBox="0 0 ${x + 10} ${h}" height="${h}" style="width:100%;max-width:${(x + 10) * 1.6}px" preserveAspectRatio="none" aria-label="${esc(text)}">${bars}</svg>`;
+  }
+  const kept = (o, it) => it.qty - (o.returns || []).filter((r) => r.productId === it.productId && (r.variantId || null) === (it.variantId || null)).reduce((n, r) => n + r.qty, 0);
+  // Order invoice: the customer's bill, with prices
+  function orderInvoiceHtml(o, st) {
+    return `<div class="card inv-page" style="max-width:820px;padding:36px">
         <div class="flex flex--between" style="align-items:flex-start"><div><img src="assets/img/logo.webp" alt="Ravari" style="height:26px;width:auto"><p class="small muted">${esc(st.legalName || "")}<br>${esc(st.address || "")}<br>${esc(st.phone || "")} · ${esc(st.email || "")}${st.tradeLicense ? "<br>Trade license: " + esc(st.tradeLicense) : ""}${st.bin ? " · BIN: " + esc(st.bin) : ""}</p></div>
-          <div class="right"><h1 class="h1">Invoice</h1><p class="muted">${esc(o.number)}<br>${date(o.createdAt)}<br>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)} · ${esc(human(o.paymentStatus))}</p></div></div>
+          <div class="right"><h1 class="h1">Invoice</h1><p class="muted">${esc(o.number)}<br>${date(o.createdAt)}<br>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)} · ${esc(human(o.paymentStatus))}</p><div style="width:170px;margin-left:auto">${barcode(o.number, 34)}</div></div></div>
         <div><p class="h3">Bill to</p><p style="margin:0">${esc(o.customer.name)}<br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p></div>
-        <table class="t"><thead><tr><th>Item</th><th>SKU</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${o.items.map((it) => `<tr><td>${esc(it.name)}<br><small class="muted">${esc(optText(it.options))}</small></td><td class="mono">${esc(it.sku)}</td><td class="right">${it.qty}</td><td class="right">${taka(it.price)}</td><td class="right">${taka(it.lineTotal)}</td></tr>`).join("")}</tbody></table>
-        <div class="totals" style="margin-left:auto;width:min(300px,100%)"><div><span>Subtotal</span><span>${taka(o.subtotal)}</span></div>${o.discount ? `<div><span>Discount</span><span>−${taka(o.discount)}</span></div>` : ""}<div><span>Delivery</span><span>${taka(o.shipping)}</span></div><div class="grand"><span>Total</span><span>${taka(o.total)}</span></div></div>
+        <table class="t"><thead><tr><th>Item</th><th>SKU</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${o.items.map((it) => `<tr><td>${esc(it.name)}<br><small class="muted">${esc(optText(it.options))}</small>${kept(o, it) < it.qty ? `<br><small>Returned: ${it.qty - kept(o, it)}</small>` : ""}</td><td class="mono">${esc(it.sku)}</td><td class="right">${it.qty}</td><td class="right">${taka(it.price)}</td><td class="right">${taka(it.lineTotal)}</td></tr>`).join("")}</tbody></table>
+        <div class="totals" style="margin-left:auto;width:min(300px,100%)"><div><span>Subtotal</span><span>${taka(o.subtotal)}</span></div>${o.discount ? `<div><span>Discount</span><span>−${taka(o.discount)}</span></div>` : ""}<div><span>Delivery</span><span>${taka(o.shipping)}</span></div><div class="grand"><span>Total</span><span>${taka(o.total)}</span></div>
+          ${o.returnedValue ? `<div><span>Returned items</span><span>−${taka(o.returnedValue)}</span></div><div class="grand"><span>Final amount</span><span>${taka(o.total - o.returnedValue)}</span></div>` : ""}</div>
         <p class="small muted">Thank you for shopping with ${esc(st.name || "Ravari")}. Exchanges and returns within 7 days of delivery: ${esc((st.website || "").replace(/^https?:\/\//, ""))}/refund</p>
       </div>`;
+  }
+  // Courier invoice: the parcel slip that goes on the package. Who to deliver to, cash to collect, what is inside; no item prices
+  function courierInvoiceHtml(o, st) {
+    const due = o.paymentStatus === "paid" ? 0 : Math.round(o.pathao && o.pathao.amount != null ? o.pathao.amount : o.total);
+    const cid = (o.pathao && o.pathao.consignmentId) || (o.courier && o.courier.consignmentId) || "";
+    const qty = o.items.reduce((n, it) => n + it.qty, 0);
+    return `<div class="slip inv-page">
+      <div class="slip__top"><img src="assets/img/logo.webp" alt="Ravari"><div class="right"><b>${cid ? "Pathao" : "Courier"}</b><br><small>${date(o.createdAt)}</small></div></div>
+      <div class="slip__codes"><div><small>Order</small><b class="mono">${esc(o.number)}</b>${barcode(o.number, 46)}</div>${cid ? `<div><small>Consignment</small><b class="mono">${esc(cid)}</b>${barcode(cid, 46)}</div>` : ""}</div>
+      <div class="slip__to"><small>Deliver to</small><b class="slip__name">${esc(o.customer.name)}</b><b class="slip__phone">${esc(o.customer.phone)}</b>
+        <p>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p>${o.shippingZone ? `<small>Area: ${esc(o.shippingZone.name)}</small>` : ""}</div>
+      <div class="slip__cod"><span>${due ? "Collect cash" : "Paid · collect nothing"}</span><b>${taka(due)}</b></div>
+      <table class="slip__items"><tbody>${o.items.map((it) => `<tr><td>${esc(it.name)}${Object.keys(it.options || {}).length ? " · " + esc(optText(it.options)) : ""}</td><td class="right">×${it.qty}</td></tr>`).join("")}</tbody></table>
+      <div class="slip__foot"><span>${qty} item${qty === 1 ? "" : "s"}${o.pathao && o.pathao.weight ? " · " + o.pathao.weight + " kg" : ""}</span>${o.note ? `<span>Note: ${esc(o.note)}</span>` : ""}</div>
+      <div class="slip__from"><small>From</small> ${esc(st.name || "Ravari")} · ${esc(st.phone || "")}${st.address ? " · " + esc(st.address) : ""}<br><small>Please call the customer before delivery. Do not hand over the parcel without collecting the amount above.</small></div>
+    </div>`;
+  }
+  async function printInvoices(orders, type, back) {
+    await loadStore();
+    const st = (store && store.settings && store.settings.store) || {};
+    const other = type === "courier" ? "order" : "courier";
+    view.innerHTML = `<div class="head no-print"><a class="btn btn--link" href="${back[0]}">${esc(back[1])}</a>
+      <div class="flex"><div class="tabs" style="margin:0"><button class="tab${type === "order" ? " is-on" : ""}" data-type="order">Order invoice</button><button class="tab${type === "courier" ? " is-on" : ""}" data-type="courier">Courier invoice</button></div>
+      <button class="btn btn--dark" data-print>Print${orders.length > 1 ? " " + orders.length : ""}</button></div></div>
+      <div class="inv-list inv-list--${type}">${orders.map((o) => type === "courier" ? courierInvoiceHtml(o, st) : orderInvoiceHtml(o, st)).join("")}</div>`;
     view.querySelector("[data-print]").onclick = () => window.print();
+    $$("[data-type]", view).forEach((b) => { b.onclick = () => { if (b.dataset.type !== type) printInvoices(orders, other, back); }; });
+  }
+  async function viewInvoices(_, query) {
+    const q = new URLSearchParams(query || ""), nums = (q.get("orders") || "").split(",").filter(Boolean).slice(0, 100);
+    setTitle("Invoices");
+    let orders;
+    try { orders = await Promise.all(nums.map((n) => api("GET", "/api/orders/" + encodeURIComponent(n)).then((r) => r.order))); } catch (err) { return fail(err); }
+    if (!orders.length) { view.innerHTML = `<p class="empty">No orders chosen. Tick orders in the Orders list first.</p>`; return; }
+    printInvoices(orders, q.get("type") === "courier" ? "courier" : "order", ["#/orders", "← Orders"]);
+  }
+  async function viewCourierInvoice(id) { return viewInvoice(id, "courier"); }
+  async function viewInvoice(id, type) {
+    setTitle((type === "courier" ? "Courier invoice " : "Invoice ") + id);
+    let o;
+    try { o = (await api("GET", "/api/orders/" + encodeURIComponent(id))).order; } catch (err) { return fail(err); }
+    printInvoices([o], type === "courier" ? "courier" : "order", ["#/orders/" + o.number, "← Order " + o.number]);
   }
 
   // ---------------------------------------------------------------------------
@@ -2982,7 +3073,7 @@
 
   const ROUTES = [
     [/^dashboard$/, viewDashboard, "dashboard"], [/^analytics$/, viewAnalytics, "dashboard"], [/^layout$/, viewLayout, "settings"], [/^tracking$/, viewTracking, "settings"], [/^popup$/, viewPopup, "content"],
-    [/^orders$/, viewOrders, "orders"], [/^orders\/([^/]+)\/invoice$/, viewInvoice, "orders"], [/^orders\/([^/]+)$/, viewOrder, "orders"],
+    [/^orders$/, viewOrders, "orders"], [/^orders\/([^/]+)\/invoice$/, viewInvoice, "orders"], [/^orders\/([^/]+)\/courier-invoice$/, viewCourierInvoice, "orders"], [/^invoices$/, viewInvoices, "orders"], [/^orders\/([^/]+)$/, viewOrder, "orders"],
     [/^customers$/, viewCustomers, "customers"], [/^customers\/([^/]+)$/, viewCustomer, "customers"], [/^subscribers$/, viewSubscribers, "customers"],
     [/^coupons$/, viewCoupons, "coupons"], [/^franchise$/, viewFranchise, "franchise"], [/^carts$/, viewCarts, "orders"], [/^email$/, viewEmail, "settings"],
     [/^products$/, viewProducts, "products"], [/^products\/([^/]+)$/, viewProduct, "products"], [/^stock$/, viewStock, "products"], [/^bulk$/, viewBulk, "products"],
@@ -3037,7 +3128,7 @@
   // Rows with data-href act as links
   document.addEventListener("click", (e) => {
     const r = e.target.closest("tr[data-href]");
-    if (r && !e.target.closest("a, button, input, select")) go(r.dataset.href);
+    if (r && !e.target.closest("a, button, input, select, [data-stop]")) go(r.dataset.href);
   });
 
   function showLogin(msg) {

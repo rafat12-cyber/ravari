@@ -1383,7 +1383,7 @@
       '<div class="empty"><p>Nothing saved yet.</p><a class="pill pill--dark pill--sm" href="#shop">Browse the shop</a></div>') + "</section>";
   }
 
-  var STATUS = { pending: "Order placed", confirmed: "Confirmed", hold: "On hold", processing: "Packing", shipped: "On the way", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
+  var STATUS = { pending: "Order placed", confirmed: "Confirmed", hold: "On hold", processing: "Packing", shipped: "On the way", delivered: "Delivered", partial_return: "Partly returned", cancelled: "Cancelled", returned: "Returned" };
   var STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
   function orderHTML(o) {
     var at = STEPS.indexOf(o.status);

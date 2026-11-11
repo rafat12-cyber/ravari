@@ -103,7 +103,7 @@
   // API keys reach the store data, never users, settings or other keys.
   var KEY_AREAS = ["orders", "customers", "products", "catalog", "coupons", "content", "chat", "messages", "dashboard"];
 
-  var ORDER_STATUSES = ["pending", "confirmed", "hold", "processing", "shipped", "delivered", "cancelled", "returned"];
+  var ORDER_STATUSES = ["pending", "confirmed", "hold", "processing", "shipped", "delivered", "partial_return", "cancelled", "returned"];
   var PAYMENT_STATUSES = ["unpaid", "paid", "refunded", "failed"];
   var EVENTS = ["order.created", "order.updated", "product.created", "product.updated", "product.deleted", "stock.updated", "stock.low",
     "customer.created", "chat.message.created", "contact.created", "coupon.used", "franchise.created", "subscriber.created"];
@@ -460,13 +460,18 @@
       if (created) emit(db, "customer.created", c);
       return c;
     }
+    // How many of an order line came back in a partial return (that stock is already on the shelf)
+    function returnedQty(o, it) {
+      return (o.returns || []).filter(function (r) { return r.productId === it.productId && (r.variantId || null) === (it.variantId || null); }).reduce(function (n, r) { return n + r.qty; }, 0);
+    }
+    function moveStock(db, it, delta) {
+      var p = findProduct(db, it.productId);
+      if (!p || !p.trackStock || !delta) return;
+      var v = it.variantId ? (p.variants || []).filter(function (x) { return x.id === it.variantId; })[0] : null;
+      if (v) v.stock = Math.max(0, v.stock + delta); else p.stock = Math.max(0, int(p.stock) + delta);
+    }
     function restock(db, o) {
-      o.items.forEach(function (it) {
-        var p = findProduct(db, it.productId);
-        if (!p || !p.trackStock) return;
-        var v = it.variantId ? (p.variants || []).filter(function (x) { return x.id === it.variantId; })[0] : null;
-        if (v) v.stock += it.qty; else p.stock = int(p.stock) + it.qty;
-      });
+      o.items.forEach(function (it) { moveStock(db, it, it.qty - returnedQty(o, it)); });
       o.restocked = true;
     }
     // Meta Conversions API: the server sends the same event as the browser Pixel, with the same event ID,
@@ -1729,6 +1734,7 @@
       var db = c.db, b = c.body || {};
       var o = db.orders.filter(function (x) { return x.id === c.params.id || x.number === String(c.params.id).toUpperCase(); })[0];
       if (!o) fail(404, "Order not found.");
+      if (onCourier(o)) fail(400, "This order is already with the courier, so it can't be edited here. Change the parcel in the courier's panel, or cancel it there first.");
       var changes = [], errors = {};
       if (b.customer) {
         var cu = b.customer, info = { name: str(cu.name, 80), phone: str(cu.phone, 20), email: str(cu.email, 120), address: str(cu.address, 300), city: str(cu.city, 60) };
@@ -1808,13 +1814,54 @@
       if (subtotal !== o.subtotal || total !== o.total) { if (total !== o.total) changes.push("Total: ৳" + o.total + " → ৳" + total); o.subtotal = subtotal; o.total = total; }
       var note = str(b.note, 500);
       if (!changes.length) return { order: o, changed: false };
-      if (o.pathao && o.pathao.consignmentId && (itemsChanged || changes.some(function (x) { return /^(Total|Phone|Address|Name)/.test(x); }))) changes.push("Already with Pathao: update the parcel in the Pathao panel too");
       o.updatedAt = now();
       o.history.push({ at: now(), status: o.status, note: "Order edited · " + changes.join(" · ") + (note ? " · " + note : ""), by: c.auth ? c.auth.name : "System", internal: true });
       if (o.customerId) { var cust = db.customers.filter(function (x) { return x.id === o.customerId; })[0]; if (cust && b.customer) { cust.name = o.customer.name; cust.address = o.customer.address; cust.city = o.customer.city || cust.city; if (o.customer.email) cust.email = o.customer.email; } }
       emit(db, "order.updated", o);
       acoreSync(c, o);
       return { order: o, changed: true };
+    });
+    function onCourier(o) {
+      return !!((o.pathao && o.pathao.consignmentId) || (o.courier && o.courier.consignmentId) || ["shipped", "delivered", "partial_return", "returned"].indexOf(o.status) > -1);
+    }
+    // Partial return: the customer kept some items and sent the rest back. Staff pick which items and how many;
+    // those go back into stock. Sending it again replaces the earlier pick.
+    route("POST", "/api/orders/:id/partial-return", "orders", function (c) {
+      var db = c.db, b = c.body || {};
+      var o = db.orders.filter(function (x) { return x.id === c.params.id || x.number === String(c.params.id).toUpperCase(); })[0];
+      if (!o) fail(404, "Order not found.");
+      if (o.status === "cancelled" || o.status === "returned") fail(400, "This order is " + o.status + ". Reopen it first.");
+      var pick = Array.isArray(b.items) ? b.items : [];
+      var next = [], all = true;
+      o.items.forEach(function (it, i) {
+        var want = pick.filter(function (x) { return int(x.index, -1) === i; })[0];
+        var q = want ? int(want.qty, 0) : 0;
+        if (q < 0 || q > it.qty) fail(400, "Return between 0 and " + it.qty + " of " + it.name + ".");
+        if (q < it.qty) all = false;
+        if (q) next.push({ productId: it.productId, variantId: it.variantId || null, name: it.name, options: it.options || {}, sku: it.sku, qty: q, price: it.price, value: it.price * q });
+      });
+      if (!next.length) fail(400, "Choose at least one returned item.");
+      if (all) fail(400, "Every item came back. Mark the whole order as Returned instead.");
+      // Move only the difference from the last pick
+      var before = o.returns || [];
+      o.items.forEach(function (it) {
+        var a = returnedQty({ returns: before }, it), n = returnedQty({ returns: next }, it);
+        if (!o.restocked) moveStock(db, it, n - a);
+      });
+      var was = o.status;
+      o.returns = next;
+      o.returnedValue = next.reduce(function (n, r) { return n + r.value; }, 0);
+      if (b.collected !== undefined && b.collected !== "") o.collected = Math.max(0, int(b.collected));
+      if (was !== "partial_return") { o.status = "partial_return"; gaServer(c, o, "refund"); }
+      if (o.paymentMethod === "cod" && o.paymentStatus !== "paid" && o.collected) o.paymentStatus = "paid";
+      o.updatedAt = now();
+      var note = str(b.note, 300);
+      o.history.push({ at: now(), status: o.status, note: "Partly returned: " + next.map(function (r) { return r.qty + "× " + r.name + (Object.keys(r.options).length ? " (" + optionText(r.options) + ")" : ""); }).join(", ") +
+        " · returned ৳" + o.returnedValue + (o.collected !== undefined ? " · collected ৳" + o.collected : "") + (note ? " · " + note : ""), public: "Some items were returned", by: c.auth ? c.auth.name : "System" });
+      statusEmail(db, o);
+      emit(db, "order.updated", o);
+      acoreSync(c, o);
+      return { order: o };
     });
     function setStatus(c, o, status) {
       var db = c.db;
@@ -1826,13 +1873,13 @@
       if ((status === "cancelled" || status === "returned") && was !== "cancelled" && was !== "returned") gaServer(c, o, "refund");
       if ((was === "cancelled" || was === "returned") && status !== "cancelled" && status !== "returned" && o.restocked) {
         // Reopening takes the stock back out.
-        o.items.forEach(function (it) {
-          var p = findProduct(db, it.productId);
-          if (!p || !p.trackStock) return;
-          var v = it.variantId ? p.variants.filter(function (x) { return x.id === it.variantId; })[0] : null;
-          if (v) v.stock = Math.max(0, v.stock - it.qty); else p.stock = Math.max(0, int(p.stock) - it.qty);
-        });
+        o.items.forEach(function (it) { moveStock(db, it, -(it.qty - returnedQty(o, it))); });
         o.restocked = false;
+      }
+      // Leaving "partly returned" for a normal status undoes the partial return: those items count as sold again
+      if (o.returns && o.returns.length && ["partial_return", "returned", "cancelled"].indexOf(status) < 0) {
+        o.returns.forEach(function (r) { if (!o.restocked) moveStock(db, r, -r.qty); });
+        o.returns = []; o.returnedValue = 0;
       }
       return true;
     }
@@ -2018,7 +2065,7 @@
     });
     // A Pathao webhook (the server checks the secret first)
     var PATHAO_STATUS = { pickup_requested: "processing", assigned_for_pickup: "processing", picked: "shipped", at_the_sorting_hub: "shipped", in_transit: "shipped",
-      received_at_last_mile_hub: "shipped", assigned_for_delivery: "shipped", delivered: "delivered", partial_delivery: "delivered", returned: "returned", paid_return: "returned" };
+      received_at_last_mile_hub: "shipped", assigned_for_delivery: "shipped", delivered: "delivered", partial_delivery: "partial_return", returned: "returned", paid_return: "returned" };
     var PATHAO_PUBLIC = { pickup_requested: "Handed to the courier", assigned_for_pickup: "Courier is coming to pick it up", picked: "Picked up by the courier",
       at_the_sorting_hub: "At the courier's sorting hub", in_transit: "On the way", received_at_last_mile_hub: "Reached your area's hub", assigned_for_delivery: "Out for delivery",
       delivered: "Delivered", partial_delivery: "Partly delivered", delivery_failed: "Delivery attempt failed. The courier will contact you.", on_hold: "On hold at the courier",
@@ -2037,8 +2084,10 @@
       o.pathao.status = ev; o.pathao.lastUpdate = now();
       if (b.delivery_fee !== undefined) o.pathao.fee = num(b.delivery_fee, o.pathao.fee || 0);
       var parts = ["Pathao: " + ev.replace(/_/g, " ")], mapped = PATHAO_STATUS[ev];
-      if (mapped && setStatus(c, o, mapped)) { parts.push("Status: " + mapped); statusEmail(db, o); }
-      if (mapped === "delivered" && o.paymentMethod === "cod" && o.paymentStatus !== "paid") {
+      if (mapped && setStatus(c, o, mapped)) { parts.push("Status: " + mapped.replace(/_/g, " ")); statusEmail(db, o); }
+      if (b.collected_amount !== undefined && (mapped === "delivered" || mapped === "partial_return")) o.collected = num(b.collected_amount, 0);
+      if (mapped === "partial_return") parts.push("Open the order and pick which items came back, so they go back into stock");
+      if ((mapped === "delivered" || (mapped === "partial_return" && num(b.collected_amount, 0) > 0)) && o.paymentMethod === "cod" && o.paymentStatus !== "paid") {
         o.paymentStatus = "paid"; parts.push("Payment: paid (cash collected" + (num(b.collected_amount, 0) ? " ৳" + num(b.collected_amount, 0) : "") + ")");
       }
       if (b.reason) parts.push(str(b.reason, 200));

@@ -140,7 +140,7 @@ textarea.input--md { font-family: var(--f-mono); font-size: 12.5px; min-height: 
 .pill--shipped { background: #ece6fb; color: #5a3fa8; }
 .pill--hold { background: #fdf0d8; color: #8a5a00; }
 .pill--delivered, .pill--paid, .pill--published, .pill--open, .pill--active { background: var(--ok-bg); color: var(--ok); }
-.pill--cancelled, .pill--failed, .pill--returned, .pill--refunded { background: var(--danger-bg); color: var(--danger); }
+.pill--cancelled, .pill--failed, .pill--returned, .pill--partial_return, .pill--refunded { background: var(--danger-bg); color: var(--danger); }
 .pill--draft, .pill--closed, .pill--unpaid, .pill--inactive { background: var(--panel); color: var(--ink-2); }
 .tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); font-size: 11.5px; }
 
@@ -318,7 +318,32 @@ table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
 .secret .code { flex: 1; background: var(--paper); }
 
 /* Invoice (print) */
+/* Courier invoice (parcel slip): 100 mm wide, several fit on a page */
+.inv-list { display: grid; gap: 18px; }
+.inv-list--courier { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+.slip { background: #fff; color: #000; border: 2px solid #000; border-radius: 4px; padding: 14px; font-size: 13px; display: grid; gap: 10px; max-width: 420px; break-inside: avoid; }
+.slip small { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #444; }
+.slip__top { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 8px; }
+.slip__top img { height: 20px; width: auto; }
+.slip__codes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.slip__codes > div:only-child { grid-column: 1 / -1; }
+.slip__codes b { display: block; font-size: 15px; }
+.slip__to { border: 1px solid #000; padding: 8px 10px; }
+.slip__name { display: block; font-size: 17px; }
+.slip__phone { display: block; font-size: 19px; letter-spacing: .03em; }
+.slip__to p { margin: 4px 0; font-size: 14px; line-height: 1.35; }
+.slip__cod { display: flex; justify-content: space-between; align-items: center; background: #000; color: #fff; padding: 8px 12px; font-weight: 700; }
+.slip__cod b { font-size: 24px; }
+.slip__items { width: 100%; border-collapse: collapse; }
+.slip__items td { border-bottom: 1px dashed #999; padding: 3px 0; }
+.slip__foot { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+.slip__from { font-size: 12px; border-top: 1px solid #000; padding-top: 6px; }
+.slip__from small { display: inline; }
+.slip__from br + small { display: block; text-transform: none; letter-spacing: 0; margin-top: 3px; }
+
 @media print {
+  .inv-list--order .inv-page { break-after: page; }
+  .inv-list--courier { grid-template-columns: repeat(2, 1fr); gap: 10mm; }
   .side, .top, .no-print, .sticky-save { display: none !important; }
   .app { display: block; }
   .view { padding: 0; }
