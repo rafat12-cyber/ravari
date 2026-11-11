@@ -1872,3 +1872,5 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .cold__bg { object-position: 50% 30%; }
 @media (min-width: 961px) { .cold__bg { object-position: 50% 0%; } }
 @media (max-width: 960px) { .cold__bg { object-position: 50% 100%; } }
+/* Ticker sits right under the full-width hero, edge to edge (Rafat, 2026-11-11) */
+.ticker { margin: 0; border-radius: 0; }
