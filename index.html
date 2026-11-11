@@ -20,8 +20,8 @@
 @font-face { font-family: 'Saira'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(assets/fonts/saira-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: 'Saira'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(assets/fonts/saira-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 </style>
-<link rel="preload" as="image" href="assets/img/home/r-hero-duo.webp" imagesrcset="assets/img/home/r-hero-duo-m.webp 1200w, assets/img/home/r-hero-duo.webp 2400w" imagesizes="100vw" fetchpriority="high">
-<link rel="stylesheet" href="assets/css/style.css?v=1180">
+<link rel="preload" as="image" href="assets/img/home/r-hero-duo.webp" imagesrcset="assets/img/home/r-hero-duo-m.webp 1200w, assets/img/home/r-hero-duo.webp 2600w" imagesizes="100vw" fetchpriority="high">
+<link rel="stylesheet" href="assets/css/style.css?v=1190">
 <script>document.documentElement.classList.add("js");try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&!/[?&](preview|edit)\b/.test(location.search))document.documentElement.classList.add("js-intro")}catch(e){}</script>
 </head>
 <body>
@@ -36,7 +36,7 @@
 <!-- 1. HERO: one wide photo, copy on the right -->
 <header class="hero hero--photo" id="top">
   <div class="hero__panel">
-    <img class="hero__photo" src="assets/img/home/r-hero-duo.webp" srcset="assets/img/home/r-hero-duo-m.webp 1200w, assets/img/home/r-hero-duo.webp 2400w" sizes="100vw" fetchpriority="high" decoding="async" alt="Two models in a burgundy and a grey suede jacket with white tees" width="2400" height="1800" data-ci="hero.image" data-calt="hero.imageAlt">
+    <img class="hero__photo" src="assets/img/home/r-hero-duo.webp" srcset="assets/img/home/r-hero-duo-m.webp 1200w, assets/img/home/r-hero-duo.webp 2600w" sizes="100vw" fetchpriority="high" decoding="async" alt="Two models in a burgundy and a grey suede jacket with white tees" width="2600" height="1333" data-ci="hero.image" data-calt="hero.imageAlt">
     <nav class="nav" aria-label="Main"><a class="nav__brand" href="#home" aria-label="Ravari home"><img src="assets/img/logo.webp" alt="Ravari" width="199" height="24"></a></nav>
 
     <div class="hero__copy">
@@ -45,10 +45,8 @@
         <span class="line"><span data-c="hero.line1">Layer up</span></span>
         <span class="line"><span><span data-c="hero.lead">for</span> <em class="alt" data-c="hero.accent">winter.</em></span></span>
       </h1>
-      <p class="hero__text" data-c="hero.text">Denim, corduroy and full sleeve shirts for the cooler days. Warm, easy to layer, made in Dhaka.</p>
       <div class="hero__ctas">
-        <a class="pill pill--light" href="#category/winter-collection" data-chref="hero.cta1Link" data-c="hero.cta1">Shop winter</a>
-        <a class="pill pill--glass" href="#category/denim-shirt" data-chref="hero.cta2Link" data-c="hero.cta2">Denim shirts</a>
+        <a class="pill pill--light pill--arrow" href="#shop" data-chref="hero.cta1Link"><span data-c="hero.cta1">Shop now</span> <span class="pill__arrow" aria-hidden="true">↗</span></a>
       </div>
     </div>
   </div>
@@ -84,29 +82,35 @@
   </aside>
 </section>
 
-<!-- 3. COLLECTION SPLIT: two photos, collection name in the middle -->
-<section class="split" id="house" aria-label="Winter collection">
-  <a class="split__half reveal" href="#category/winter-collection" data-chref="house.card1.link">
-    <img src="assets/img/home/r-split-1.webp" srcset="assets/img/home/r-split-1-m.webp 640w, assets/img/home/r-split-1.webp 1100w" sizes="(max-width: 700px) 100vw, 50vw" alt="Model in a burgundy suede jacket and white jeans" loading="lazy" decoding="async" data-ci="house.card1.image">
+<!-- 3. TICKER + THE DROP: a moving strip, then a bento of three photos and a sticker card -->
+<div class="ticker" aria-hidden="true"><div class="ticker__track"><span data-c="house.ticker">New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ </span><span data-c="house.ticker">New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ </span></div></div>
+
+<section class="bento" id="house" aria-label="Winter drop">
+  <a class="drop__ph drop__a reveal" href="#category/winter-collection" data-chref="house.card1.link">
+    <img src="assets/img/home/r-drop-1.webp" srcset="assets/img/home/r-drop-1-m.webp 720w, assets/img/home/r-drop-1.webp 1300w" sizes="(max-width: 960px) 100vw, 45vw" width="1300" height="1040" alt="Two models in black and white check jackets" loading="lazy" decoding="async" data-ci="house.card1.image">
+    <span class="sticker" aria-hidden="true">New<br>drop</span>
+    <span class="drop__tag"><span data-c="house.card1.title">Check jackets</span> <i aria-hidden="true">↗</i></span>
   </a>
-  <a class="split__half reveal" style="--d:120ms" href="#category/full-shirt" data-chref="house.card2.link">
-    <img src="assets/img/home/r-split-2.webp" srcset="assets/img/home/r-split-2-m.webp 640w, assets/img/home/r-split-2.webp 1100w" sizes="(max-width: 700px) 100vw, 50vw" alt="Model in a grey suede jacket and black trousers" loading="lazy" decoding="async" data-ci="house.card2.image">
-  </a>
-  <ul class="split__list split__list--l">
-    <li><a href="#category/denim-shirt">Denim shirt</a></li>
-    <li><a href="#category/full-shirt">Full sleeve</a></li>
-    <li><a href="#category/half-shirt">Half sleeve</a></li>
-  </ul>
-  <ul class="split__list split__list--r">
-    <li><a href="#category/panjabi">Panjabi</a></li>
-    <li><a href="#category/on-sale">On sale</a></li>
-    <li><a href="#shop">All products</a></li>
-  </ul>
-  <div class="split__title">
-    <h2 class="split__h"><span data-c="house.titleStart">Winter</span> <span data-c="house.titleEnd">collection</span></h2>
-    <p class="split__year" data-c="house.eyebrow">2026</p>
-    <a class="pill pill--light pill--sm" href="#category/winter-collection" data-chref="house.link" data-c="house.linkLabel">Shop winter</a>
+  <div class="drop__card reveal" style="--d:80ms">
+    <p class="drop__year" data-c="house.eyebrow">Drop 01 / 2026</p>
+    <h2 class="drop__h"><span data-c="house.titleStart">Winter</span> <em data-c="house.titleEnd">collection</em></h2>
+    <ul class="drop__chips">
+      <li><a href="#category/denim-shirt">Denim</a></li>
+      <li><a href="#category/full-shirt">Full sleeve</a></li>
+      <li><a href="#category/half-shirt">Half sleeve</a></li>
+      <li><a href="#category/panjabi">Panjabi</a></li>
+      <li><a href="#category/on-sale">On sale</a></li>
+    </ul>
+    <a class="pill pill--dark pill--arrow drop__cta" href="#category/winter-collection" data-chref="house.link"><span data-c="house.linkLabel">Shop the drop</span> <span class="pill__arrow" aria-hidden="true">↗</span></a>
   </div>
+  <a class="drop__ph drop__c reveal" style="--d:160ms" href="#category/full-shirt" data-chref="house.card2.link">
+    <img src="assets/img/home/r-drop-2.webp" srcset="assets/img/home/r-drop-2-m.webp 480w, assets/img/home/r-drop-2.webp 720w" sizes="(max-width: 960px) 50vw, 26vw" width="720" height="1200" alt="Model in a brown suede jacket and sunglasses" loading="lazy" decoding="async" data-ci="house.card2.image">
+    <span class="drop__tag"><span data-c="house.card2.title">Full sleeve</span> <i aria-hidden="true">↗</i></span>
+  </a>
+  <a class="drop__ph drop__d reveal" style="--d:240ms" href="#category/denim-shirt" data-chref="house.card3.link">
+    <img src="assets/img/home/r-drop-3.webp" srcset="assets/img/home/r-drop-3-m.webp 480w, assets/img/home/r-drop-3.webp 720w" sizes="(max-width: 960px) 50vw, 24vw" width="720" height="720" alt="Model in a navy suede jacket" loading="lazy" decoding="async" data-ci="house.card3.image">
+    <span class="drop__tag"><span data-c="house.card3.title">Denim</span> <i aria-hidden="true">↗</i></span>
+  </a>
 </section>
 
 <!-- 4. NEW ARRIVALS ------------------------------------------------------ -->
@@ -132,14 +136,17 @@
     <div class="tiles__row">
       <a class="tile reveal" style="--d:0ms" href="#category/winter-collection" data-chref="tiles.items.0.link">
         <img src="assets/img/home/r-tile-1.webp" srcset="assets/img/home/r-tile-1-m.webp 640w, assets/img/home/r-tile-1.webp 900w" sizes="(max-width: 700px) 92vw, 400px" alt="" loading="lazy" decoding="async" data-ci="tiles.items.0.image">
+        <span class="tile__num" aria-hidden="true">01</span>
         <span class="tile__label"><span data-c="tiles.items.0.label">Winter collection</span><span class="tile__arrow" aria-hidden="true">↗</span></span>
       </a>
       <a class="tile reveal" style="--d:90ms" href="#category/full-shirt" data-chref="tiles.items.1.link">
         <img src="assets/img/home/r-tile-2.webp" srcset="assets/img/home/r-tile-2-m.webp 640w, assets/img/home/r-tile-2.webp 900w" sizes="(max-width: 700px) 92vw, 400px" alt="" loading="lazy" decoding="async" data-ci="tiles.items.1.image">
+        <span class="tile__num" aria-hidden="true">02</span>
         <span class="tile__label"><span data-c="tiles.items.1.label">Full sleeve</span><span class="tile__arrow" aria-hidden="true">↗</span></span>
       </a>
       <a class="tile reveal" style="--d:180ms" href="#category/denim-shirt" data-chref="tiles.items.2.link">
         <img src="assets/img/home/r-tile-3.webp" srcset="assets/img/home/r-tile-3-m.webp 640w, assets/img/home/r-tile-3.webp 900w" sizes="(max-width: 700px) 92vw, 400px" alt="" loading="lazy" decoding="async" data-ci="tiles.items.2.image">
+        <span class="tile__num" aria-hidden="true">03</span>
         <span class="tile__label"><span data-c="tiles.items.2.label">Denim &amp; check</span><span class="tile__arrow" aria-hidden="true">↗</span></span>
       </a>
     </div>
@@ -152,6 +159,7 @@
     <p class="eyebrow cold__kicker" data-c="poster.kicker">Winter collection 2026</p>
     <h2 class="cold__h cold__h--top" data-c="poster.title">When the cold<br>hits, layer up.</h2>
     <img class="cold__model reveal" src="assets/img/home/r-poster-cut.webp" srcset="assets/img/home/r-poster-cut-m.webp 460w, assets/img/home/r-poster-cut.webp 820w" sizes="(max-width: 700px) 60vw, 380px" width="820" height="2005" alt="Model in a white half-zip and black trousers" loading="lazy" decoding="async" data-ci="poster.image" data-calt="poster.imageAlt">
+    <svg class="spin" viewBox="0 0 200 200" aria-hidden="true"><defs><path id="spinPath" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0"/></defs><circle cx="100" cy="100" r="98" /><text><textPath href="#spinPath">CASH ON DELIVERY ✱ ALL OVER BANGLADESH ✱ </textPath></text><text class="spin__mid" x="100" y="114" text-anchor="middle">✱</text></svg>
     <p class="cold__note" data-c="poster.marqueeTop">Made in Dhaka. Cut for the cooler months: suede, denim and corduroy you can wear all season.</p>
     <a class="cold__cta" href="#category/winter-collection" data-chref="poster.ctaLink"><span class="cold__ring" aria-hidden="true">↗</span><span><small data-c="poster.cta">Shop winter</small><b data-c="poster.price">From ৳1,299</b></span></a>
     <p class="cold__h cold__h--bottom" data-c="poster.marqueeBottom" aria-hidden="true">Bold, edge<br>&amp; classy.</p>
@@ -160,7 +168,7 @@
 
 <!-- 7. INSTAGRAM ---------------------------------------------------------- -->
 <section class="ig" aria-label="Instagram">
-  <h2 class="ig__h"><span data-c="insta.title">Follow us on</span> <a href="https://www.instagram.com/ravari_bd" target="_blank" rel="noopener" data-chref="insta.link" data-c="insta.handle">Instagram</a></h2>
+  <div class="ig__head"><h2 class="ig__h"><span data-c="insta.title">Follow us on</span> <a href="https://www.instagram.com/ravari_bd" target="_blank" rel="noopener" data-chref="insta.link" data-c="insta.handle">Instagram</a></h2><a class="pill pill--line pill--sm" href="https://www.instagram.com/ravari_bd" target="_blank" rel="noopener" data-chref="insta.link">@ravari_bd</a></div>
   <div class="ig__row">
       <a class="ig__item reveal" style="--d:0ms" href="https://www.instagram.com/ravari_bd" target="_blank" rel="noopener" data-chref="insta.link"><img src="assets/img/home/r-ig-1.webp" width="520" height="520" alt="Ravari on Instagram, photo 1" loading="lazy" decoding="async" data-ci="insta.images.0.image"></a>
       <a class="ig__item reveal" style="--d:70ms" href="https://www.instagram.com/ravari_bd" target="_blank" rel="noopener" data-chref="insta.link"><img src="assets/img/home/r-ig-2.webp" width="520" height="520" alt="Ravari on Instagram, photo 2" loading="lazy" decoding="async" data-ci="insta.images.1.image"></a>
@@ -297,7 +305,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/client.js?v=1180"></script>
-<script src="assets/js/store.js?v=1180"></script>
+<script src="assets/js/client.js?v=1190"></script>
+<script src="assets/js/store.js?v=1190"></script>
 </body>
 </html>

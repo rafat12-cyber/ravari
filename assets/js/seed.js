@@ -154,20 +154,21 @@
     home: {
       hero: {
         line1: "Layer up", lead: "for", accent: "winter.",
-        cta1: "Shop winter", cta1Link: "#category/winter-collection", cta2: "Denim shirts", cta2Link: "#category/denim-shirt",
+        cta1: "Shop now", cta1Link: "#shop",
         image: "assets/img/home/r-hero-duo.webp", imageAlt: "Two models in a burgundy and a grey suede jacket with white tees",
-        text: "Denim, corduroy and full sleeve shirts for the cooler days. Warm, easy to layer, made in Dhaka.",
         note: "Winter collection 2026 · Cash on delivery all over Bangladesh"
       },
       tryLook: {
         title: "Try the Look.", sub: "Styled head to toe. Tap a look to see the pieces.", panelTitle: "In this look", totalTitle: "Complete the look", cta: "Add full look to bag",
         looks: []
       },
-      // Two photos side by side with the collection name in the middle
+      // Moving strip under the hero, then a bento: big photo, sticker card, two more photos
       house: {
-        eyebrow: "2026", titleStart: "Winter", accent: "", titleEnd: "collection", linkLabel: "Shop winter", link: "#category/winter-collection",
-        card1: { image: "assets/img/home/r-split-1.webp", meta: "Model in a burgundy suede jacket", title: "", link: "#category/winter-collection" },
-        card2: { image: "assets/img/home/r-split-2.webp", meta: "Model in a grey suede jacket", title: "", link: "#category/full-shirt" }
+        ticker: "New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ ",
+        eyebrow: "Drop 01 / 2026", titleStart: "Winter", accent: "", titleEnd: "collection", linkLabel: "Shop the drop", link: "#category/winter-collection",
+        card1: { image: "assets/img/home/r-drop-1.webp", title: "Check jackets", link: "#category/winter-collection" },
+        card2: { image: "assets/img/home/r-drop-2.webp", title: "Full sleeve", link: "#category/full-shirt" },
+        card3: { image: "assets/img/home/r-drop-3.webp", title: "Denim", link: "#category/denim-shirt" }
       },
       arrivals: {
         titleStart: "New", accent: "arrivals", titleEnd: "",
