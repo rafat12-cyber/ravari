@@ -516,14 +516,14 @@
     var w = tlStage.clientWidth;
     // Phones show three looks (one either side), wider screens show five
     TL.edge = w < 700 ? 1.15 : 2.2;
-    TL.unit = w < 700 ? w * 0.34 : Math.max(96, Math.min(300, w * 0.245));
+    TL.unit = w < 700 ? w * 0.34 : Math.max(120, w * 0.31); // desktop: four looks spread over the whole stage
   }
   function tlWrapD(d) { var n = TL.n; d = ((d % n) + n) % n; return d > n / 2 ? d - n : d; }
   // Place every model from the current position. The look in focus stands on
   // the right; the next looks queue up to its left, each one smaller and softer.
   function tlLayout() {
     var u = TL.unit, w = tlStage.clientWidth, n = TL.n, phone = w < 700;
-    var anchor = w * (phone ? 0.2 : 0.27), edge = phone ? 2.2 : 3.2;
+    var anchor = w * (phone ? 0.2 : 0.32), edge = phone ? 2.2 : 3.2;
     tlModels.forEach(function (m, k) {
       var r = (((k - TL.pos) % n) + n) % n;
       if (r > n - 1) r -= n; // the look that just left slides out to the right
