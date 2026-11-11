@@ -1926,3 +1926,15 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .hero--photo .hero__note { white-space: nowrap; line-height: 1.7; }
 .hero--photo .display { line-height: .82; }
 .hero--photo .display .line { padding-bottom: .02em; }
+
+/* Big scroll-linked line behind the three cards (Rafat, 2026-11-11) */
+.wbig { position: relative; z-index: 0; overflow: hidden; margin-top: clamp(70px, 9vw, 140px); margin-bottom: calc(-1 * clamp(44px, 6vw, 96px)); pointer-events: none; }
+.wbig__track { display: flex; align-items: center; gap: .3em; width: max-content; padding: 0 var(--gut); white-space: nowrap; will-change: transform;
+  font-family: var(--f-head); font-weight: 700; text-transform: uppercase; letter-spacing: -.01em; line-height: .9;
+  font-size: clamp(64px, 11vw, 190px); color: #2b2c30; }
+.wbig__track i { font-style: normal; color: var(--red); font-size: .5em; }
+#house.bento--3 { position: relative; z-index: 1; }
+@media (max-width: 960px) { .wbig { margin-top: 56px; margin-bottom: -26px; } .wbig__track { font-size: 64px; } }
+.wbig { font-size: clamp(64px, 11vw, 190px); margin-bottom: -.28em; }
+.wbig__track { font-size: 1em; }
+@media (max-width: 960px) { .wbig { font-size: 64px; margin-bottom: -.25em; } .wbig__track { font-size: 1em; } }

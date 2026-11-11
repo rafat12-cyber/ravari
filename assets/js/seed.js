@@ -203,6 +203,7 @@
       },
       // Moving strip under the hero, then a bento: big photo, sticker card, two more photos
       house: {
+        bigText: "Make your Winter 26/27 fashionable",
         ticker: "New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ ",
         card1: { image: "assets/img/home/r-card-jacket.webp", title: "Jacket", link: "#category/jacket" },
         card2: { image: "assets/img/home/r-card-winter.webp", title: "Winter 26/27", link: "#category/winter-collection" },

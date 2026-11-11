@@ -225,6 +225,14 @@
     var heroNav = homeView.hidden ? $("#pagehead .nav") : $(".hero .nav");
     var limit = heroNav ? heroNav.getBoundingClientRect().bottom + y : 80;
     top.classList.toggle("is-on", y > limit + 10);
+    // Big "Make your Winter 26/27 fashionable" line behind the three cards slides with the scroll
+    $$("[data-wbig]").forEach(function (el) {
+      var r = el.parentNode.getBoundingClientRect();
+      if (r.bottom < -200 || r.top > vh + 200) return;
+      var p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height + 400)));
+      var room = Math.max(0, el.scrollWidth - el.parentNode.clientWidth);
+      el.style.transform = "translate3d(" + (-p * room).toFixed(1) + "px,0,0)";
+    });
     $$("[data-drift]").forEach(function (el) {
       // inside the sticky lookbook, measure the whole section so the text keeps sliding while the photos are pinned
       var r = (el.closest(".lookbook") || el.parentElement).getBoundingClientRect();
