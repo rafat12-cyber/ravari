@@ -211,7 +211,7 @@
     [/^house\.card\d\.image$/, 960, 1200, "4:5 photo", 160],
     [/^poster\.image$/, 2400, 1600, "3:2 photo, fills the frame behind the text", 320], [/^tiles\.items\.\d+\.image$/, 900, 1200, "3:4 photo", 200], [/^insta\.images\.\d+\.image$/, 520, 520, "square photo", 90],
     [/^lookbook\.looks\.\d+\.image$/, 900, 1200, "3:4 photo", 180],
-    [/^sizeGuide$/, 1200, 0, "width", 120],
+    [/^sizeGuide$/, 1200, 800, "3:2 landscape chart, shown in full", 120, true],
     [/^image$/, 900, 1200, "3:4 photo", 150],
     [/^product$/, 690, 862, "4:5 photo", 80],
     [/^logo$/, 360, 120, "wide logo with a see-through background", 30],
@@ -223,7 +223,7 @@
   ];
   function imgSpec(name) {
     const s = IMG_SPECS.find((x) => x[0].test(name)) || [null, 1200, 0, "longest side", 200];
-    return { w: s[1], h: s[2], what: s[3], kb: s[4],
+    return { w: s[1], h: s[2], what: s[3], kb: s[4], fit: !!s[5],
       text: `Best size: ${s[2] ? `${s[1]} × ${s[2]} px` : `${s[1]} px on the ${s[3]}`}${s[2] ? ` (${s[3]})` : ""} · WebP · under ${s[4]} KB` };
   }
   // Show an image's real size and weight, with a warning when it is far off the recommended one
@@ -235,7 +235,8 @@
       const w = im.naturalWidth, h = im.naturalHeight;
       fetch(url).then((r) => r.blob()).then((b) => b.size, () => 0).then((bytes) => {
         const kb = Math.round(bytes / 1024), warn = [];
-        if (spec.h && Math.abs(w / h - spec.w / spec.h) > 0.03) warn.push("different shape, the edges will be cropped");
+        if (spec.h && !spec.fit && Math.abs(w / h - spec.w / spec.h) > 0.03) warn.push("different shape, the edges will be cropped");
+        if (spec.fit && (w / h < 0.9 || w / h > 2.2)) warn.push(w / h < 0.9 ? "tall chart, hard to read on phones; a landscape 3:2 chart works best" : "very wide chart, text gets small on phones");
         if (w < spec.w * 0.8) warn.push("smaller than recommended, may look soft");
         if (kb && kb > spec.kb * 1.5) warn.push(`heavy file, aim for under ${spec.kb} KB`);
         out.innerHTML = `This image: ${w} × ${h} px${kb ? ` · ${kb} KB` : ""} ${warn.length ? `· <span style="color:#b3261e">${esc(warn.join("; "))}</span>` : "· good fit"}`;
@@ -1127,7 +1128,7 @@
             <label class="check"><input type="checkbox" name="trackStock" ${draft.trackStock ? "checked" : ""}> Track stock (sold-out sizes can't be ordered)</label>
             <label class="field" id="simpleStock" style="max-width:200px"><span>Stock</span><input class="input" name="stock" type="number" min="0" value="${esc(draft.stock == null ? 0 : draft.stock)}"></label></div>
           <div class="card"><h2 class="h2">Size guide</h2><p class="muted small" style="margin:0">Upload a size chart image. Customers see a “Size guide” button above the sizes; it opens this image in a popup.</p>
-            ${imgField("sizeGuide", draft.sizeGuide, "Size guide image", "A wide image works best, like a chart with chest, length and sleeve.", true)}</div>
+            ${imgField("sizeGuide", draft.sizeGuide, "Size guide image", "Ratio 3:2 landscape, 1200 × 800 px (1200 × 900 also fine). Shown in full, never cropped. Put sizes in rows and chest, length, sleeve in columns, with big text so it reads on phones.", true)}</div>
         </div>
         <div class="stack">
           <div class="card"><h2 class="h2">Status</h2>
