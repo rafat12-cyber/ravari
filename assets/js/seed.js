@@ -221,7 +221,7 @@
       // Big type around a cut-out model
       poster: {
         kicker: "Winter collection 2026", title: "When the cold\nhits, layer up.", cta: "Shop winter", ctaLink: "#category/winter-collection",
-        image: "assets/img/home/r-poster-cut.webp", imageAlt: "Model in a white half-zip and black trousers",
+        image: "assets/img/home/r-poster-bg.webp", imageAlt: "Model in a blue check jacket",
         marqueeTop: "Made in Dhaka. Cut for the cooler months: suede, denim and corduroy you can wear all season.", marqueeBottom: "Bold, edge\n& classy.", price: "From ৳1,299"
       },
       insta: {

@@ -209,7 +209,7 @@
     [/^hero\.image$/, 2400, 1600, "3:2 photo, shown in full, plain wall top right for the text", 260],
     [/^tryLook\.looks\.\d+\.image$/, 400, 1200, "model cutout with a see-through background", 80],
     [/^house\.card\d\.image$/, 960, 1200, "4:5 photo", 160],
-    [/^poster\.image$/, 820, 2005, "cut-out PNG/WebP on a see-through background", 200], [/^tiles\.items\.\d+\.image$/, 900, 1200, "3:4 photo", 200], [/^insta\.images\.\d+\.image$/, 520, 520, "square photo", 90],
+    [/^poster\.image$/, 1600, 2400, "2:3 photo, fills the frame behind the text", 260], [/^tiles\.items\.\d+\.image$/, 900, 1200, "3:4 photo", 200], [/^insta\.images\.\d+\.image$/, 520, 520, "square photo", 90],
     [/^lookbook\.looks\.\d+\.image$/, 900, 1200, "3:4 photo", 180],
     [/^sizeGuide$/, 1200, 0, "width", 120],
     [/^image$/, 900, 1200, "3:4 photo", 150],

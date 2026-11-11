@@ -1844,3 +1844,14 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 
 /* Ticker in the hero wall dark grey (Rafat) */
 .ticker { background: #3c3a40; color: #f2f0ec; }
+
+/* Winter poster: one photo fills the frame behind the type (2026-11-11) */
+.cold__stage { isolation: isolate; background: #4a4950; }
+.cold__bg { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
+.cold__stage::before, .cold__stage::after { content: none !important; }
+@media (min-width: 961px) {
+  .cold__bg { object-position: 50% 10%; }
+  .cold__h--top { font-size: clamp(36px, 4.4vw, 72px); }
+  .cold__note { left: auto; right: 5%; top: 48px; text-align: right; max-width: 260px; }
+}
+.cold__h--bottom { color: #fff; -webkit-text-stroke: 0; }
