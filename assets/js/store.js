@@ -67,7 +67,8 @@
   // 600 px tall for Try the Look models). Phones and small cards load those instead of the full photo.
   // If a small copy is missing the server sends the full photo, so a new photo never shows as broken.
   var SMALL_RE = /^(\/?assets\/img\/(?:products\/[\w.-]+|home\/look-\d+))\.webp$/;
-  function smallOf(src) { var m = SMALL_RE.exec(src || ""); return m && !/-s$/.test(m[1]) ? m[1] + "-s.webp" : ""; }
+  // The static demo has no small copies (file limit), so it always uses the full photo
+  function smallOf(src) { if (window.RV_NO_SMALL) return ""; var m = SMALL_RE.exec(src || ""); return m && !/-s$/.test(m[1]) ? m[1] + "-s.webp" : ""; }
   function imgSet(src, smallW, fullW, sizes) {
     var s = smallOf(src);
     return s ? ' srcset="' + esc(s) + " " + smallW + "w, " + esc(src) + " " + fullW + 'w" sizes="' + sizes + '"' : "";
