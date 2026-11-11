@@ -206,7 +206,7 @@
   }
   // Recommended size and file weight for each image slot, so uploads stay sharp and fast
   const IMG_SPECS = [
-    [/^hero\.image$/, 2600, 1333, "wide photo, people on the left, plain wall on the right for the text", 260],
+    [/^hero\.image$/, 2400, 1600, "3:2 photo, shown in full, plain wall top right for the text", 260],
     [/^tryLook\.looks\.\d+\.image$/, 400, 1200, "model cutout with a see-through background", 80],
     [/^house\.card1\.image$/, 1300, 1040, "5:4 photo", 200], [/^house\.card2\.image$/, 720, 1200, "3:5 tall photo", 120], [/^house\.card3\.image$/, 720, 720, "square photo", 100],
     [/^poster\.image$/, 820, 2005, "cut-out PNG/WebP on a see-through background", 200], [/^tiles\.items\.\d+\.image$/, 900, 1200, "3:4 photo", 200], [/^insta\.images\.\d+\.image$/, 520, 520, "square photo", 90],

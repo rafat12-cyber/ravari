@@ -1800,3 +1800,25 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 
 /* Keep the "nothing matches" note hidden while there are products */
 .empty[hidden] { display: none; }
+
+/* ==========================================================================
+   HERO: one full 3:2 photo, nothing on top of it (2026-11-11)
+   No glass, no gradient, no shadow. Desktop: text on the plain wall, top right.
+   Phones: the whole photo, then the text under it.
+   ========================================================================== */
+.hero--photo .hero__panel { aspect-ratio: 3 / 2; min-height: 0; height: auto; background: #3a3a3f; }
+.hero--photo .hero__panel::after, .hero--photo .hero__panel::before { content: none !important; }
+.hero--photo .hero__photo { position: absolute; inset: 0; left: 0; top: 0; width: 100%; height: 100%; max-width: none; aspect-ratio: auto; object-fit: cover; object-position: 50% 50%; -webkit-mask-image: none; mask-image: none; filter: none; }
+.hero--photo .hero__copy { align-self: start; margin-top: clamp(24px, 5vw, 90px); }
+.hero--photo .display [data-c], .hero--photo .hero__note, .hero--photo .hero__text { text-shadow: none !important; }
+.hero--photo .hero__note { background: transparent !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (max-width: 960px) {
+  .hero--photo .hero__panel { display: block !important; aspect-ratio: auto; min-height: 0 !important; padding: 0 !important; background: #2b2c30; }
+  .hero--photo .nav { position: absolute !important; top: 12px; left: 12px; right: 12px; z-index: 3; }
+  .hero--photo .hero__photo { position: relative !important; inset: auto; display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; object-position: 50% 50%; }
+  .hero--photo .hero__copy { margin-top: 0; align-self: auto; justify-items: end; text-align: right; padding: 22px 18px 26px !important; gap: 14px; }
+}
+@media (min-width: 961px) {
+  .hero--photo .hero__copy { margin-top: clamp(16px, 2vw, 40px); }
+  .hero--photo .display { font-size: clamp(36px, 4.1vw, 66px); }
+}
