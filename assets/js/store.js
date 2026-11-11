@@ -29,6 +29,14 @@
   var S = { settings: {}, categories: [], attributes: [], products: [], pages: {}, menus: { header: [], footer: [] } };
   var BY_ID = {}, BY_SLUG = {}, CAT_BY_SLUG = {}, CAT_BY_ID = {};
   var cart = [], saved = store.get("saved", []);
+  // Size chart made in Admin › Size charts (a table), picked on the product; an uploaded chart image is the fallback
+  function chartOf(p) { return p && p.sizeChartId ? ((S && S.sizeCharts) || []).filter(function (x) { return x.id === p.sizeChartId; })[0] || null : null; }
+  function sizeChartHtml(ch, label) {
+    return '<div class="szc"><div class="szc__top"><h3 class="szc__title">' + esc(ch.title || ch.name) + '<span>Size chart</span></h3>' + (ch.unit ? '<p class="szc__unit">Measurements<br>in ' + esc(ch.unit) + "</p>" : "") + "</div>" +
+      '<div class="szc__wrap"><table class="szc__t"><thead><tr>' + ch.columns.map(function (c, i) { return "<th>" + esc(c) + (i && ch.unit ? "<small>" + esc(ch.unit) + "</small>" : "") + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      ch.rows.map(function (r) { return "<tr>" + r.map(function (v, i) { return i ? "<td>" + esc(v) + "</td>" : "<th scope=\"row\">" + esc(v) + "</th>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>" +
+      '<div class="szc__foot">' + (ch.note ? "<span><b>Tip</b> " + esc(ch.note) + "</span>" : "<span></span>") + '<span class="szc__logo">' + esc(label || "") + "</span></div></div>";
+  }
 
   function index() {
     BY_ID = {}; BY_SLUG = {}; CAT_BY_SLUG = {}; CAT_BY_ID = {};
@@ -66,7 +74,8 @@
   // Smaller copies of the site's own photos sit next to them as "<name>-s.webp" (360 px wide for products,
   // 600 px tall for Try the Look models). Phones and small cards load those instead of the full photo.
   // If a small copy is missing the server sends the full photo, so a new photo never shows as broken.
-  var SMALL_RE = /^(\/?assets\/img\/(?:products\/[\w.-]+|home\/look-\d+))\.webp$/;
+  // Photos uploaded in the admin get a 600 px "-s" copy too (older uploads fall back to the full photo)
+  var SMALL_RE = /^(\/?assets\/img\/(?:products\/[\w.-]+|home\/look-\d+)|\/uploads\/(?:\d{4}\/\d{2}\/)?[\w-]+)\.webp$/;
   // The static demo has no small copies (file limit), so it always uses the full photo
   function smallOf(src) { if (window.RV_NO_SMALL) return ""; var m = SMALL_RE.exec(src || ""); return m && !/-s$/.test(m[1]) ? m[1] + "-s.webp" : ""; }
   function imgSet(src, smallW, fullW, sizes) {
@@ -409,7 +418,8 @@
     $("#footerCopy").innerHTML = LAY().footer.copyright ? esc(LAY().footer.copyright).replace(/\{year\}/g, new Date().getFullYear())
       : "© " + new Date().getFullYear() + " " + esc(st.legalName || "Ravari") + " · Prices in BDT (৳)";
     var payments = S.settings.payments || {};
-    $("#payBadges").innerHTML = (payments.sslcommerz ? ["VISA", "Mastercard", "AMEX", "bKash", "Nagad", "Rocket", "Upay", "DBBL Nexus", "Internet banking"] : []).concat(payments.cod ? ["Cash on delivery"] : [])
+    $("#payBadges").innerHTML = (payments.sslcommerz ? ["VISA", "Mastercard", "AMEX", "bKash", "Nagad", "DBBL Nexus", "Internet banking"] : [])
+      .concat(!payments.sslcommerz && payments.bkash ? ["bKash"] : []).concat(!payments.sslcommerz && payments.nagad ? ["Nagad"] : []).concat(payments.cod ? ["Cash on delivery"] : [])
       .map(function (b) { return '<span class="pay-badge">' + esc(b) + "</span>"; }).join("");
     $("#sslBanner").hidden = !payments.sslcommerz;
     bind($("#footer"), S.pages.home);
@@ -996,7 +1006,7 @@
             var isSize = /size/i.test(a.name);
             return '<div class="pd__block" data-attr="' + esc(a.name) + '">' +
               '<div class="pd__label-row"><p class="pd__label mono">' + esc(a.name) + ' · <span data-attr-label>Choose one</span></p>' +
-                (isSize && p.sizeGuide ? '<button class="guide-btn" type="button" data-size-guide>' + ICON.ruler + "Size guide</button>" : "") + "</div>" +
+                (isSize && (p.sizeGuide || chartOf(p)) ? '<button class="guide-btn" type="button" data-size-guide>' + ICON.ruler + "Size guide</button>" : "") + "</div>" +
               '<div class="sizes' + (def.type === "color" ? " sizes--color" : "") + '" role="radiogroup" aria-label="' + esc(a.name) + '">' + a.values.map(function (val) {
                 var hex = def.type === "color" ? ((def.values || []).filter(function (x) { return x.label === val; })[0] || {}).hex : "";
                 return '<button class="size" type="button" role="radio" aria-checked="false" data-value="' + esc(val) + '"' + (hex ? ' style="--sw:' + esc(hex) + '"' : "") + ">" + esc(val) + "</button>";
@@ -1106,6 +1116,8 @@
     });
     var guide = $("[data-size-guide]", page);
     if (guide) guide.addEventListener("click", function () {
+      var ch = chartOf(p);
+      if (ch) return openModal(sizeChartHtml(ch, shortName(p)), "Size guide");
       openModal('<figure class="guide"><img src="' + esc(p.sizeGuide) + '" alt="Size guide for ' + esc(shortName(p)) + '"><figcaption class="mono">' + esc(shortName(p)) + " · size guide</figcaption></figure>", "Size guide");
     });
     var main = $(".pd__main");
@@ -1383,14 +1395,14 @@
       '<div class="empty"><p>Nothing saved yet.</p><a class="pill pill--dark pill--sm" href="#shop">Browse the shop</a></div>') + "</section>";
   }
 
-  var STATUS = { pending: "Order placed", confirmed: "Confirmed", hold: "On hold", processing: "Packing", shipped: "On the way", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
+  var STATUS = { pending: "Order placed", confirmed: "Confirmed", hold: "On hold", processing: "Packing", shipped: "On the way", delivered: "Delivered", partial_return: "Partly returned", cancelled: "Cancelled", returned: "Returned" };
   var STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
   function orderHTML(o) {
     var at = STEPS.indexOf(o.status);
     return '<div class="order panel">' +
       '<div class="order__head"><div><p class="mono">Order ' + esc(o.number) + " · " + new Date(o.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + "</p>" +
         '<h2 class="h2 order__status">' + esc(STATUS[o.status] || o.status) + "</h2></div>" +
-        '<span class="chip ' + (o.paymentStatus === "paid" ? "chip--paid" : "chip--muted") + '">' + (o.paymentStatus === "paid" ? "Paid" : o.paymentMethod === "cod" ? "Cash on delivery" : "Payment " + esc(o.paymentStatus)) + "</span></div>" +
+        '<span class="chip ' + (o.paymentStatus === "paid" ? "chip--paid" : "chip--muted") + '">' + (o.paymentStatus === "paid" ? "Paid" : o.paymentMethod === "cod" ? "Cash on delivery" : o.paymentStatus === "unpaid" && (o.paymentMethod === "bkash" || o.paymentMethod === "nagad") ? "Checking " + PAY_NAME[o.paymentMethod] + " payment" : "Payment " + esc(o.paymentStatus)) + "</span></div>" +
       (at > -1 ? '<ol class="steps">' + STEPS.map(function (s, i) { return '<li class="' + (i <= at ? "is-done" : "") + '">' + STATUS[s] + "</li>"; }).join("") + "</ol>" : "") +
       (o.courier && (o.courier.name || o.courier.code) ? '<p class="order__track">' + esc(o.courier.name ? o.courier.name.charAt(0).toUpperCase() + o.courier.name.slice(1) : "Courier") +
           (o.courier.code ? " · <b>" + esc(o.courier.code) + "</b>" : "") + (o.courier.url ? ' · <a href="' + esc(safe(o.courier.url)) + '" target="_blank" rel="noopener">Track with the courier</a>' : "") +
@@ -1589,9 +1601,7 @@
             (ship.freeOver ? '<p class="checkout__hint mono">Free delivery on orders over ' + taka(ship.freeOver) + "</p>" : "") +
             field("co-note", "Order note (optional)", '<input id="co-note" name="note" placeholder="Best time to call, landmark…">') + "</fieldset>" +
           '<fieldset class="panel"><legend class="panel__title">Payment</legend>' +
-            (pay.cod ? '<label class="radio"><input type="radio" name="pay" value="cod" checked><span><b>Cash on delivery</b>Pay the rider when your order arrives.</span></label>' : "") +
-            (pay.sslcommerz ? '<label class="radio"><input type="radio" name="pay" value="sslcommerz"' + (pay.cod ? "" : " checked") + '><span><b>Pay online</b>Card, bKash, Nagad, Rocket or internet banking, secured by SSLCOMMERZ.</span></label>' +
-              '<div class="ssl-row"><img src="https://securepay.sslcommerz.com/public/image/SSLCommerz-Pay-With-logo-All-Size-03.png" alt="Pay with SSLCOMMERZ: cards, mobile banking and internet banking" loading="lazy" onerror="this.parentNode.classList.add(\'no-img\');this.remove()"><span class="ssl-row__fallback mono">Secured by SSLCOMMERZ</span></div>' : "") +
+            payOptions(pay) +
             '<em class="field__err" data-err="payment" hidden></em></fieldset>' +
           '<label class="agree"><input type="checkbox" name="agree" id="co-agree" required checked><span>I have read and agree to the website\'s <a href="#terms" data-policy="terms">Terms &amp; conditions</a>, <a href="#privacy" data-policy="privacy">Privacy policy</a> and <a href="#refund" data-policy="refund">Return &amp; refund policy</a>.</span></label>' +
           '<em class="field__err" data-err="agree" hidden></em>' +
@@ -1606,6 +1616,12 @@
       "</section>";
     drawSummary();
     var form = $("#checkoutForm");
+    // bKash / Nagad Send Money: show the number and TrxID boxes only under the chosen one
+    var payBox = function () { $$("[data-paybox]", form).forEach(function (b) { var r = $('input[name="pay"]:checked', form); b.hidden = !r || r.value !== b.dataset.paybox;
+      // only the open box carries the names, so errors land under the right fields
+      $("[data-pay-sender]", b)[b.hidden ? "removeAttribute" : "setAttribute"]("name", "paySender"); $("[data-pay-trx]", b)[b.hidden ? "removeAttribute" : "setAttribute"]("name", "payTrx"); }); };
+    $$('input[name="pay"]', form).forEach(function (r) { r.addEventListener("change", payBox); });
+    payBox();
     $$('input[name="zone"]', form).forEach(function (r) { r.addEventListener("change", function () { checkoutState.zone = r.value; drawSummary(); }); });
     $("#couponForm").addEventListener("submit", function (e) {
       e.preventDefault();
@@ -1641,19 +1657,23 @@
         customer: { name: form.name.value, phone: form.phone.value, email: form.email.value, address: form.address.value, city: form.city.value },
         items: cart.map(function (l) { return { productId: l.productId, variantId: l.variantId, qty: l.qty }; }),
         zone: checkoutState.zone, couponCode: checkoutState.coupon ? checkoutState.coupon.code : "",
-        paymentMethod: payInput ? payInput.value : "", agree: form.agree.checked, note: form.note.value, source: trafficSource(), meta: metaInfo(), cartId: cartId()
+        paymentMethod: payInput ? payInput.value : "", payment: manualPayment(form, payInput), agree: form.agree.checked, note: form.note.value, source: trafficSource(), meta: metaInfo(), cartId: cartId()
       };
       var errs = {};
       if (!body.customer.name.trim()) errs.name = "Enter your name.";
       if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(body.customer.phone.replace(/[\s-]/g, ""))) errs.phone = "Enter a Bangladeshi mobile number, like 01712345678.";
       if (body.customer.address.trim().length < 6) errs.address = "Enter your full delivery address.";
       if (!body.agree) errs.agree = "Please accept the terms and conditions, privacy policy and refund policy.";
+      if (body.payment) {
+        if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(body.payment.sender.replace(/[\s-]/g, ""))) errs.paySender = "Enter the number you sent the money from.";
+        if (!/^[A-Z0-9]{8,12}$/i.test(body.payment.trxId.replace(/\s+/g, ""))) errs.payTrx = "Enter the transaction ID (TrxID) from your SMS, like 9C7A1B2D3E.";
+      }
       if (Object.keys(errs).length) return showErrors(form, { message: "Please check the highlighted fields.", fields: errs });
       var btn = $("#placeOrder");
       btn.disabled = true;
       btn.firstChild.textContent = "Placing order… ";
       store.set("customer", body.customer);
-      track("payment", "", { method: body.paymentMethod === "cod" ? "Cash on delivery" : "Online payment" });
+      track("payment", "", { method: PAY_NAME[body.paymentMethod] || "Online payment" });
       api("POST", "/api/orders", body).then(function (r) {
         var o = r.order;
         pixelMatch(body.customer);
@@ -1671,6 +1691,28 @@
         showErrors(form, err);
       });
     });
+  }
+  var PAY_NAME = { cod: "Cash on delivery", sslcommerz: "Online payment", bkash: "bKash", nagad: "Nagad" };
+  // Checkout payment choices: only the methods turned on in Admin › Payments
+  function payOptions(pay) {
+    var first = ["cod", "sslcommerz", "bkash", "nagad"].filter(function (k) { return pay[k]; })[0];
+    var radio = function (k, title, text) { return '<label class="radio"><input type="radio" name="pay" value="' + k + '"' + (k === first ? " checked" : "") + "><span><b>" + title + "</b>" + text + "</span></label>"; };
+    var manual = function (k, name, cfg) {
+      return radio(k, name, cfg.mode === "api" ? "Pay with your " + name + " account. You'll go to " + name + " to enter your number, code and PIN." : "Send Money to our " + name + " number, then enter the transaction ID.") +
+        (cfg.mode === "api" ? "" : '<div class="paybox" data-paybox="' + k + '" hidden><p>1. Open your ' + name + " app or dial " + (k === "bkash" ? "*247#" : "*167#") + ".<br>2. " + (cfg.accountType === "Merchant" ? "Make a <b>Payment</b>" : cfg.accountType === "Agent" ? "<b>Cash Out</b>" : "<b>Send Money</b>") +
+          " of <b data-total></b> to <b class=\"mono\">" + esc(cfg.number) + "</b> (" + esc(cfg.accountType) + ").<br>3. Enter your number and the TrxID from the SMS below.</p>" +
+          '<div class="field-row">' + field("co-" + k + "-from", "Your " + name + " number", '<input id="co-' + k + '-from" data-pay-sender type="tel" inputmode="numeric" placeholder="01XXXXXXXXX">') +
+          field("co-" + k + "-trx", "Transaction ID (TrxID)", '<input id="co-' + k + '-trx" data-pay-trx autocomplete="off" autocapitalize="characters" placeholder="9C7A1B2D3E">') + "</div></div>");
+    };
+    return (pay.cod ? radio("cod", "Cash on delivery", "Pay the rider when your order arrives.") : "") +
+      (pay.sslcommerz ? radio("sslcommerz", "Pay online", "Card, mobile banking or internet banking, secured by SSLCOMMERZ.") +
+        '<div class="ssl-row"><img src="https://securepay.sslcommerz.com/public/image/SSLCommerz-Pay-With-logo-All-Size-03.png" alt="Pay with SSLCOMMERZ: cards, mobile banking and internet banking" loading="lazy" onerror="this.parentNode.classList.add(\'no-img\');this.remove()"><span class="ssl-row__fallback mono">Secured by SSLCOMMERZ</span></div>' : "") +
+      (pay.bkash ? manual("bkash", "bKash", pay.bkash) : "") +
+      (pay.nagad ? manual("nagad", "Nagad", pay.nagad) : "");
+  }
+  function manualPayment(form, input) {
+    var box = input && $('[data-paybox="' + input.value + '"]', form);
+    return box ? { sender: $("[data-pay-sender]", box).value, trxId: $("[data-pay-trx]", box).value } : undefined;
   }
   function drawSummary() {
     var box = $("#summaryLines");
@@ -2455,7 +2497,7 @@
       var m = e.data || {};
       if (m.type === "ravari:page" && m.key && m.page) {
         S.pages[m.key] = m.page;
-        if (m.key === "home") { bind(homeView, m.page); bind($("#footer"), m.page); drawLook(current); editable(homeView); }
+        if (m.key === "home") { drawHome(); bind($("#footer"), m.page); var nl = (m.page.footer || {}).newsletter; if (nl) $("#email").placeholder = nl; editable(homeView); }
         else {
           if (LIVE[m.key]) LIVE[m.key]();
           var root = document.querySelectorAll('[data-page="' + m.key + '"]');

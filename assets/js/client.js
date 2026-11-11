@@ -1,7 +1,7 @@
 // API client for the storefront and admin. On a server it calls /api; where
 // there is no server (opening the files directly, or a static preview) it
 // runs the same engine (core.js) in the browser against a demo database kept
-// in localStorage (products and pages only, no sample orders or customers).
+// in localStorage (products, pages and a few sample orders to try the admin on).
 (function () {
   "use strict";
 
@@ -9,7 +9,7 @@
     var s = document.currentScript && document.currentScript.src;
     return s ? s.replace(/assets\/js\/client\.js.*$/, "") : "";
   })();
-  var DB_KEY = "ravari:demo-db:v55";
+  var DB_KEY = "ravari:demo-db:v60";
   var DEMO_LOGIN = { email: "admin@ravaribd.com", password: "ravari-demo" };
 
   // The server stamps the current asset version on the page (cache busting); the demo uses the fixed one
@@ -82,9 +82,9 @@
         var out = engine.handle({ method: method, path: parts[0], query: q, body: body ? JSON.parse(JSON.stringify(body)) : {}, headers: token ? { authorization: "Bearer " + token } : {} }, db);
         if (out.changed && out.status < 400) writeDb(db);
         // Online payment in the demo: pretend the customer paid.
-        if (method === "POST" && parts[0] === "/api/orders" && out.status === 201 && body.paymentMethod === "sslcommerz") {
+        if (method === "POST" && parts[0] === "/api/orders" && out.status === 201 && (body.paymentMethod === "sslcommerz" || (body.paymentMethod === "bkash" && db.settings.payments.bkash.mode === "api"))) {
           var o = db.orders.filter(function (x) { return x.number === out.body.order.number; })[0];
-          engine.handle({ method: "POST", path: "/api/internal/payment", internal: true, body: { orderId: o.id, status: "paid", ref: "DEMO-" + hex(4).toUpperCase() } }, db);
+          engine.handle({ method: "POST", path: "/api/internal/payment", internal: true, body: { orderId: o.id, status: "paid", ref: "DEMO-" + hex(4).toUpperCase(), by: body.paymentMethod === "bkash" ? "bKash" : "SSLCOMMERZ" } }, db);
           writeDb(db);
           out.body.payment = { demo: true };
         }
@@ -93,8 +93,6 @@
     };
   }
 
-  // Demo database: products, pages and settings from the seed and one owner login.
-  // No sample orders, customers, carts, analytics, chats or messages.
   function buildDemoDb() {
     var db = RavariCore.freshDb(window.RAVARI_SEED);
     db.demo = true;

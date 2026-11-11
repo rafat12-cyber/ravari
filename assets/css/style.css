@@ -967,9 +967,12 @@ details[open] > .menu__link::after { transform: rotate(45deg); }
 .field__err { font-style: normal; font-size: 12px; color: var(--sale); }
 .field__err[hidden] { display: none; }
 .is-invalid { border-color: var(--sale) !important; }
-.zones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .checkout__hint { margin: -6px 0 0; color: var(--ink-2); }
 .ssl-row { display: flex; justify-content: center; padding: 10px; border-radius: 12px; background: var(--ground); }
+.paybox { padding: 14px; border-radius: 12px; background: var(--ground); display: grid; gap: 10px; }
+.paybox[hidden] { display: none; }
+.paybox p { margin: 0; font-size: 14px; line-height: 1.6; }
 .ssl-row img { max-height: 70px; width: auto; }
 .ssl-row__fallback { display: none; color: var(--ink-2); }
 .ssl-row.no-img .ssl-row__fallback { display: block; }
@@ -1979,3 +1982,20 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .footer__cols .mono, .footer__pay > .mono, .ssl-banner figcaption, .footer__copy, .footer__legal, .footer__dev { color: #a9adb3; }
 /* Phones: product names at a readable size */
 @media (max-width: 960px) { .card__name b { font-size: 12px; } }
+
+/* Size chart made in the admin (Size charts), shown in the Size guide popup */
+.szc { background: #ecebe8; color: #1b1b1d; border-radius: 14px; padding: clamp(16px, 3vw, 28px); width: min(720px, 100%); }
+.szc__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 8px 12px; border-bottom: 2px solid #1b1b1d; padding-bottom: 12px; margin-bottom: 16px; }
+.szc__title { margin: 0; font-family: var(--f-display, inherit); font-weight: 700; font-size: clamp(26px, 5vw, 40px); line-height: .9; text-transform: uppercase; }
+.szc__title span { display: block; color: #BC070C; }
+.szc__unit { margin: 0; text-align: right; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #5b5d62; line-height: 1.5; }
+.szc__wrap { overflow-x: auto; border-radius: 12px; }
+.szc__t { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border-radius: 12px; overflow: hidden; }
+.szc__t thead th { background: #1b1b1d; color: #f2f0ec; font-weight: 600; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; padding: 12px 8px; text-align: center; }
+.szc__t thead th small { display: block; font-size: 9px; letter-spacing: .14em; color: #a9adb3; margin-top: 2px; }
+.szc__t td, .szc__t tbody th { text-align: center; font-size: 16px; padding: 11px 8px; border-top: 1px solid #e3e2df; }
+.szc__t tbody th { font-weight: 700; background: #f6f5f2; }
+.szc__t tbody tr:nth-child(even) td { background: #fbfaf8; }
+.szc__foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; font-size: 13px; color: #5b5d62; }
+.szc__foot b { color: #1b1b1d; text-transform: uppercase; letter-spacing: .06em; margin-right: 4px; }
+.szc__logo { font-weight: 700; letter-spacing: .12em; color: #1b1b1d; text-transform: uppercase; white-space: nowrap; }

@@ -48,7 +48,7 @@
   });
 
   var attributes = [
-    { id: "att_size", name: "Size", type: "button", values: ["M", "L", "XL", "XXL"].map(function (v) { return { label: v }; }), createdAt: T0 },
+    { id: "att_size", name: "Size", type: "button", values: ["M", "L", "XL", "XXL", "28", "30", "32", "34", "36"].map(function (v) { return { label: v }; }), createdAt: T0 },
     { id: "att_color", name: "Color", type: "color", values: [{"label": "Blue", "hex": "#3b5677"}, {"label": "Gray", "hex": "#8a8d91"}, {"label": "Black", "hex": "#1f2022"}, {"label": "Brown", "hex": "#6b4a35"}, {"label": "Off-White", "hex": "#ece6d8"}, {"label": "Yellow", "hex": "#d8b84a"}, {"label": "Coffee", "hex": "#5b4335"}, {"label": "White", "hex": "#f4f4f2"}, {"label": "Olive", "hex": "#6b6b3a"}, {"label": "Black (Mixed)", "hex": "#2b2c2e"}, {"label": "Light Pink", "hex": "#e8b9c0"}, {"label": "Bronze", "hex": "#8c6a3f"}, {"label": "Maroon", "hex": "#6d1f2a"}, {"label": "Bottle Green", "hex": "#1f4a3a"}, {"label": "Peach", "hex": "#f0b99a"}, {"label": "Red", "hex": "#b52a45"}, {"label": "Red (Mixed)", "hex": "#a3343f"}], createdAt: T0 }
   ];
 
@@ -136,13 +136,31 @@
   ];
   var NEW = { "jacket": 1, "sweat-shirt": 1, "denim-pant": 1 };
   var SIZE_CHART = { "jacket": "assets/img/size/jacket-size-chart.webp", "denim-pant": "assets/img/size/denim-size-chart.webp" };
+  var SIZE_CHART_ID = { "jacket": "sc_jacket", "denim-pant": "sc_denim", "denim-shirt": "sc_winter_shirt", "full-shirt": "sc_shirt", "half-shirt": "sc_shirt", "panjabi": "sc_panjabi" };
+  // Size chart pictures the old shop kept among the product photos; now they are size chart templates instead
+  var CHART_PHOTOS = {"classic-double-pocket-denim-shirt-blue-4": "sc_winter_shirt", "classic-denim-casual-shirt-gray-2": "sc_winter_shirt", "classic-denim-shirt-with-accent-pocket-blue-3": "sc_winter_shirt", "corduroy-shirt-with-elbow-patches-blue-4": "sc_winter_shirt", "classic-black-denim-casual-shirt-black-4": "sc_winter_shirt", "dual-tone-check-corduroy-shirt-blue-3": "sc_winter_shirt", "classic-blue-denim-casual-shirt-blue-3": "sc_winter_shirt", "dual-tone-check-corduroy-shirt-brown-4": "sc_winter_shirt", "premium-casual-shirt-blue-2": "sc_shirt", "half-sleeve-casual-shirt-off-white-2": "sc_shirt", "half-sleeve-casual-shirt-blue-4": "sc_shirt", "premium-casual-shirt-yellow-2": "sc_shirt", "half-sleeve-casual-shirt-brown-4": "sc_shirt", "premium-casual-shirt-blue-2-2": "sc_shirt", "premium-casual-shirt-coffee-4": "sc_shirt", "premium-casual-shirt-white-4": "sc_shirt", "premium-embroidered-panjabi-olive-4": "sc_panjabi", "premium-embroidered-panjabi-off-white-4": "sc_panjabi", "premium-embroidered-panjabi-blue-4": "sc_panjabi", "premium-cotton-sequin-panjabi-yellow-3": "sc_panjabi", "premium-classic-panjabi-brown-4": "sc_panjabi", "premium-classic-panjabi-blue-3": "sc_panjabi", "premium-classic-panjabi-black-mixed-4": "sc_panjabi", "premium-classic-panjabi-light-pink-3": "sc_panjabi", "premium-classic-panjabi-bronze-3": "sc_panjabi", "panjabi-maroon-4": "sc_panjabi", "premium-classic-panjabi-blue-2-3": "sc_panjabi", "premium-embroidered-panjabi-olive-2-4": "sc_panjabi", "premium-classic-panjabi-brown-2-4": "sc_panjabi", "premium-embroidered-panjabi-off-white-2-4": "sc_panjabi", "premium-embroidered-panjabi-white-3": "sc_panjabi", "premium-embroidered-panjabi-black-4": "sc_panjabi", "premium-embroidered-panjabi-bottle-green-4": "sc_panjabi", "premium-embroidered-panjabi-blue-2-4": "sc_panjabi", "classic-cotton-panjabi-blue-5": "sc_panjabi", "classic-cotton-panjabi-peach-3": "sc_panjabi", "classic-cotton-panjabi-black-4": "sc_panjabi", "classic-cotton-panjabi-maroon-4": "sc_panjabi", "classic-cotton-panjabi-blue-2-4": "sc_panjabi", "premium-embroidered-panjabi-gray-4": "sc_panjabi", "premium-embroidered-panjabi-bottle-green-2-4": "sc_panjabi", "premium-classic-panjabi-blue-3-3": "sc_panjabi", "premium-classic-panjabi-gray-4": "sc_panjabi", "half-sleeve-casual-shirt-blue-2-4": "sc_shirt", "classic-cotton-panjabi-blue-3-4": "sc_panjabi", "premium-casual-shirt-coffee-2-3": "sc_shirt", "premium-casual-shirt-red-2": "sc_shirt", "premium-casual-shirt-olive-2": "sc_shirt", "premium-casual-shirt-black-mixed-2": "sc_shirt", "half-sleeve-casual-shirt-brown-2-3": "sc_shirt", "half-sleeve-casual-shirt-red-mixed-3": "sc_shirt", "half-sleeve-casual-shirt-brown-3-2": "sc_shirt", "half-sleeve-casual-shirt-black-3": "sc_shirt", "half-sleeve-casual-shirt-olive-3": "sc_shirt", "half-sleeve-casual-shirt-blue-3-3": "sc_shirt"};
+  // Size chart templates (Admin › Size charts); products pick one by name
+  var sizeCharts = [
+    { id: "sc_jacket", name: "Jacket", title: "Jacket", unit: "inch", columns: ["Size", "Length", "Chest", "Sleeve"],
+      rows: [["M", "25.5", "42", "23"], ["L", "26.5", "44", "23.5"], ["XL", "27.5", "46", "24"], ["XXL", "28.5", "48", "24.5"]],
+      note: "Between two sizes? Take the bigger one for an easy layered fit.", createdAt: T0, updatedAt: T0 },
+    { id: "sc_denim", name: "Baggy Denim", title: "Baggy Denim", unit: "inch", columns: ["Size", "Waist", "Length", "Leg opening"],
+      rows: [["28", "28", "39", "16"], ["30", "30", "39", "17"], ["32", "32", "40", "18"], ["34", "34", "41", "19"], ["36", "36", "42", "19"]],
+      note: "Pick your usual waist size. The leg is cut wide and loose.", createdAt: T0, updatedAt: T0 },
+    { id: "sc_winter_shirt", name: "Winter Shirt", title: "Winter Shirt", unit: "inch", columns: ["Size", "Chest", "Length"],
+      rows: [["M", "40", "27"], ["L", "42", "28"], ["XL", "44", "29"], ["XXL", "46", "30"]], note: "", createdAt: T0, updatedAt: T0 },
+    { id: "sc_shirt", name: "Shirt", title: "Shirt", unit: "inch", columns: ["Size", "Chest", "Length"],
+      rows: [["M", "40", "28"], ["L", "42", "29"], ["XL", "44", "30"], ["XXL", "46", "31"]], note: "", createdAt: T0, updatedAt: T0 },
+    { id: "sc_panjabi", name: "Panjabi", title: "Panjabi", unit: "inch", columns: ["Size", "Chest", "Length"],
+      rows: [["M", "40", "40"], ["L", "42", "42"], ["XL", "44", "44"], ["XXL", "46", "44"]], note: "", createdAt: T0, updatedAt: T0 }
+  ];
   var products = P.map(function (r, i) {
     var sku = "RV-" + String(1001 + i);
     var cats = ["cat_men"].concat(r[6].filter(function (c) { return c !== "men"; }).map(function (c) { return "cat_" + c.replace(/-/g, "_"); }));
     return {
       id: "prd_" + r[0].replace(/-/g, "_").slice(0, 60), slug: r[0], sku: sku, status: "published",
       name: r[1], color: r[2], hex: r[3], price: r[4], comparePrice: r[5] || null,
-      description: r[8], details: r[9].slice(), images: photos(r[0], r[7]), sizeGuide: SIZE_CHART[r[6][0]] || "",
+      description: r[8], details: r[9].slice(), images: photos(r[0], r[7]).filter(function (u) { return !CHART_PHOTOS[u.replace(/^.*\//, "").replace(/\.webp$/, "")]; }), sizeGuide: SIZE_CHART[r[6][0]] || "", sizeChartId: SIZE_CHART_ID[r[6].filter(function (c) { return SIZE_CHART_ID[c]; })[0]] || "",
       categoryIds: cats, isNew: r[6].some(function (c) { return NEW[c]; }), featured: i < 8, trackStock: true, stock: 0,
       attributes: [{ name: "Size", values: r[10].map(function (v) { return v[0]; }) }],
       variants: r[10].map(function (v) { return { id: "var_" + i + "_" + v[0].toLowerCase(), sku: sku + "-" + v[0], options: { Size: v[0] }, price: null, stock: v[1] }; }),
@@ -165,11 +183,12 @@
     shipping: {
       zones: [
         { id: "inside-dhaka", name: "Inside Dhaka", fee: 70, days: "1–3 days" },
+        { id: "dhaka-sub", name: "Dhaka Sub Area", fee: 100, days: "2–4 days" },
         { id: "outside-dhaka", name: "Outside Dhaka", fee: 130, days: "3–5 days" }
       ],
       freeOver: 0, processing: "Orders are confirmed by phone and packed within 24 hours."
     },
-    payments: { cod: true, sslcommerz: { enabled: true, sandbox: true, storeId: "" } },
+    payments: { cod: true, sslcommerz: { enabled: true, sandbox: false, storeId: "ravaribd0live" } },
     chat: { enabled: true, title: "Ravari", greeting: "Hi! Ask us anything about sizes, delivery or your order.",
       autoReply: true, autoReplyText: "Thanks for your message. We usually reply within a few minutes during store hours." },
     lowStock: 5,
@@ -358,7 +377,7 @@
   ];
 
   return {
-    version: 2, settings: settings, categories: categories, attributes: attributes, products: products,
+    version: 2, settings: settings, categories: categories, attributes: attributes, products: products, sizeCharts: sizeCharts, chartPhotos: CHART_PHOTOS,
     pages: pages, menus: menus, coupons: coupons, counters: { order: 1000 }
   };
 });
