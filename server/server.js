@@ -200,6 +200,106 @@ function metaEvent(job) {
   req.on("error", function (e) { capiStatus = { at: Date.now(), ok: false, event: job.event.event_name, message: e.message }; });
   req.end(body);
 }
+// Pathao courier (Merchant API): sign in with the store's details, keep the token in memory, send parcels, take status webhooks
+var pathaoAuth = { key: "", token: "", exp: 0 }, pathaoLast = { send: null, webhook: null };
+function pathaoBase(p) { return process.env.PATHAO_URL || (p.sandbox ? "https://courier-api-sandbox.pathao.com" : "https://api-hermes.pathao.com"); }
+function pathaoHttp(p, method, pth, body, token, cb) {
+  var url, data = body ? JSON.stringify(body) : "";
+  try { url = new URL(pathaoBase(p) + pth); } catch (e) { return cb(e); }
+  var headers = { Accept: "application/json", "Content-Type": "application/json" };
+  if (data) headers["Content-Length"] = Buffer.byteLength(data);
+  if (token) headers.Authorization = "Bearer " + token;
+  var req = (url.protocol === "https:" ? https : http).request(url, { method: method, timeout: 15000, headers: headers }, function (res) {
+    readAll(res, function (txt) {
+      var j = {}; try { j = JSON.parse(txt); } catch (e) {}
+      if (res.statusCode >= 400 || (j.type && j.type === "error")) {
+        var errs = j.errors && typeof j.errors === "object" ? Object.keys(j.errors).map(function (k) { return [].concat(j.errors[k]).join(" "); }).join(" ") : "";
+        var e = new Error(String((j.message || "Pathao answered " + res.statusCode) + (errs ? ": " + errs : "")).slice(0, 300)); e.status = res.statusCode; return cb(e, j);
+      }
+      cb(null, j);
+    });
+  });
+  req.on("timeout", function () { req.destroy(new Error("Pathao didn't answer in time.")); });
+  req.on("error", function (e) { cb(e); });
+  req.end(data);
+}
+function pathaoToken(p, cb, fresh) {
+  var key = [p.sandbox, p.clientId, p.username, crypto.createHash("sha256").update(p.clientSecret + "|" + p.password).digest("hex")].join("|");
+  if (!fresh && pathaoAuth.key === key && pathaoAuth.token && Date.now() < pathaoAuth.exp) return cb(null, pathaoAuth.token);
+  pathaoHttp(p, "POST", "/aladdin/api/v1/issue-token", { client_id: p.clientId, client_secret: p.clientSecret, grant_type: "password", username: p.username, password: p.password }, null, function (e, j) {
+    if (e) return cb(new Error("Pathao sign-in failed: " + e.message));
+    if (!j.access_token) return cb(new Error("Pathao didn't send a token. Check the Client ID, Secret, email and password."));
+    pathaoAuth = { key: key, token: j.access_token, exp: Date.now() + Math.max(60, (+j.expires_in || 3600) - 300) * 1000 };
+    cb(null, j.access_token);
+  });
+}
+// One signed-in call; if the token has run out, sign in again once
+function pathaoCall(p, method, pth, body, cb) {
+  pathaoToken(p, function (e, t) {
+    if (e) return cb(e);
+    pathaoHttp(p, method, pth, body, t, function (e2, j) {
+      if (e2 && e2.status === 401) return pathaoToken(p, function (e3, t2) { if (e3) return cb(e3); pathaoHttp(p, method, pth, body, t2, cb); }, true);
+      cb(e2, j);
+    });
+  });
+}
+function pathaoConf() {
+  var x = db.settings.pathao || {};
+  return { sandbox: x.sandbox !== false, clientId: x.clientId || "", clientSecret: x.clientSecret || "", username: x.username || "", password: x.password || "", storeId: x.storeId || "" };
+}
+function pathaoList(j) { var d = (j && j.data) || {}; return Array.isArray(d) ? d : d.data || []; }
+// The core route said what to do (out.body.pathao); do it and answer the admin
+function pathaoJob(job, req, res) {
+  var p = pathaoConf(), done = function (status, body) { sendJson(res, status, body); };
+  if (job.op === "stores") return pathaoCall(p, "GET", "/aladdin/api/v1/stores", null, function (e, j) {
+    if (e) return done(502, { error: e.message });
+    done(200, { ok: true, message: "Signed in to Pathao" + (p.sandbox ? " (sandbox)" : ""), stores: pathaoList(j).map(function (x) { return { id: x.store_id, name: x.store_name, address: x.store_address, active: x.is_active !== 0 }; }) });
+  });
+  if (job.op === "cities") return pathaoCall(p, "GET", "/aladdin/api/v1/city-list", null, function (e, j) {
+    if (e) return done(502, { error: e.message });
+    done(200, { items: pathaoList(j).map(function (x) { return { id: x.city_id, name: x.city_name }; }) });
+  });
+  if (job.op === "zones") return pathaoCall(p, "GET", "/aladdin/api/v1/cities/" + job.city + "/zone-list", null, function (e, j) {
+    if (e) return done(502, { error: e.message });
+    done(200, { items: pathaoList(j).map(function (x) { return { id: x.zone_id, name: x.zone_name }; }) });
+  });
+  if (job.op === "areas") return pathaoCall(p, "GET", "/aladdin/api/v1/zones/" + job.zone + "/area-list", null, function (e, j) {
+    if (e) return done(502, { error: e.message });
+    done(200, { items: pathaoList(j).map(function (x) { return { id: x.area_id, name: x.area_name }; }) });
+  });
+  if (job.op === "create") return pathaoCall(p, "POST", "/aladdin/api/v1/orders", job.payload, function (e, j) {
+    pathaoLast.send = { at: Date.now(), ok: !e, message: job.payload.merchant_order_id + (e ? " · " + e.message : " · consignment " + ((j.data || {}).consignment_id || "?")) };
+    if (e) return done(502, { error: e.message });
+    var out = run({ method: "POST", path: "/api/internal/pathao-sent", internal: true, body: { orderId: job.orderId, data: j.data || {}, amount: job.payload.amount_to_collect } });
+    done(out.status, out.body);
+  });
+  if (job.op === "info") return pathaoCall(p, "GET", "/aladdin/api/v1/orders/" + encodeURIComponent(job.consignmentId) + "/info", null, function (e, j) {
+    if (e) return done(502, { error: e.message });
+    var d = j.data || {}, ev = String(d.order_status_slug || d.order_status || "").toLowerCase();
+    var out = run({ method: "POST", path: "/api/internal/pathao", internal: true, body: { event: ev, consignment_id: job.consignmentId, updated_at: d.updated_at || "", delivery_fee: d.delivery_fee } });
+    done(200, { ok: true, status: d.order_status || ev, order: (db.orders.filter(function (o) { return o.id === job.orderId; })[0]) || null, result: out.body });
+  });
+  done(400, { error: "Unknown Pathao request." });
+}
+// Pathao webhook: it sends the secret saved in its panel in X-PATHAO-Signature. Its first call checks the URL and needs this exact answer.
+var PATHAO_HOOK_REPLY = "f3992ecc-59da-4cbe-a049-a13da2018d51";
+function pathaoWebhook(req, raw, body, res) {
+  var secret = ((db.settings || {}).pathao || {}).webhookSecret || "";
+  var sent = String(req.headers["x-pathao-signature"] || "");
+  var hmac = secret ? crypto.createHmac("sha256", secret).update(raw || "").digest("hex") : "";
+  var same = function (a, b) { var x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && x.length > 0 && crypto.timingSafeEqual(x, y); };
+  if (!secret || !(same(sent, secret) || same(sent.replace(/^sha256=/, ""), hmac))) {
+    pathaoLast.webhook = { at: Date.now(), ok: false, message: "Rejected: the signature didn't match the webhook secret." };
+    return sendJson(res, 401, { error: "Bad signature." });
+  }
+  res.setHeader("X-Pathao-Merchant-Webhook-Integration-Secret", PATHAO_HOOK_REPLY);
+  if (body.event === "webhook_integration") { pathaoLast.webhook = { at: Date.now(), ok: true, message: "Pathao checked the webhook URL" }; return sendJson(res, 202, { ok: true }); }
+  var out;
+  try { out = run({ method: "POST", path: "/api/internal/pathao", internal: true, body: body }); } catch (e) { console.error(e); return sendJson(res, 500, { error: "Something went wrong on the server." }); }
+  pathaoLast.webhook = { at: Date.now(), ok: out.status < 400, message: (body.merchant_order_id || body.consignment_id || "?") + " · " + (body.event || "update") };
+  sendJson(res, 202, out.body);
+}
+
 // Acore: send orders to Acore, retry the ones that failed, and take signed status updates back
 var acoreLast = { send: null, webhook: null };
 function acoreSend(job) {
@@ -456,8 +556,8 @@ setInterval(function () { run({ method: "POST", path: "/api/internal/cart-remind
 
 var core = Core.create({
   now: Date.now, random: random, hashPassword: hashPassword, emit: emit, saveMedia: saveMedia, deleteMedia: deleteMedia, trashMedia: trashMedia, restoreMedia: restoreMedia,
-  describeSettings: function (s) { s.payments.sslcommerz.serverReady = !!(SSLC_PASS && (SSLC_ID || s.payments.sslcommerz.storeId)); if (s.code) { s.code.capiStatus = capiStatus; s.code.gaStatus = gaStatus; s.code.catalogStatus = catalogStatus; } if (s.acore) { s.acore.lastSend = acoreLast.send; s.acore.lastWebhook = acoreLast.webhook; s.acore.webhookUrl = PUBLIC_URL + "/api/acore/webhook"; } },
-  metaEvent: metaEvent, gaEvent: gaEvent, catalogSync: catalogSyncAll, acoreSend: acoreSend, sendEmail: sendEmail, publicUrl: PUBLIC_URL
+  describeSettings: function (s) { s.payments.sslcommerz.serverReady = !!(SSLC_PASS && (SSLC_ID || s.payments.sslcommerz.storeId)); if (s.code) { s.code.capiStatus = capiStatus; s.code.gaStatus = gaStatus; s.code.catalogStatus = catalogStatus; } if (s.pathao) { s.pathao.lastSend = pathaoLast.send; s.pathao.lastWebhook = pathaoLast.webhook; s.pathao.webhookUrl = PUBLIC_URL + "/api/pathao/webhook"; } if (s.acore) { s.acore.lastSend = acoreLast.send; s.acore.lastWebhook = acoreLast.webhook; s.acore.webhookUrl = PUBLIC_URL + "/api/acore/webhook"; } },
+  metaEvent: metaEvent, gaEvent: gaEvent, catalogSync: catalogSyncAll, acoreSend: acoreSend, pathao: true, sendEmail: sendEmail, publicUrl: PUBLIC_URL
 });
 
 // ---------------------------------------------------------------------------
@@ -523,7 +623,7 @@ function paymentCallback(kind, body, res) {
 // ---------------------------------------------------------------------------
 // HTTP
 // ---------------------------------------------------------------------------
-var LIMITS = { "/api/acore/webhook": [600, 60e3], "/api/auth/login": [10, 60e3], "/api/auth/forgot": [5, 60e3], "/api/auth/reset": [10, 60e3], "/api/orders": [10, 60e3], "/api/contact": [5, 60e3], "/api/franchise": [5, 60e3], "/api/carts/capture": [30, 60e3], "/api/chat": [40, 60e3], "/api/track": [240, 60e3], "/api/coupons/validate": [30, 60e3], "/api/subscribe": [10, 60e3],
+var LIMITS = { "/api/acore/webhook": [600, 60e3], "/api/pathao/webhook": [600, 60e3], "/api/auth/login": [10, 60e3], "/api/auth/forgot": [5, 60e3], "/api/auth/reset": [10, 60e3], "/api/orders": [10, 60e3], "/api/contact": [5, 60e3], "/api/franchise": [5, 60e3], "/api/carts/capture": [30, 60e3], "/api/chat": [40, 60e3], "/api/track": [240, 60e3], "/api/coupons/validate": [30, 60e3], "/api/subscribe": [10, 60e3],
   "/api/orders/track": [15, 60e3], "/api/chat/start": [10, 60e3], "/api/payments": [60, 60e3], "/api/auth/reset/": [20, 60e3] };
 var hits = {};
 function limited(ip, p, method) {
@@ -643,6 +743,7 @@ function api(req, res, u, p) {
     } catch (e) { return sendJson(res, 400, { error: "The request body isn't valid JSON." }); }
 
     if (p === "/api/acore/webhook" && req.method === "POST") return acoreWebhook(req, raw, body, res);
+    if (p === "/api/pathao/webhook" && req.method === "POST") return pathaoWebhook(req, raw, body, res);
     var ssl = /^\/api\/payments\/sslcommerz\/(success|fail|cancel|ipn)$/.exec(p);
     if (ssl) return paymentCallback(ssl[1], Object.assign({}, Object.fromEntries(u.searchParams), body), res);
 
@@ -654,6 +755,8 @@ function api(req, res, u, p) {
       console.error(e);
       return sendJson(res, 500, { error: "Something went wrong on the server." });
     }
+    // Pathao: the core checked the request; the server now talks to Pathao and answers when it hears back
+    if (out.status < 400 && out.body && out.body.pathao && out.body.pathao.op) return pathaoJob(out.body.pathao, req, res);
     var hold = req.method === "GET" && waitKey(p, query, out);
     if (hold) return park(hold, res, function () { try { return call(); } catch (e) { console.error(e); return { status: 500, body: { error: "Something went wrong on the server." } }; } }, out);
     // Online payment: hand the customer to SSLCOMMERZ.

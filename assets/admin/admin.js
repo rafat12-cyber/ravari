@@ -439,11 +439,18 @@
     });
     $("#prodCsv").onclick = () => download(`ravari-products-${dashDays}d.csv`, csv([cols.map((c) => c[1]).concat(["SKU"])].concat(d.products.map((p) => [p.name, p.views, p.carts, p.orders, p.units, p.revenue, p.conversion, p.stock, p.sku]))));
   }
-  function ordersTable(list) {
+  // Pathao column: the parcel's live status, or a one-click Send button
+  function pathaoCell(o) {
+    const pt = o.pathao;
+    if (pt) return `<td class="pt-cell"><span class="pill pill--pt${/deliver/.test(pt.status) && !/fail/.test(pt.status) ? " pill--pt-ok" : /return|fail|cancel/.test(pt.status) ? " pill--pt-bad" : ""}">${esc(String(pt.status || "sent").replace(/_/g, " "))}</span><br><small class="muted mono">${esc(pt.consignmentId)}</small>${o.trackingUrl ? ` · <a href="${esc(o.trackingUrl)}" target="_blank" rel="noopener" data-stop>Track</a>` : ""}</td>`;
+    if (o.status === "cancelled" || o.status === "returned" || o.status === "delivered") return `<td class="pt-cell"><span class="muted">—</span></td>`;
+    return `<td class="pt-cell"><button class="btn btn--ghost btn--sm" type="button" data-pathao="${esc(o.id)}">Send to Pathao</button></td>`;
+  }
+  function ordersTable(list, courier) {
     if (!list.length) return `<p class="empty">No orders yet.</p>`;
-    return `<div class="table-wrap"><table class="t"><thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th><th class="right">Items</th><th class="right">Total</th></tr></thead><tbody>${list.map((o) => `
+    return `<div class="table-wrap"><table class="t"><thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Status</th><th>Payment</th>${courier ? "<th>Pathao</th>" : ""}<th class="right">Items</th><th class="right">Total</th></tr></thead><tbody>${list.map((o) => `
       <tr class="is-link" data-href="#/orders/${esc(o.number)}"><td><b>${esc(o.number)}</b></td><td class="nowrap">${dateTime(o.createdAt)}</td><td>${esc(o.customer.name)}<br><small class="muted">${esc(o.customer.phone)}</small></td>
-      <td>${pill(o.status)}</td><td>${pill(o.paymentStatus)}<br><small class="muted">${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</small></td><td class="right num">${o.itemCount}</td><td class="right num"><b>${taka(o.total)}</b></td></tr>`).join("")}</tbody></table></div>`;
+      <td>${pill(o.status)}</td><td>${pill(o.paymentStatus)}<br><small class="muted">${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)}</small></td>${courier ? pathaoCell(o) : ""}<td class="right num">${o.itemCount}</td><td class="right num"><b>${taka(o.total)}</b></td></tr>`).join("")}</tbody></table></div>`;
   }
 
   // ---------------------------------------------------------------------------
@@ -474,8 +481,26 @@
       $("#ordTabs").innerHTML = [["", "All", all.length]].concat(STATUSES.map((s) => [s, human(s), counts[s] || 0]))
         .map(([k, l, n]) => `<button class="tab${state.status === k ? " is-on" : ""}" data-s="${k}">${l}<small>${n}</small></button>`).join("");
       const list = all.filter((o) => !state.status || o.status === state.status);
-      $("#ordList").innerHTML = ordersTable(list);
+      $("#ordList").innerHTML = ordersTable(list, true);
     };
+    // One click: Send to Pathao guesses the city and zone from the address; if it can't, the full form opens
+    $("#ordList").addEventListener("click", async (e) => {
+      if (e.target.closest("[data-stop]")) { e.stopPropagation(); return; }
+      const b = e.target.closest("[data-pathao]");
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      const o = all.filter((x) => x.id === b.dataset.pathao)[0];
+      if (!o) return;
+      b.disabled = true; b.textContent = "Sending…";
+      try {
+        const sent = await pathaoQuickSend(o);
+        if (!sent) { b.disabled = false; b.textContent = "Send to Pathao"; return; }
+        toast(o.number + " sent to Pathao · " + sent);
+        load();
+      } catch (err) { b.disabled = false; b.textContent = "Send to Pathao"; fail(err); }
+    }, true);
+    // Live: Pathao updates arrive by webhook, so the list reloads by itself every 30 seconds while it's open
+    const timer = setInterval(() => { if (!document.body.contains($("#ordList"))) return clearInterval(timer); if (document.visibilityState === "visible" && !document.querySelector("#modal:not([hidden])")) load(); }, 30000);
     $("#ordTabs").onclick = (e) => { const b = e.target.closest("[data-s]"); if (b) { state.status = b.dataset.s; draw(); } };
     $("#ordQ").oninput = debounce((e) => { state.q = e.target.value.trim(); load(); }, 250);
     $("#ordFrom").onchange = (e) => { state.from = e.target.value; load(); };
@@ -497,7 +522,8 @@
   async function viewOrder(id) {
     setTitle("Order " + id);
     let o;
-    try { o = (await api("GET", "/api/orders/" + encodeURIComponent(id))).order; } catch (err) { view.innerHTML = `<p class="empty">${esc(err.message)}</p>`; return; }
+    let acoreOn = false;
+    try { const r = await api("GET", "/api/orders/" + encodeURIComponent(id)); o = r.order; acoreOn = !!r.acoreOn; } catch (err) { view.innerHTML = `<p class="empty">${esc(err.message)}</p>`; return; }
     const tel = o.customer.phone;
     view.innerHTML = `<div class="head"><div><a class="btn btn--link" href="#/orders">← Orders</a><h1 class="h1" style="margin-top:8px">Order ${esc(o.number)}</h1>
       <p class="muted">${dateTime(o.createdAt)} · ${pill(o.status)} ${pill(o.paymentStatus)}</p></div>
@@ -525,7 +551,18 @@
             ${o.shippingZone ? `<dt>Area</dt><dd>${esc(o.shippingZone.name)} · ${esc(o.shippingZone.days)}</dd>` : ""}</dl>
             ${o.customerId && can("customers") ? `<a class="btn btn--ghost btn--sm" href="#/customers/${esc(o.customerId)}">Customer profile</a>` : ""}</div>
           ${(() => {
+            const pt = o.pathao || {};
+            return `<div class="card"><h2 class="h2">Pathao courier</h2>${pt.consignmentId ? `<dl class="kv"><dt>Consignment</dt><dd class="mono">${esc(pt.consignmentId)}</dd>
+              <dt>Pathao status</dt><dd>${esc(String(pt.status || "sent").replace(/_/g, " "))}</dd>${pt.fee ? `<dt>Delivery fee</dt><dd>${taka(pt.fee)}</dd>` : ""}
+              <dt>Collect</dt><dd>${taka(pt.amount || 0)}</dd><dt>Sent</dt><dd>${dateTime(pt.sentAt)}</dd>
+              ${o.courier && o.courier.trackingUrl ? `<dt>Tracking</dt><dd><a href="${esc(o.courier.trackingUrl)}" target="_blank" rel="noopener">Open Pathao tracking</a></dd>` : ""}</dl>
+              <div class="flex"><button class="btn btn--ghost btn--sm" type="button" id="pathaoRefresh">Refresh from Pathao</button><button class="btn btn--ghost btn--sm" type="button" id="pathaoSend" data-again="1">Send again</button></div>`
+              : `<p class="muted small" style="margin:0 0 10px">Make a Pathao parcel for this order. Pathao picks it up from your store and updates the status here.</p><button class="btn btn--dark btn--sm" type="button" id="pathaoSend">Send to Pathao</button>`}</div>`;
+          })()}
+          ${(() => {
             const a = o.acore || {}, cr = o.courier || {};
+            // Shown while Acore is turned on, or for orders that went to Acore before
+            if (!acoreOn && !o.acore) return "";
             const state = a.pending ? "Sending…" : a.error ? `<span style="color:var(--danger)">Not sent: ${esc(a.error)}</span>` : a.sentAt ? `Sent ${dateTime(a.sentAt)}${a.id ? ` · Acore id <span class="mono">${esc(a.id)}</span>` : ""}` : "Not sent yet";
             return `<div class="card"><h2 class="h2">Acore and courier</h2><dl class="kv"><dt>Acore</dt><dd>${state}</dd>
               ${a.lastUpdate ? `<dt>Last update</dt><dd>${dateTime(a.lastUpdate)}</dd>` : ""}
@@ -538,7 +575,12 @@
           ${o.note ? `<div class="card"><h2 class="h2">Customer note</h2><p style="margin:0">${esc(o.note)}</p></div>` : ""}
         </div>
       </div>`;
-    $("#acoreSend").onclick = async () => {
+    $("#pathaoSend").onclick = (e) => pathaoSendDialog(o, !!e.target.dataset.again, () => viewOrder(id));
+    if ($("#pathaoRefresh")) $("#pathaoRefresh").onclick = async (e) => {
+      busy(e.target, true);
+      try { const r = await api("POST", "/api/orders/" + o.id + "/pathao-status"); toast("Pathao: " + String(r.status || "updated").replace(/_/g, " ")); viewOrder(id); } catch (err) { busy(e.target, false); fail(err); }
+    };
+    if ($("#acoreSend")) $("#acoreSend").onclick = async () => {
       try { await api("POST", "/api/orders/" + o.id + "/acore"); toast("Sending to Acore"); setTimeout(() => viewOrder(id), 1500); } catch (err) { fail(err); }
     };
     $("#ordForm").onsubmit = async (e) => {
@@ -558,8 +600,8 @@
   async function viewInvoice(id) {
     setTitle("Invoice " + id);
     let o;
-    try { o = (await api("GET", "/api/orders/" + encodeURIComponent(id))).order; } catch (err) { return fail(err); }
-    const st = (store.settings && store.settings.store) || {};
+    try { o = (await api("GET", "/api/orders/" + encodeURIComponent(id))).order; await loadStore(); } catch (err) { return fail(err); }
+    const st = (store && store.settings && store.settings.store) || {};
     view.innerHTML = `<div class="head no-print"><a class="btn btn--link" href="#/orders/${esc(o.number)}">← Order ${esc(o.number)}</a><button class="btn btn--dark" data-print>Print invoice</button></div>
       <div class="card" style="max-width:820px;padding:36px">
         <div class="flex flex--between" style="align-items:flex-start"><div><img src="assets/img/logo.webp" alt="Ravari" style="height:26px;width:auto"><p class="small muted">${esc(st.legalName || "")}<br>${esc(st.address || "")}<br>${esc(st.phone || "")} · ${esc(st.email || "")}${st.tradeLicense ? "<br>Trade license: " + esc(st.tradeLicense) : ""}${st.bin ? " · BIN: " + esc(st.bin) : ""}</p></div>
@@ -2044,7 +2086,7 @@
   // Each area is one module (or a few related ones) in the menu on the left
   const AREA = { dashboard: "Dashboard & Analytics", orders: "Orders & Abandoned carts", customers: "Customers & Subscribers", products: "Products & Stock", catalog: "Categories & Variations",
     coupons: "Coupons", content: "Pages, Menus & Media library", chat: "Live chat", messages: "Messages", franchise: "Franchise requests", users: "Users",
-    settings: "Settings, Header & footer, Pixel & Analytics, Email & reminders, Acore", integrations: "API & webhooks" };
+    settings: "Settings, Header & footer, Pixel & Analytics, Email & reminders, Acore, Pathao", integrations: "API & webhooks" };
   async function viewUsers() {
     setTitle("Users");
     const r = (await api("GET", "/api/users").catch(fail)) || { users: [], roles: {} };
@@ -2395,6 +2437,120 @@
   }
 
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Pathao courier: send an order as a parcel, and the settings page
+  // ---------------------------------------------------------------------------
+  // Pick the Pathao city and zone whose names appear in the customer's address
+  function pathaoGuess(items, text) {
+    const t = " " + String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ") + " ";
+    let best = null;
+    items.forEach((x) => { const n = String(x.name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); if (n && t.indexOf(" " + n + " ") > -1 && (!best || n.length > best.n.length)) best = { id: x.id, n }; });
+    return best ? best.id : "";
+  }
+  async function pathaoQuickSend(o) {
+    const addr = [o.customer.address, o.customer.city].filter(Boolean).join(", ");
+    const cities = (await api("GET", "/api/pathao/cities")).items || [];
+    const city = pathaoGuess(cities, addr) || ((cities.filter((x) => /dhaka/i.test(x.name))[0]) || {}).id;
+    const zones = city ? (await api("GET", "/api/pathao/zones/" + city)).items || [] : [];
+    const zone = pathaoGuess(zones, addr);
+    if (!city || !zone) {
+      // Not sure where it goes: open the form so the zone can be chosen
+      return new Promise((resolve) => pathaoSendDialog(o, false, () => resolve("sent")));
+    }
+    const r = await api("POST", "/api/orders/" + o.id + "/pathao", { cityId: city, zoneId: zone });
+    return (r.order && r.order.pathao && r.order.pathao.consignmentId) || "sent";
+  }
+  async function pathaoSendDialog(o, again, done) {
+    const addr = [o.customer.address, o.customer.city].filter(Boolean).join(", ");
+    const due = o.paymentStatus === "paid" ? 0 : Math.round(o.total || 0);
+    const body = modal("Send to Pathao", `<form class="stack" id="ptForm">
+      <p class="muted small" style="margin:0">${esc(o.number)} · ${esc(o.customer.name)} · ${esc(addr)}</p>
+      <div class="row row--2"><label class="field"><span>City</span><select class="input" name="cityId" required><option value="">Loading…</option></select></label>
+      <label class="field"><span>Zone</span><select class="input" name="zoneId" required><option value="">Choose the city first</option></select></label></div>
+      <label class="field"><span>Area (optional)</span><select class="input" name="areaId"><option value="">—</option></select></label>
+      <div class="row row--2"><label class="field"><span>Cash to collect (৳)</span><input class="input" name="amount" type="number" min="0" step="1" value="${due}"><small>${o.paymentStatus === "paid" ? "Paid online, so nothing to collect." : "The order total, cash on delivery."}</small></label>
+      <label class="field"><span>Weight (kg)</span><input class="input" name="weight" type="number" min="0.5" max="10" step="0.5" value="0.5"></label></div>
+      <label class="field"><span>Note for the rider</span><input class="input" name="note" value="${esc(o.note || "")}" maxlength="200"></label>
+      <div class="modal__foot"><button class="btn btn--ghost" type="button" data-modal-close>Cancel</button><button class="btn btn--dark" type="submit">${again ? "Send again" : "Send to Pathao"}</button></div></form>`);
+    const f = $("#ptForm", body), sel = (el, items, pick) => { el.innerHTML = `<option value="">Choose…</option>` + items.map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join(""); if (pick) el.value = pick; };
+    const loadAreas = async () => { f.areaId.innerHTML = `<option value="">—</option>`; if (!f.zoneId.value) return; try { const r = await api("GET", "/api/pathao/areas/" + f.zoneId.value); sel(f.areaId, r.items || [], pathaoGuess(r.items || [], addr)); f.areaId.options[0].textContent = "—"; } catch (_) {} };
+    const loadZones = async () => {
+      f.zoneId.innerHTML = `<option value="">Loading…</option>`;
+      try { const r = await api("GET", "/api/pathao/zones/" + f.cityId.value); sel(f.zoneId, r.items || [], pathaoGuess(r.items || [], addr)); loadAreas(); } catch (err) { fail(err); }
+    };
+    f.cityId.onchange = loadZones; f.zoneId.onchange = loadAreas;
+    try {
+      const r = await api("GET", "/api/pathao/cities");
+      sel(f.cityId, r.items || [], pathaoGuess(r.items || [], addr) || ((r.items || []).filter((x) => /dhaka/i.test(x.name))[0] || {}).id);
+      if (f.cityId.value) loadZones();
+    } catch (err) { closeModal(); return fail(err); }
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      const b = formData(f), btn = $("button[type=submit]", f);
+      if (again) b.again = true;
+      busy(btn, true);
+      try { const r = await api("POST", "/api/orders/" + o.id + "/pathao", b); closeModal(); toast("Sent to Pathao · " + ((r.order && r.order.pathao && r.order.pathao.consignmentId) || "")); done(); }
+      catch (err) { busy(btn, false); fail(err); }
+    };
+  }
+  async function viewPathao() {
+    setTitle("Pathao");
+    let s;
+    try { s = (await api("GET", "/api/settings")).settings; } catch (err) { return fail(err); }
+    const a = s.pathao || {}, demo = window.Ravari.mode === "demo";
+    const hookUrl = a.webhookUrl || (location.origin + "/api/pathao/webhook");
+    const last = (x, none) => x ? `<span style="color:${x.ok ? "var(--ok, #1e7d4f)" : "var(--danger)"}">${esc(x.message)}</span> <small class="muted">${dateTime(x.at)}</small>` : `<span class="muted">${none}</span>`;
+    view.innerHTML = `<div class="head"><div><h1 class="h1">Pathao courier</h1><p class="muted">Send an order to Pathao from its page in Orders. Pathao's status updates (picked, on the way, delivered, returned) change the order here by themselves, and customers see them on Track order.</p></div></div>
+      <form class="stack" id="ptSet">
+        <div class="card"><h2 class="h2">Sign-in details</h2><p class="muted small" style="margin:0 0 6px">From the Pathao merchant panel › Developer's API. Only the store owner can change these.</p>
+          <div class="row row--2"><label class="field"><span>Client ID</span><input class="input" name="clientId" value="${esc(a.clientId || "")}" autocomplete="off"></label>
+          <label class="field"><span>Client Secret</span><input class="input" type="password" name="clientSecret" autocomplete="off" placeholder="${a.clientSecretSet ? "Saved. Paste a new one to replace it." : ""}"></label></div>
+          <div class="row row--2"><label class="field"><span>Pathao login email</span><input class="input" name="username" type="email" value="${esc(a.username || "")}" autocomplete="off"></label>
+          <label class="field"><span>Pathao login password</span><input class="input" type="password" name="password" autocomplete="new-password" placeholder="${a.passwordSet ? "Saved. Type a new one to replace it." : ""}"></label></div>
+          <label class="field"><span>Mode</span><select class="input" name="sandbox"><option value="0">Live (real parcels)</option><option value="1"${a.sandbox ? " selected" : ""}>Sandbox (testing)</option></select></label>
+          ${demo ? `<p class="small" style="margin:0;color:var(--warn)">This demo has no server, so it can't talk to Pathao. This page works on the live store.</p>` : ""}</div>
+        <div class="card"><h2 class="h2">Pickup store and parcel</h2>
+          <div class="row row--2"><label class="field"><span>Store ID</span><input class="input" name="storeId" value="${esc(a.storeId || "")}" inputmode="numeric"><small>${a.storeName ? esc(a.storeName) : "Or press Check connection and pick it from the list."}</small></label>
+          <label class="field"><span>Default weight (kg)</span><input class="input" type="number" name="weight" min="0.5" max="10" step="0.5" value="${a.weight || 0.5}"></label></div>
+          <div class="row row--2"><label class="field"><span>Delivery</span><select class="input" name="deliveryType"><option value="48">Normal delivery</option><option value="12"${a.deliveryType === 12 ? " selected" : ""}>On-demand delivery</option></select></label>
+          <label class="field"><span>Item type</span><select class="input" name="itemType"><option value="2">Parcel</option><option value="1"${a.itemType === 1 ? " selected" : ""}>Document</option></select></label></div>
+          <div class="flex"><button class="btn btn--ghost btn--sm" type="button" id="ptTest">Check connection</button><span class="small muted" id="ptMsg">Save first, then check.</span></div>
+          <div id="ptStores"></div></div>
+        <div class="card"><h2 class="h2">Paste these into Pathao</h2><p class="muted small" style="margin:0">Pathao merchant panel › Developer's API › Webhook. Works once this store is live on its own web address.</p>
+          <div class="row row--2"><label class="field"><span>Callback URL</span><input class="input" readonly value="${esc(hookUrl)}" data-copy></label>
+          <label class="field"><span>Webhook secret</span><input class="input" name="webhookSecret" autocomplete="off" value="${esc(a.webhookSecret || "")}" placeholder="Save once to make one"><small>The same secret as in Pathao. Paste yours here, or copy this one into Pathao.</small></label></div>
+          <div class="flex"><button class="btn btn--ghost btn--sm" type="button" id="ptNewSecret">Make a new secret</button><small class="muted">Making a new one stops the old one working, so update Pathao too.</small></div></div>
+        <div class="card"><h2 class="h2">Status</h2><dl class="kv">
+          <dt>Last parcel sent</dt><dd>${last(a.lastSend, "Nothing sent since the server started.")}</dd>
+          <dt>Last update from Pathao</dt><dd>${last(a.lastWebhook, "No updates received since the server started.")}</dd></dl></div>
+        <div class="sticky-save"><span class="small">Sign-in details are kept on your server and never shown again.</span><button class="btn btn--dark" type="submit">Save</button></div>
+      </form>`;
+    $$("[data-copy]").forEach((el) => { el.onclick = () => { el.select(); try { navigator.clipboard.writeText(el.value); toast("Copied"); } catch (_) {} }; });
+    let renew = false;
+    $("#ptNewSecret").onclick = (e) => { renew = true; e.target.textContent = "A new secret is made when you save"; };
+    $("#ptTest").onclick = async (e) => {
+      busy(e.target, true); $("#ptMsg").textContent = "Checking…";
+      try {
+        const r = await api("POST", "/api/pathao/test");
+        $("#ptMsg").textContent = r.message || "Connected";
+        $("#ptStores").innerHTML = (r.stores || []).length ? `<div class="table-wrap"><table class="t"><thead><tr><th>Store ID</th><th>Name</th><th>Address</th><th></th></tr></thead><tbody>${r.stores.map((x) => `<tr><td class="mono">${esc(x.id)}</td><td>${esc(x.name)}</td><td class="small">${esc(x.address || "")}</td><td><button class="btn btn--ghost btn--sm" type="button" data-store="${esc(x.id)}" data-name="${esc(x.name)}">Use</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="small muted">No pickup stores on this Pathao account yet.</p>`;
+        $$("[data-store]").forEach((b) => { b.onclick = () => { $("#ptSet").storeId.value = b.dataset.store; $("#ptSet").dataset.storeName = b.dataset.name; toast("Store chosen. Press Save."); }; });
+      } catch (err) { $("#ptMsg").textContent = err.message || "Couldn't connect"; }
+      busy(e.target, false);
+    };
+    $("#ptSet").onsubmit = async (e) => {
+      e.preventDefault();
+      const f = e.target, out = { enabled: true, clientId: f.clientId.value.trim(), username: f.username.value.trim(), sandbox: f.sandbox.value === "1",
+        storeId: f.storeId.value.trim(), weight: f.weight.value, deliveryType: f.deliveryType.value, itemType: f.itemType.value };
+      if (f.dataset.storeName && out.storeId) out.storeName = f.dataset.storeName; else if (out.storeId !== (a.storeId || "")) out.storeName = "";
+      if (f.clientSecret.value.trim()) out.clientSecret = f.clientSecret.value.trim();
+      if (f.password.value) out.password = f.password.value;
+      const ws = f.webhookSecret.value.trim();
+      if (renew) out.newSecret = true; else if (ws && ws !== a.webhookSecret && ws !== "Only the owner can see this") out.webhookSecret = ws;
+      try { await api("PUT", "/api/settings", { settings: { pathao: out } }); toast("Pathao settings saved"); viewPathao(); } catch (err) { fail(err); }
+    };
+  }
+
   // Acore: website orders go to Acore; Acore sends status and courier updates back
   // ---------------------------------------------------------------------------
   async function viewAcore() {
@@ -2690,7 +2846,7 @@
     ["Catalog", [["products", "Products", "products"], ["stock", "Stock", "products"], ["bulk", "Bulk edit", "products"], ["categories", "Categories", "catalog"], ["variations", "Variations", "catalog"]]],
     ["Website", [["pages", "Pages", "content"], ["menus", "Menus", "content"], ["layout", "Header & footer", "settings"], ["tracking", "Pixel & Analytics", "settings"], ["popup", "Popup banner", "content"], ["media", "Media library", "content"]]],
     ["Inbox", [["chat", "Live chat", "chat"], ["messages", "Messages", "messages"], ["franchise", "Franchise requests", "franchise"]]],
-    ["Admin", [["users", "Users", "users"], ["settings", "Settings", "settings"], ["email", "Email & reminders", "settings"], ["integrations", "API & webhooks", "integrations"], ["acore", "Acore", "settings"], ["trash", "Trash", "trash"]]]
+    ["Admin", [["users", "Users", "users"], ["settings", "Settings", "settings"], ["email", "Email & reminders", "settings"], ["integrations", "API & webhooks", "integrations"], ["acore", "Acore", "settings"], ["pathao", "Pathao", "settings"], ["trash", "Trash", "trash"]]]
   ];
   const counts = { orders: 0, chat: 0, messages: 0, franchise: 0, carts: 0 };
   function drawSide() {
@@ -2730,7 +2886,7 @@
     [/^categories$/, viewCategories, "catalog"], [/^variations$/, viewVariations, "catalog"],
     [/^pages$/, viewPages, "content"], [/^pages\/([^/]+)$/, viewPageEditor, "content"], [/^menus$/, viewMenus, "content"], [/^media$/, viewMedia, "content"], [/^trash$/, viewTrash, "trash"],
     [/^chat$/, viewChat, "chat"], [/^chat\/([^/]+)$/, viewChat, "chat"], [/^messages$/, viewMessages, "messages"],
-    [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"],
+    [/^users$/, viewUsers, "users"], [/^settings$/, viewSettings, "settings"], [/^integrations$/, viewIntegrations, "integrations"], [/^acore$/, viewAcore, "settings"], [/^pathao$/, viewPathao, "settings"],
     [/^account$/, viewAccount, null]
   ];
   let leaveGuard = null, cleanup = null, lastHash = location.hash;

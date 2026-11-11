@@ -133,7 +133,9 @@
   }
   function orderSummary(o) {
     return { id: o.id, number: o.number, createdAt: o.createdAt, status: o.status, paymentStatus: o.paymentStatus, paymentMethod: o.paymentMethod,
-      customer: { name: o.customer.name, phone: o.customer.phone }, itemCount: o.items.reduce(function (s, i) { return s + i.qty; }, 0), total: o.total };
+      customer: { name: o.customer.name, phone: o.customer.phone, address: o.customer.address, city: o.customer.city }, itemCount: o.items.reduce(function (s, i) { return s + i.qty; }, 0), total: o.total,
+      pathao: o.pathao && o.pathao.consignmentId ? { consignmentId: o.pathao.consignmentId, status: o.pathao.status || "", lastUpdate: o.pathao.lastUpdate || o.pathao.sentAt || 0 } : null,
+      trackingUrl: o.courier && o.courier.trackingUrl || "" };
   }
   function chatSummary(c) {
     var last = c.messages[c.messages.length - 1];
@@ -1683,7 +1685,7 @@
     route("GET", "/api/orders/:id", "orders", function (c) {
       var o = c.db.orders.filter(function (x) { return x.id === c.params.id || x.number === String(c.params.id).toUpperCase(); })[0];
       if (!o) fail(404, "Order not found.");
-      return { order: o };
+      return { order: o, acoreOn: acoreSettings(c.db).enabled };
     }, { readonly: true });
     route("DELETE", "/api/orders/:id", "orders", function (c) {
       needOwner(c, "delete orders");
@@ -1846,6 +1848,109 @@
       o.updatedAt = now();
       o.acore.lastUpdate = now();
       o.history.push({ at: Math.min(at, now()), status: o.status, note: (parts.length ? parts.join(" · ") : "Update from Acore") + (d.note ? " · " + str(d.note, 200) : ""), public: pub, by: "Acore", acoreStep: raw || "" });
+      emit(db, "order.updated", o);
+      return { ok: true, status: o.status, order_number: o.number };
+    });
+    // ---------------------------------------------------------------------------
+    // Pathao courier: the server talks to Pathao; these routes check the request and say what to do
+    // ---------------------------------------------------------------------------
+    function pathaoSettings(db) {
+      var p = db.settings.pathao || {};
+      return { enabled: !!p.enabled, sandbox: p.sandbox !== false, clientId: p.clientId || "", clientSecret: p.clientSecret || "", username: p.username || "",
+        password: p.password || "", storeId: p.storeId || "", storeName: p.storeName || "", webhookSecret: p.webhookSecret || "",
+        weight: num(p.weight, 0.5) || 0.5, itemType: int(p.itemType, 2) === 1 ? 1 : 2, deliveryType: int(p.deliveryType, 48) === 12 ? 12 : 48 };
+    }
+    function pathaoReady(db, needStore) {
+      var p = pathaoSettings(db);
+      if (!host.pathao) fail(400, "Pathao is reached from the live store. The demo has no server.");
+      if (!p.clientId || !p.clientSecret || !p.username || !p.password) fail(400, "Add the Pathao Client ID, Client Secret, login email and password in Admin › Pathao first.");
+      if (needStore && !p.storeId) fail(400, "Choose your Pathao pickup store in Admin › Pathao first.");
+      return p;
+    }
+    function pathaoOrder(c) {
+      var o = c.db.orders.filter(function (x) { return x.id === c.params.id || x.number === String(c.params.id).toUpperCase(); })[0];
+      if (!o) fail(404, "Order not found.");
+      return o;
+    }
+    // Admin › Pathao › Check connection: signs in and lists the pickup stores
+    route("POST", "/api/pathao/test", "settings", function (c) { pathaoReady(c.db); return { pathao: { op: "stores" } }; });
+    route("GET", "/api/pathao/cities", "orders", function (c) { pathaoReady(c.db); return { pathao: { op: "cities" } }; }, { readonly: true });
+    route("GET", "/api/pathao/zones/:city", "orders", function (c) { pathaoReady(c.db); return { pathao: { op: "zones", city: int(c.params.city) } }; }, { readonly: true });
+    route("GET", "/api/pathao/areas/:zone", "orders", function (c) { pathaoReady(c.db); return { pathao: { op: "areas", zone: int(c.params.zone) } }; }, { readonly: true });
+    // Admin › order › Send to Pathao: makes the parcel request
+    route("POST", "/api/orders/:id/pathao", "orders", function (c) {
+      var p = pathaoReady(c.db, true), o = pathaoOrder(c), b = c.body || {};
+      if (o.status === "cancelled" || o.status === "returned") fail(400, "This order is " + o.status + ". Reopen it before sending it to Pathao.");
+      if (o.pathao && o.pathao.consignmentId && !b.again) fail(409, "This order is already with Pathao (" + o.pathao.consignmentId + ").");
+      var city = int(b.cityId), zone = int(b.zoneId), area = int(b.areaId);
+      if (!city || !zone) fail(400, "Choose the city and zone for Pathao.");
+      var phone = normPhone(o.customer.phone);
+      if (!/^01\d{9}$/.test(phone)) fail(400, "Pathao needs an 11-digit mobile number (01XXXXXXXXX). Fix the customer's phone first.");
+      var due = o.paymentStatus === "paid" ? 0 : Math.max(0, Math.round(num(o.total, 0)));
+      var collect = b.amount !== undefined && b.amount !== "" ? Math.max(0, Math.round(num(b.amount, due))) : due;
+      var qty = o.items.reduce(function (n, it) { return n + int(it.qty, 1); }, 0) || 1;
+      var addr = [o.customer.address, o.customer.city].filter(Boolean).join(", ");
+      var payload = {
+        store_id: int(p.storeId), merchant_order_id: o.number, recipient_name: str(o.customer.name, 100) || "Customer", recipient_phone: phone,
+        recipient_address: str(addr, 220), recipient_city: city, recipient_zone: zone, delivery_type: p.deliveryType, item_type: p.itemType,
+        special_instruction: str(b.note !== undefined ? b.note : o.note, 200), item_quantity: qty, item_weight: Math.min(10, Math.max(0.5, num(b.weight, p.weight) || p.weight)),
+        amount_to_collect: collect, item_description: str(o.items.map(function (it) { return it.qty + " x " + it.name + (it.options && it.options.Size ? " (" + it.options.Size + ")" : ""); }).join(", "), 250)
+      };
+      if (area) payload.recipient_area = area;
+      if (String(payload.recipient_address).length < 10) fail(400, "Pathao needs an address of at least 10 letters. Fix the customer's address first.");
+      return { pathao: { op: "create", orderId: o.id, payload: payload } };
+    });
+    // Admin › order › Refresh from Pathao
+    route("POST", "/api/orders/:id/pathao-status", "orders", function (c) {
+      pathaoReady(c.db); var o = pathaoOrder(c);
+      if (!o.pathao || !o.pathao.consignmentId) fail(400, "This order hasn't been sent to Pathao yet.");
+      return { pathao: { op: "info", orderId: o.id, consignmentId: o.pathao.consignmentId } };
+    });
+    // The server saves Pathao's answer to a parcel request
+    route("POST", "/api/internal/pathao-sent", "internal", function (c) {
+      var o = c.db.orders.filter(function (x) { return x.id === c.body.orderId; })[0], d = c.body.data || {};
+      if (!o) fail(404, "Order not found.");
+      var cid = str(d.consignment_id, 80);
+      o.pathao = { consignmentId: cid, status: str(d.order_status, 40), fee: num(d.delivery_fee, 0), sentAt: now(), amount: num(c.body.amount, 0), seen: [] };
+      o.courier = o.courier || {};
+      o.courier.name = "Pathao"; o.courier.consignmentId = cid;
+      o.courier.trackingUrl = "https://merchant.pathao.com/tracking?consignment_id=" + encodeURIComponent(cid) + "&phone=" + encodeURIComponent(normPhone(o.customer.phone));
+      o.tracking = "Pathao " + cid;
+      var by = c.body.by || "Admin";
+      if (o.status === "pending" || o.status === "confirmed" || o.status === "hold") setStatus(c, o, "processing");
+      o.updatedAt = now();
+      o.history.push({ at: now(), status: o.status, note: "Sent to Pathao · consignment " + cid + (o.pathao.fee ? " · delivery fee ৳" + o.pathao.fee : "") + " · collect ৳" + o.pathao.amount, public: "Handed to the courier", by: by });
+      emit(c.db, "order.updated", o);
+      return { order: o };
+    });
+    // A Pathao webhook (the server checks the secret first)
+    var PATHAO_STATUS = { pickup_requested: "processing", assigned_for_pickup: "processing", picked: "shipped", at_the_sorting_hub: "shipped", in_transit: "shipped",
+      received_at_last_mile_hub: "shipped", assigned_for_delivery: "shipped", delivered: "delivered", partial_delivery: "delivered", returned: "returned", paid_return: "returned" };
+    var PATHAO_PUBLIC = { pickup_requested: "Handed to the courier", assigned_for_pickup: "Courier is coming to pick it up", picked: "Picked up by the courier",
+      at_the_sorting_hub: "At the courier's sorting hub", in_transit: "On the way", received_at_last_mile_hub: "Reached your area's hub", assigned_for_delivery: "Out for delivery",
+      delivered: "Delivered", partial_delivery: "Partly delivered", delivery_failed: "Delivery attempt failed. The courier will contact you.", on_hold: "On hold at the courier",
+      returned: "Returned to us", paid_return: "Returned to us" };
+    route("POST", "/api/internal/pathao", "internal", function (c) {
+      var b = c.body || {}, db = c.db;
+      var ev = str(b.event, 60).toLowerCase().replace(/^order\./, "").replace(/[\s-]+/g, "_");
+      var cid = str(b.consignment_id, 80), num_ = str(b.merchant_order_id, 40).toUpperCase();
+      var o = db.orders.filter(function (x) { return (cid && x.pathao && x.pathao.consignmentId === cid) || (num_ && x.number === num_); })[0];
+      if (!o) return { ok: true, ignored: "No order " + (num_ || cid) + " on this website." };
+      o.pathao = o.pathao || { consignmentId: cid, seen: [] };
+      var key = ev + "|" + str(b.updated_at || b.timestamp, 40);
+      o.pathao.seen = o.pathao.seen || [];
+      if (o.pathao.seen.indexOf(key) > -1) return { ok: true, duplicate: true };
+      o.pathao.seen.push(key); if (o.pathao.seen.length > 40) o.pathao.seen.splice(0, o.pathao.seen.length - 40);
+      o.pathao.status = ev; o.pathao.lastUpdate = now();
+      if (b.delivery_fee !== undefined) o.pathao.fee = num(b.delivery_fee, o.pathao.fee || 0);
+      var parts = ["Pathao: " + ev.replace(/_/g, " ")], mapped = PATHAO_STATUS[ev];
+      if (mapped && setStatus(c, o, mapped)) { parts.push("Status: " + mapped); statusEmail(db, o); }
+      if (mapped === "delivered" && o.paymentMethod === "cod" && o.paymentStatus !== "paid") {
+        o.paymentStatus = "paid"; parts.push("Payment: paid (cash collected" + (num(b.collected_amount, 0) ? " ৳" + num(b.collected_amount, 0) : "") + ")");
+      }
+      if (b.reason) parts.push(str(b.reason, 200));
+      o.updatedAt = now();
+      o.history.push({ at: now(), status: o.status, note: parts.join(" · "), public: PATHAO_PUBLIC[ev] || "", by: "Pathao" });
       emit(db, "order.updated", o);
       return { ok: true, status: o.status, order_number: o.number };
     });
@@ -2079,6 +2184,10 @@
       if (s.email) { s.email.passwordSet = !!s.email.password; s.email.password = ""; }
       var ac = acoreSettings(c.db);
       s.acore = { enabled: ac.enabled, url: ac.url, apiKeySet: !!ac.apiKey, webhookSecret: isOwner(c.auth) ? ac.webhookSecret : (ac.webhookSecret ? "Only the owner can see this" : ""), since: ac.since };
+      var pa = pathaoSettings(c.db);
+      s.pathao = { enabled: pa.enabled, sandbox: pa.sandbox, clientId: pa.clientId, username: pa.username, storeId: pa.storeId, storeName: pa.storeName, weight: pa.weight,
+        itemType: pa.itemType, deliveryType: pa.deliveryType, clientSecretSet: !!pa.clientSecret, passwordSet: !!pa.password,
+        webhookSecret: isOwner(c.auth) ? pa.webhookSecret : (pa.webhookSecret ? "Only the owner can see this" : "") };
       if (host.describeSettings) host.describeSettings(s);
       return { settings: s };
     }, { readonly: true });
@@ -2130,6 +2239,25 @@
           });
         });
         s.layout = cur;
+      }
+      if (b.pathao && typeof b.pathao === "object") {
+        var pt = s.pathao = s.pathao || {}, bp = b.pathao;
+        // Courier sign-in details and the webhook secret: owner only
+        if (bp.clientSecret || bp.password || bp.newSecret || bp.webhookSecret || (bp.clientId !== undefined && String(bp.clientId || "").trim() !== (pt.clientId || "")) ||
+          (bp.username !== undefined && String(bp.username || "").trim() !== (pt.username || "")) || (bp.sandbox !== undefined && bool(bp.sandbox) !== (pt.sandbox !== false))) needOwner(c, "change the Pathao sign-in details");
+        if (bp.enabled !== undefined) pt.enabled = bool(bp.enabled);
+        if (bp.sandbox !== undefined) pt.sandbox = bool(bp.sandbox);
+        if (bp.clientId !== undefined) pt.clientId = str(String(bp.clientId || "").trim(), 100);
+        if (bp.username !== undefined) pt.username = str(String(bp.username || "").trim(), 120);
+        if (bp.clientSecret) pt.clientSecret = String(bp.clientSecret).trim().slice(0, 300);
+        if (bp.password) pt.password = String(bp.password).slice(0, 200);
+        if (bp.storeId !== undefined) pt.storeId = str(String(bp.storeId || "").replace(/[^\d]/g, ""), 20);
+        if (bp.storeName !== undefined) pt.storeName = str(bp.storeName, 100);
+        if (bp.weight !== undefined) pt.weight = Math.min(10, Math.max(0.5, num(bp.weight, 0.5)));
+        if (bp.itemType !== undefined) pt.itemType = int(bp.itemType) === 1 ? 1 : 2;
+        if (bp.deliveryType !== undefined) pt.deliveryType = int(bp.deliveryType) === 12 ? 12 : 48;
+        if (bp.webhookSecret) pt.webhookSecret = String(bp.webhookSecret).trim().slice(0, 200);
+        else if (bp.newSecret || !pt.webhookSecret) pt.webhookSecret = "pth_" + host.random(16);
       }
       if (b.acore && typeof b.acore === "object") {
         var ac = s.acore = s.acore || {}, ba = b.acore;
