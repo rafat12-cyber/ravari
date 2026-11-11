@@ -1999,3 +1999,5 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .szc__foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; font-size: 13px; color: #5b5d62; }
 .szc__foot b { color: #1b1b1d; text-transform: uppercase; letter-spacing: .06em; margin-right: 4px; }
 .szc__logo { font-weight: 700; letter-spacing: .12em; color: #1b1b1d; text-transform: uppercase; white-space: nowrap; }
+#areaBox { display: contents; }
+#areaBox[hidden] { display: none; }

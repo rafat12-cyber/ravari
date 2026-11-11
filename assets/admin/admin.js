@@ -501,7 +501,7 @@
         <div class="stack" style="gap:8px">
           <h3 class="h3" style="margin:0">Customer</h3>
           <dl class="kv"><dt>Name</dt><dd>${esc(o.customer.name)}</dd><dt>Phone</dt><dd><a href="tel:${esc(tel)}">${esc(tel)}</a></dd>${o.customer.email ? `<dt>Email</dt><dd>${esc(o.customer.email)}</dd>` : ""}
-            <dt>Address</dt><dd>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</dd>${o.shippingZone ? `<dt>Area</dt><dd>${esc(o.shippingZone.name)}</dd>` : ""}</dl>
+            <dt>Address</dt><dd>${esc(o.customer.address)}${o.customer.area ? ", " + esc(o.customer.area) : ""}${o.customer.city ? ", " + esc(o.customer.city) : ""}</dd>${o.shippingZone ? `<dt>Delivery</dt><dd>${esc(o.shippingZone.name)}</dd>` : ""}</dl>
           ${pt.consignmentId ? `<h3 class="h3" style="margin:6px 0 0">Pathao</h3><dl class="kv"><dt>Consignment</dt><dd class="mono">${esc(pt.consignmentId)}</dd><dt>Status</dt><dd>${esc(String(pt.status || "sent").replace(/_/g, " "))}</dd></dl>` : ""}
           ${o.note ? `<h3 class="h3" style="margin:6px 0 0">Customer note</h3><p style="margin:0">${esc(o.note)}</p>` : ""}
         </div>
@@ -705,7 +705,7 @@
         </div>
         <div class="stack">
           <div class="card"><h2 class="h2">Customer</h2><dl class="kv"><dt>Name</dt><dd>${esc(o.customer.name)}</dd><dt>Phone</dt><dd><a href="tel:${esc(tel)}">${esc(tel)}</a></dd>
-            ${o.customer.email ? `<dt>Email</dt><dd><a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a></dd>` : ""}<dt>Address</dt><dd>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</dd>
+            ${o.customer.email ? `<dt>Email</dt><dd><a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a></dd>` : ""}<dt>Address</dt><dd>${esc(o.customer.address)}${o.customer.area ? ", " + esc(o.customer.area) : ""}${o.customer.city ? ", " + esc(o.customer.city) : ""}</dd>
             ${o.shippingZone ? `<dt>Area</dt><dd>${esc(o.shippingZone.name)} · ${esc(o.shippingZone.days)}</dd>` : ""}</dl>
             ${o.customerId && can("customers") ? `<a class="btn btn--ghost btn--sm" href="#/customers/${esc(o.customerId)}">Customer profile</a>` : ""}</div>
           ${(() => {
@@ -901,7 +901,7 @@
     return `<div class="card inv-page" style="max-width:820px;padding:36px">
         <div class="flex flex--between" style="align-items:flex-start"><div><img src="assets/img/logo.webp" alt="Ravari" style="height:26px;width:auto"><p class="small muted">${esc(st.legalName || "")}<br>${esc(st.address || "")}<br>${esc(st.phone || "")} · ${esc(st.email || "")}${st.tradeLicense ? "<br>Trade license: " + esc(st.tradeLicense) : ""}${st.bin ? " · BIN: " + esc(st.bin) : ""}</p></div>
           <div class="right"><h1 class="h1">Invoice</h1><p class="muted">${esc(o.number)}<br>${date(o.createdAt)}<br>${esc(PAY_LABEL[o.paymentMethod] || o.paymentMethod)} · ${esc(human(o.paymentStatus))}</p><div class="flex" style="justify-content:flex-end;align-items:center;gap:10px;margin-top:6px"><div style="width:150px">${barcode(o.number, 34)}</div>${qr((st.website || location.origin).replace(/\/$/, "") + "/order/" + o.number, 74)}</div><small class="muted">Scan to track ${esc(o.number)}</small></div></div>
-        <div><p class="h3">Bill to</p><p style="margin:0">${esc(o.customer.name)}<br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p></div>
+        <div><p class="h3">Bill to</p><p style="margin:0">${esc(o.customer.name)}<br>${esc(o.customer.phone)}<br>${esc(o.customer.address)}${o.customer.area ? ", " + esc(o.customer.area) : ""}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p></div>
         <table class="t"><thead><tr><th>Item</th><th>SKU</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${o.items.map((it) => `<tr><td>${esc(it.name)}<br><small class="muted">${esc(optText(it.options))}</small>${kept(o, it) < it.qty ? `<br><small>Returned: ${it.qty - kept(o, it)}</small>` : ""}</td><td class="mono">${esc(it.sku)}</td><td class="right">${it.qty}</td><td class="right">${taka(it.price)}</td><td class="right">${taka(it.lineTotal)}</td></tr>`).join("")}</tbody></table>
         <div class="totals" style="margin-left:auto;width:min(300px,100%)"><div><span>Subtotal</span><span>${taka(o.subtotal)}</span></div>${o.discount ? `<div><span>Discount</span><span>−${taka(o.discount)}</span></div>` : ""}<div><span>Delivery</span><span>${taka(o.shipping)}</span></div><div class="grand"><span>Total</span><span>${taka(o.total)}</span></div>
           ${o.returnedValue ? `<div><span>Returned items</span><span>−${taka(o.returnedValue)}</span></div><div class="grand"><span>Final amount</span><span>${taka(o.total - o.returnedValue)}</span></div>` : ""}</div>
@@ -917,7 +917,7 @@
       <div class="slip__top"><img src="assets/img/logo.webp" alt="Ravari"><div class="right"><b>${cid ? "Pathao" : "Courier"}</b><br><small>${date(o.createdAt)}</small></div></div>
       <div class="slip__codes"><div><small>Order</small><b class="mono">${esc(o.number)}</b>${barcode(o.number, 46)}</div>${cid ? `<div class="slip__pt"><div><small>Pathao ID</small><b class="mono">${esc(cid)}</b>${barcode(cid, 40)}</div>${qr(cid, 86)}</div>` : ""}</div>
       <div class="slip__to"><small>Deliver to</small><b class="slip__name">${esc(o.customer.name)}</b><b class="slip__phone">${esc(o.customer.phone)}</b>
-        <p>${esc(o.customer.address)}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p>${o.shippingZone ? `<small>Area: ${esc(o.shippingZone.name)}</small>` : ""}</div>
+        <p>${esc(o.customer.address)}${o.customer.area ? ", " + esc(o.customer.area) : ""}${o.customer.city ? ", " + esc(o.customer.city) : ""}</p>${o.shippingZone ? `<small>Delivery: ${esc(o.shippingZone.name)}</small>` : ""}</div>
       <div class="slip__cod"><span>${due ? "Collect cash" : "Paid · collect nothing"}</span><b>${taka(due)}</b></div>
       <table class="slip__items"><tbody>${o.items.map((it) => `<tr><td>${esc(it.name)}${Object.keys(it.options || {}).length ? " · " + esc(optText(it.options)) : ""}</td><td class="right">×${it.qty}</td></tr>`).join("")}</tbody></table>
       <div class="slip__foot"><span>${qty} item${qty === 1 ? "" : "s"}${o.pathao && o.pathao.weight ? " · " + o.pathao.weight + " kg" : ""}</span>${o.note ? `<span>Note: ${esc(o.note)}</span>` : ""}</div>
@@ -3031,7 +3031,11 @@
     return best ? best.id : "";
   }
   async function pathaoQuickSend(o) {
-    const addr = [o.customer.address, o.customer.city].filter(Boolean).join(", ");
+    if (o.place && o.place.cityId && o.place.zoneId) {
+      const r = await api("POST", "/api/orders/" + o.id + "/pathao", { cityId: o.place.cityId, zoneId: o.place.zoneId });
+      return (r.order && r.order.pathao && r.order.pathao.consignmentId) || "sent";
+    }
+    const addr = [o.customer.address, o.customer.area, o.customer.city].filter(Boolean).join(", ");
     const cities = (await api("GET", "/api/pathao/cities")).items || [];
     const city = pathaoGuess(cities, addr) || ((cities.filter((x) => /dhaka/i.test(x.name))[0]) || {}).id;
     const zones = city ? (await api("GET", "/api/pathao/zones/" + city)).items || [] : [];
@@ -3044,7 +3048,8 @@
     return (r.order && r.order.pathao && r.order.pathao.consignmentId) || "sent";
   }
   async function pathaoSendDialog(o, again, done) {
-    const addr = [o.customer.address, o.customer.city].filter(Boolean).join(", ");
+    const addr = [o.customer.address, o.customer.area, o.customer.city].filter(Boolean).join(", ");
+    const pl = o.place || {};
     const due = o.paymentStatus === "paid" ? 0 : Math.round(o.total || 0);
     const body = modal("Send to Pathao", `<form class="stack" id="ptForm">
       <p class="muted small" style="margin:0">${esc(o.number)} · ${esc(o.customer.name)} · ${esc(addr)}</p>
@@ -3059,12 +3064,12 @@
     const loadAreas = async () => { f.areaId.innerHTML = `<option value="">—</option>`; if (!f.zoneId.value) return; try { const r = await api("GET", "/api/pathao/areas/" + f.zoneId.value); sel(f.areaId, r.items || [], pathaoGuess(r.items || [], addr)); f.areaId.options[0].textContent = "—"; } catch (_) {} };
     const loadZones = async () => {
       f.zoneId.innerHTML = `<option value="">Loading…</option>`;
-      try { const r = await api("GET", "/api/pathao/zones/" + f.cityId.value); sel(f.zoneId, r.items || [], pathaoGuess(r.items || [], addr)); loadAreas(); } catch (err) { fail(err); }
+      try { const r = await api("GET", "/api/pathao/zones/" + f.cityId.value); sel(f.zoneId, r.items || [], (+f.cityId.value === pl.cityId && pl.zoneId) || pathaoGuess(r.items || [], addr)); loadAreas(); } catch (err) { fail(err); }
     };
     f.cityId.onchange = loadZones; f.zoneId.onchange = loadAreas;
     try {
       const r = await api("GET", "/api/pathao/cities");
-      sel(f.cityId, r.items || [], pathaoGuess(r.items || [], addr) || ((r.items || []).filter((x) => /dhaka/i.test(x.name))[0] || {}).id);
+      sel(f.cityId, r.items || [], pl.cityId || pathaoGuess(r.items || [], addr) || ((r.items || []).filter((x) => /dhaka/i.test(x.name))[0] || {}).id);
       if (f.cityId.value) loadZones();
     } catch (err) { closeModal(); return fail(err); }
     f.onsubmit = async (e) => {

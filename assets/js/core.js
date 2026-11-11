@@ -154,7 +154,7 @@
   }
   function orderSummary(o) {
     return { id: o.id, number: o.number, createdAt: o.createdAt, status: o.status, paymentStatus: o.paymentStatus, paymentMethod: o.paymentMethod,
-      customer: { name: o.customer.name, phone: o.customer.phone, address: o.customer.address, city: o.customer.city }, itemCount: o.items.reduce(function (s, i) { return s + i.qty; }, 0), total: o.total,
+      customer: { name: o.customer.name, phone: o.customer.phone, address: o.customer.address, area: o.customer.area || "", city: o.customer.city }, place: o.place || null, itemCount: o.items.reduce(function (s, i) { return s + i.qty; }, 0), total: o.total,
       pathao: o.pathao && o.pathao.consignmentId ? { consignmentId: o.pathao.consignmentId, status: o.pathao.status || "", lastUpdate: o.pathao.lastUpdate || o.pathao.sentAt || 0 } : null,
       trackingUrl: o.courier && o.courier.trackingUrl || "" };
   }
@@ -976,7 +976,10 @@
 
     route("POST", "/api/orders", null, function (c) {
       var db = c.db, b = c.body || {}, cu = b.customer || {};
-      var info = { name: str(cu.name, 80), phone: str(cu.phone, 20), email: str(cu.email, 120), address: str(cu.address, 300), city: str(cu.city, 60) };
+      var info = { name: str(cu.name, 80), phone: str(cu.phone, 20), email: str(cu.email, 120), address: str(cu.address, 300), city: str(cu.city, 60), area: str(cu.area, 80) };
+      // City and Area picked from Pathao's own lists at checkout, so the parcel can be sent without choosing them again
+      var place = b.place && int(b.place.cityId) && int(b.place.zoneId) ? { cityId: int(b.place.cityId), zoneId: int(b.place.zoneId), city: str(b.place.city, 60), zone: str(b.place.zone, 80) } : null;
+      if (place) { info.city = place.city || info.city; info.area = place.zone || info.area; }
       var errors = {};
       if (!info.name) errors.name = "Enter your name.";
       if (!isPhone(info.phone)) errors.phone = "Enter a Bangladeshi mobile number, like 01712345678.";
@@ -1001,7 +1004,8 @@
       var order = {
         id: newId("ord"), number: "RV" + db.counters.order, createdAt: t, updatedAt: t,
         status: "pending", paymentStatus: "unpaid", paymentMethod: pay,
-        customer: { name: info.name, phone: normPhone(info.phone), email: info.email, address: info.address, city: info.city },
+        customer: { name: info.name, phone: normPhone(info.phone), email: info.email, address: info.address, area: info.area, city: info.city },
+        place: place,
         shippingZone: q.zone ? { id: q.zone.id, name: q.zone.name, days: q.zone.days } : null,
         items: q.lines, subtotal: q.subtotal, discount: q.discount, coupon: q.coupon ? q.coupon.code : "", shipping: q.shipping, total: q.total,
         note: str(b.note, 500), source: str(b.source, 40) || "website",
@@ -1040,7 +1044,7 @@
 
     function publicOrder(o) {
       return { number: o.number, createdAt: o.createdAt, status: o.status, paymentStatus: o.paymentStatus, paymentMethod: o.paymentMethod,
-        customer: { name: o.customer.name, phone: o.customer.phone.replace(/^(\d{3})\d{5}/, "$1•••••"), address: o.customer.address, city: o.customer.city },
+        customer: { name: o.customer.name, phone: o.customer.phone.replace(/^(\d{3})\d{5}/, "$1•••••"), address: o.customer.address, area: o.customer.area || "", city: o.customer.city },
         shippingZone: o.shippingZone, items: o.items, subtotal: o.subtotal, discount: o.discount, coupon: o.coupon, shipping: o.shipping, total: o.total,
         tracking: o.tracking || "", courier: o.courier ? { name: o.courier.name || "", code: o.courier.trackingCode || o.courier.consignmentId || "", url: o.courier.trackingUrl || "",
           rider: o.status === "shipped" ? o.courier.riderName || "" : "", riderPhone: o.status === "shipped" ? o.courier.riderPhone || "" : "" } : null, history: o.history.filter(function (h) { return !h.internal; }).map(function (h) { return { at: h.at, status: h.status, note: h.public || "" }; }) };
@@ -2098,6 +2102,10 @@
     // Admin › Pathao › Check connection: signs in and lists the pickup stores
     route("POST", "/api/pathao/test", "settings", function (c) { pathaoReady(c.db); return { pathao: { op: "stores" } }; });
     route("GET", "/api/pathao/cities", "orders", function (c) { pathaoReady(c.db); return { pathao: { op: "cities" } }; }, { readonly: true });
+    // Checkout: Pathao's cities and areas (zones) for the City / Area boxes. Empty when Pathao isn't set up, so checkout shows a plain City box.
+    var pathaoOn = function (db) { var p = pathaoSettings(db); return !!(host.pathao && p.clientId && p.clientSecret && p.username && p.password); };
+    route("GET", "/api/delivery/cities", null, function (c) { return pathaoOn(c.db) ? { pathao: { op: "cities", cache: true } } : { items: [] }; }, { readonly: true });
+    route("GET", "/api/delivery/areas/:city", null, function (c) { return pathaoOn(c.db) && int(c.params.city) ? { pathao: { op: "zones", city: int(c.params.city), cache: true } } : { items: [] }; }, { readonly: true });
     route("GET", "/api/pathao/zones/:city", "orders", function (c) { pathaoReady(c.db); return { pathao: { op: "zones", city: int(c.params.city) } }; }, { readonly: true });
     route("GET", "/api/pathao/areas/:zone", "orders", function (c) { pathaoReady(c.db); return { pathao: { op: "areas", zone: int(c.params.zone) } }; }, { readonly: true });
     // Admin › order › Send to Pathao: makes the parcel request
@@ -2112,7 +2120,7 @@
       var due = o.paymentStatus === "paid" ? 0 : Math.max(0, Math.round(num(o.total, 0)));
       var collect = b.amount !== undefined && b.amount !== "" ? Math.max(0, Math.round(num(b.amount, due))) : due;
       var qty = o.items.reduce(function (n, it) { return n + int(it.qty, 1); }, 0) || 1;
-      var addr = [o.customer.address, o.customer.city].filter(Boolean).join(", ");
+      var addr = [o.customer.address, o.customer.area, o.customer.city].filter(Boolean).join(", ");
       var payload = {
         store_id: int(p.storeId), merchant_order_id: o.number, recipient_name: str(o.customer.name, 100) || "Customer", recipient_phone: phone,
         recipient_address: str(addr, 220), recipient_city: city, recipient_zone: zone, delivery_type: p.deliveryType, item_type: p.itemType,

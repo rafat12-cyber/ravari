@@ -249,8 +249,15 @@ function pathaoConf() {
 }
 function pathaoList(j) { var d = (j && j.data) || {}; return Array.isArray(d) ? d : d.data || []; }
 // The core route said what to do (out.body.pathao); do it and answer the admin
+var pathaoCache = {};   // checkout's city/area lists: Pathao changes them rarely
 function pathaoJob(job, req, res) {
   var p = pathaoConf(), done = function (status, body) { sendJson(res, status, body); };
+  if (job.cache) {
+    var ck = job.op + ":" + (job.city || ""), hit = pathaoCache[ck];
+    if (hit && hit.until > Date.now()) return done(200, hit.body);
+    var send = done;
+    done = function (status, body) { if (status === 200) pathaoCache[ck] = { until: Date.now() + 12 * 3600e3, body: body }; send(status, status === 200 ? body : { items: [], error: body.error }); };
+  }
   if (job.op === "stores") return pathaoCall(p, "GET", "/aladdin/api/v1/stores", null, function (e, j) {
     if (e) return done(502, { error: e.message });
     done(200, { ok: true, message: "Signed in to Pathao" + (p.sandbox ? " (sandbox)" : ""), stores: pathaoList(j).map(function (x) { return { id: x.store_id, name: x.store_name, address: x.store_address, active: x.is_active !== 0 }; }) });
