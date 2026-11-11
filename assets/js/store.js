@@ -531,7 +531,7 @@
       if (r >= 0) {
         x = anchor - u * (0.95 * Math.min(r, 1) + 0.66 * Math.max(0, Math.min(r, 2) - 1) + 0.5 * Math.max(0, Math.min(r, 3) - 2) + 0.42 * Math.max(0, r - 3));
         sc = 1 - Math.min(r, 4.5) * 0.15;
-        blur = Math.min(r, 5) * 1.8;
+        blur = Math.min(r, 5) * 0.7;
         op = r > edge ? Math.max(0, 1 - (r - edge) / 0.7) : 1;
         y = -Math.min(r, 4) * 10;
       } else {
