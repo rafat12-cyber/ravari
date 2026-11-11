@@ -2726,6 +2726,18 @@
       changed = true;
     }
     if (!db.sizeCharts) db.sizeCharts = [];
+    // The old shop's size chart pictures leave the product photos; their products use the matching template
+    if (done.indexOf("chart-photos") < 0) {
+      (seed.sizeCharts || []).forEach(function (t) { if (!db.sizeCharts.some(function (x) { return x.id === t.id; })) db.sizeCharts.push(clone(t)); });
+      var cp = seed.chartPhotos || {};
+      db.products.forEach(function (p) {
+        var hit = null;
+        p.images = (p.images || []).filter(function (u) { var k = String(u).replace(/^.*\//, "").replace(/\.webp$/, ""); if (cp[k]) { hit = cp[k]; return false; } return true; });
+        if (hit && !p.sizeChartId && db.sizeCharts.some(function (x) { return x.id === hit; })) p.sizeChartId = hit;
+      });
+      done.push("chart-photos");
+      changed = true;
+    }
     // Every option a product uses shows in Variations too (pant waist sizes 28–36 were missing from Size)
     if (done.indexOf("attr-values") < 0) {
       (db.attributes || []).forEach(function (a) {
