@@ -967,7 +967,7 @@ details[open] > .menu__link::after { transform: rotate(45deg); }
 .field__err { font-style: normal; font-size: 12px; color: var(--sale); }
 .field__err[hidden] { display: none; }
 .is-invalid { border-color: var(--sale) !important; }
-.zones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .checkout__hint { margin: -6px 0 0; color: var(--ink-2); }
 .ssl-row { display: flex; justify-content: center; padding: 10px; border-radius: 12px; background: var(--ground); }
 .ssl-row img { max-height: 70px; width: auto; }

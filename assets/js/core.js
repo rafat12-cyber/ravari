@@ -2714,6 +2714,16 @@
       done.push("seo-text");
       changed = true;
     }
+    // Dhaka Sub Area delivery (Savar, Gazipur, Narayanganj, Keraniganj), ৳100, between Inside and Outside Dhaka
+    if (done.indexOf("dhaka-sub-zone") < 0) {
+      var zs = (db.settings.shipping = db.settings.shipping || {}).zones = db.settings.shipping.zones || [];
+      if (!zs.some(function (z) { return z.id === "dhaka-sub"; })) {
+        var at = zs.map(function (z) { return z.id; }).indexOf("inside-dhaka");
+        zs.splice(at > -1 ? at + 1 : zs.length, 0, { id: "dhaka-sub", name: "Dhaka Sub Area", fee: 100, days: "2–4 days" });
+      }
+      done.push("dhaka-sub-zone");
+      changed = true;
+    }
     if (done.indexOf("popup") < 0) {
       if (!db.pages.popup && seed.pages.popup) { db.pages.popup = clone(seed.pages.popup); db.pages.popup.enabled = false; }
       done.push("popup");

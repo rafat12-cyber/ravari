@@ -165,6 +165,7 @@
     shipping: {
       zones: [
         { id: "inside-dhaka", name: "Inside Dhaka", fee: 70, days: "1–3 days" },
+        { id: "dhaka-sub", name: "Dhaka Sub Area", fee: 100, days: "2–4 days" },
         { id: "outside-dhaka", name: "Outside Dhaka", fee: 130, days: "3–5 days" }
       ],
       freeOver: 0, processing: "Orders are confirmed by phone and packed within 24 hours."

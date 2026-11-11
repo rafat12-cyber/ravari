@@ -9,7 +9,7 @@
     var s = document.currentScript && document.currentScript.src;
     return s ? s.replace(/assets\/js\/client\.js.*$/, "") : "";
   })();
-  var DB_KEY = "ravari:demo-db:v56";
+  var DB_KEY = "ravari:demo-db:v57";
   var DEMO_LOGIN = { email: "admin@ravaribd.com", password: "ravari-demo" };
 
   // The server stamps the current asset version on the page (cache busting); the demo uses the fixed one
@@ -103,7 +103,7 @@
       ["Karim Ahmed", "01711234567", "House 14, Road 7, Block C, Mirpur 10", "Dhaka", "inside-dhaka"],
       ["Nusrat Jahan", "01822345678", "Flat 5B, 23 Satmasjid Road, Dhanmondi", "Dhaka", "inside-dhaka"],
       ["Tanvir Hasan", "01933456789", "Holding 112, Agrabad Commercial Area", "Chattogram", "outside-dhaka"],
-      ["Sadia Islam", "01544567890", "House 3, Lane 2, Uttara Sector 7", "Dhaka", "inside-dhaka"],
+      ["Sadia Islam", "01544567890", "House 3, Lane 2, Bank Town", "Savar", "dhaka-sub"],
       ["Rakib Chowdhury", "01655678901", "Zindabazar, near Al-Hamra Shopping City", "Sylhet", "outside-dhaka"],
       ["Mahin Rahman", "01366789012", "Road 11, Banani", "Dhaka", "inside-dhaka"]
     ];
