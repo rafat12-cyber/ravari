@@ -181,7 +181,7 @@
   var pages = {
     home: {
       hero: {
-        line1: "Layer up", lead: "for", accent: "winter.",
+        line1: "Layer up", lead: "for", accent: "winter",
         cta1: "Shop now", cta1Link: "#shop",
         image: "assets/img/home/r-hero-sofa.webp", imageAlt: "Two models in a maroon and a grey velvet jacket on a pink sofa",
         note: "Winter collection 2026 · Cash on delivery all over Bangladesh"
@@ -193,10 +193,9 @@
       // Moving strip under the hero, then a bento: big photo, sticker card, two more photos
       house: {
         ticker: "New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ ",
-        eyebrow: "Drop 01 / 2026", titleStart: "Winter", accent: "", titleEnd: "collection", linkLabel: "Shop the drop", link: "#category/winter-collection",
-        card1: { image: "assets/img/home/r-drop-1.webp", title: "Check jackets", link: "#category/jacket" },
-        card2: { image: "assets/img/home/r-drop-2.webp", title: "Jackets", link: "#category/jacket" },
-        card3: { image: "assets/img/home/r-drop-3.webp", title: "Denim", link: "#category/denim-shirt" }
+        card1: { image: "assets/img/home/r-card-jacket.webp", title: "Jacket", link: "#category/jacket" },
+        card2: { image: "assets/img/home/r-card-winter.webp", title: "Winter 26/27", link: "#category/winter-collection" },
+        card3: { image: "assets/img/home/r-card-sweat.webp", title: "Sweat Shirt", link: "#category/sweat-shirt" }
       },
       arrivals: {
         titleStart: "New", accent: "arrivals", titleEnd: "",
