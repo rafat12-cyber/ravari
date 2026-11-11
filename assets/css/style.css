@@ -1669,3 +1669,97 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
   .ig__head { flex-wrap: wrap; }
   .ig__row { gap: 10px; }
 }
+
+
+/* ==========================================================================
+   TRANSPARENT HERO HEADER + LIVELY MOTION (2026-11-11)
+   ========================================================================== */
+/* The header that sits on the hero has no fill at all (the sticky one keeps its own look) */
+.hero--photo .nav__menu { --cap-bg: transparent; --cap-line: transparent; --cap-ink: #fff; --cap-on: transparent; background: transparent; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hero--photo .nav__menu > li > a, .hero--photo .nav__menu > li:first-child > a { background: transparent; color: #fff; position: relative; }
+.hero--photo .nav__menu > li > a::after { display: block !important; content: ""; position: absolute; left: 16px; right: 16px; bottom: 3px; height: 1.5px; background: var(--red); transform: scaleX(0); transform-origin: right; transition: transform .35s var(--ease); }
+.hero--photo .nav__menu > li > a:hover { background: transparent; color: #fff; }
+.hero--photo .nav__menu > li > a:hover::after { transform: scaleX(1); transform-origin: left; }
+.hero--photo .icon-btn, .hero--photo .nav__burger, .hero--photo .bag-btn { background: transparent; border-color: transparent; color: #fff; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hero--photo .icon-btn:hover, .hero--photo .nav__burger:hover { background: transparent; color: var(--paper); transform: translateY(-2px); }
+.hero--photo .bag-btn svg, .hero--photo .icon-btn svg { stroke: currentColor; }
+
+.hero--photo picture { display: contents; }
+/* One clean Shop now button */
+.hero--photo .hero__shop { height: 50px; padding: 0 30px; font-size: 12px; position: relative; overflow: hidden; }
+
+/* Shine across buttons on hover */
+.pill { position: relative; overflow: hidden; isolation: isolate; }
+.pill::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%); transform: translateX(-120%); transition: transform .7s var(--ease); pointer-events: none; }
+.pill--dark::before, .pill--line::before { background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.22) 50%, transparent 70%); }
+.pill:hover::before { transform: translateX(120%); }
+
+/* Hero: lines rise one after another, the photo settles, the button pops in */
+.js-intro .hero--photo .hero__note { animation: rRise .7s var(--ease) .1s both; }
+.js-intro .hero--photo .display .line > span { animation: lineUp 1s var(--ease) both; }
+.js-intro .hero--photo .display .line:nth-child(1) > span { animation-delay: .2s; }
+.js-intro .hero--photo .display .line:nth-child(2) > span { animation-delay: .34s; }
+.js-intro .hero--photo .hero__ctas { animation: popIn .7s cubic-bezier(.3,1.5,.5,1) .6s both; }
+.js-intro .hero--photo .nav > * { animation: rFade .8s ease .05s both; }
+.hero--photo .display .line { overflow: hidden; padding-bottom: .04em; }
+@keyframes lineUp { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes popIn { from { opacity: 0; transform: scale(.85) translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Stickers wobble a little, the ticker pauses on hover */
+.sticker { animation: wobble 3.2s ease-in-out infinite; }
+@keyframes wobble { 0%, 100% { transform: rotate(10deg) scale(1); } 50% { transform: rotate(18deg) scale(1.06); } }
+.ticker:hover .ticker__track { animation-play-state: paused; }
+
+/* Cards and tiles lift on hover */
+.card { transition: transform .35s var(--ease); }
+.card:hover { transform: translateY(-6px); }
+.card__fav { transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+.card__fav:active { transform: scale(.8); }
+.tile { transition: transform .4s var(--ease); }
+.tile:hover { transform: translateY(-6px); }
+.drop__ph { transition: transform .4s var(--ease); }
+.drop__ph:hover { transform: translateY(-4px); }
+.drop__chips a { transition: background .2s, color .2s, transform .25s cubic-bezier(.3,1.6,.5,1); }
+.drop__chips a:hover { transform: translateY(-2px); }
+
+/* Product cards slide in when switching tabs */
+.grid .card { animation: cardIn .6s var(--ease) both; }
+.grid .card:nth-child(4n+2) { animation-delay: .06s; }
+.grid .card:nth-child(4n+3) { animation-delay: .12s; }
+.grid .card:nth-child(4n+4) { animation-delay: .18s; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+
+/* Where the browser supports it, things move with the scroll (no JavaScript, no layout work) */
+@supports (animation-timeline: view()) {
+  .grid .card { animation: cardIn linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+  .rise { animation: riseIn linear both; animation-timeline: view(); animation-range: entry 10% entry 70%; }
+  .drop__ph img, .tile img { animation: drift linear both; animation-timeline: view(); animation-range: cover; }
+  .tile__num { animation: numIn linear both; animation-timeline: view(); animation-range: entry 20% cover 45%; }
+  .cold__h--top { animation: slideIn linear both; animation-timeline: view(); animation-range: entry 0% cover 35%; }
+  .cats__list li { animation: riseIn linear both; animation-timeline: view(); animation-range: entry 0% entry 80%; }
+  .footer__word { animation: wordIn linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
+}
+@keyframes riseIn { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes drift { from { transform: translateY(-4%) scale(1.1); } to { transform: translateY(4%) scale(1.1); } }
+@keyframes numIn { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
+@keyframes wordIn { from { letter-spacing: 1.2em; opacity: 0; } to { letter-spacing: .5em; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker, .grid .card, .rise, .drop__ph img, .tile img, .tile__num, .cold__h--top, .cats__list li, .footer__word { animation: none !important; }
+  .pill::before { display: none; }
+}
+
+@media (max-width: 960px) {
+  /* Phone hero: the photo fills the whole hero from the centre, copy sits on it */
+  .hero--photo .hero__panel { display: grid; grid-template-rows: auto 1fr !important; align-content: stretch; min-height: min(760px, calc(100svh - 70px)); padding: 12px 12px 0; }
+  .hero--photo .nav { grid-row: 1; align-self: start; }
+  .hero--photo .hero__copy { grid-row: 2; }
+  .hero--photo .nav { position: relative; top: auto; left: auto; right: auto; }
+  .hero--photo .hero__photo { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; object-position: 50% 100%; }
+  .hero--photo .hero__copy { align-self: start; justify-self: stretch; justify-items: end; text-align: right; padding: 26px 6px 0; gap: 14px; }
+  /* Straight buttons and labels on phones */
+  .drop__tag, .tile__label, .card .chip, .ig__item, .ig__item:nth-child(even) { transform: none; }
+  .tile:hover .tile__label, .drop__ph:hover .drop__tag { transform: none; }
+  .card:hover, .tile:hover, .drop__ph:hover { transform: none; }
+}
