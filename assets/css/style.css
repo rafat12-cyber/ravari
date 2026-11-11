@@ -1960,3 +1960,5 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 /* Footer: wordmark readable on the dark grey, developer credit (Rafat, 2026-11-11) */
 .footer__word { color: rgba(242,240,236,.16); }
 .footer__dev { margin: 0; text-align: center; color: #8b9096; }
+/* SSLCOMMERZ pay-with strip (local copy from Rafat) under the caption */
+.ssl-banner img { width: min(100%, 1020px); padding: 6px 8px; border-radius: 10px; background: #fff; box-sizing: border-box; }
