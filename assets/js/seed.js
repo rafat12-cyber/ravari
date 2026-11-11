@@ -19,6 +19,8 @@
     ["men", "Men", null, 1, "assets/img/home/r-hero-wide.webp", "Shirts and panjabis for men."],
     ["winter-collection", "Winter Collection", null, 2, "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", "Denim and corduroy shirts for the cooler days."],
     ["denim-shirt", "Denim Shirt", "winter-collection", 1, "assets/img/products/classic-double-pocket-denim-shirt-blue-1.webp", "Heavyweight denim and corduroy shirts."],
+    ["jacket", "Jacket", "winter-collection", 2, "assets/img/home/r-drop-2.webp", "Suede and check jackets to layer over a tee."],
+    ["sweat-shirt", "Sweat Shirt", "winter-collection", 3, "assets/img/home/r-tile-1.webp", "Half-zip sweatshirts, warm and easy to wear."],
     ["full-shirt", "Full Sleeve Shirt", "men", 1, "assets/img/home/r-lb-1.webp", "Premium full sleeve casual shirts."],
     ["half-shirt", "Half Sleeve Shirt", "men", 2, "assets/img/home/r-lb-3.webp", "Half sleeve casual shirts in bold prints."],
     ["panjabi", "Premium Panjabi", "men", 3, "assets/img/home/r-lb-2.webp", "Embroidered, sequin and classic cotton panjabis."],
@@ -30,9 +32,11 @@
     "full-shirt": "Ravari full sleeve casual shirts in premium cotton, with modern prints and a comfortable fit. Delivered across Bangladesh with cash on delivery.",
     "half-shirt": "Half sleeve casual shirts in breathable cotton with bold prints, made for everyday wear in the heat.",
     "panjabi": "Premium embroidered, sequin and classic cotton panjabis for Eid, weddings and every occasion. Cash on delivery all over Bangladesh.",
-    "denim-shirt": "Heavyweight denim and corduroy shirts for layering through the cooler months."
+    "denim-shirt": "Heavyweight denim and corduroy shirts for layering through the cooler months.",
+    "jacket": "Ravari winter jackets for men: suede and check jackets made to layer over a tee. Cash on delivery all over Bangladesh.",
+    "sweat-shirt": "Ravari half-zip sweatshirts for men, soft and warm for the cooler months. Cash on delivery all over Bangladesh."
   };
-  var SEO_TITLE = { "men": "Men's Shirts and Panjabis in Bangladesh", "full-shirt": "Full Sleeve Shirts in Bangladesh", "half-shirt": "Half Sleeve Shirts in Bangladesh", "panjabi": "Premium Panjabi in Bangladesh", "denim-shirt": "Denim Shirts in Bangladesh" };
+  var SEO_TITLE = { "men": "Men's Shirts and Panjabis in Bangladesh", "full-shirt": "Full Sleeve Shirts in Bangladesh", "half-shirt": "Half Sleeve Shirts in Bangladesh", "panjabi": "Premium Panjabi in Bangladesh", "denim-shirt": "Denim Shirts in Bangladesh", "jacket": "Men's Winter Jackets in Bangladesh", "sweat-shirt": "Men's Sweat Shirts in Bangladesh" };
   var categories = CATS.map(function (c) {
     return { id: "cat_" + c[0].replace(/-/g, "_"), slug: c[0], name: c[1], parentId: c[2] ? "cat_" + c[2].replace(/-/g, "_") : null,
       order: c[3], image: c[4], description: c[5], seoText: SEO_TEXT[c[0]] || "", seoTitle: SEO_TITLE[c[0]] || "", createdAt: T0 };
@@ -166,8 +170,8 @@
       house: {
         ticker: "New drop ✱ Winter 26 ✱ Cash on delivery all over Bangladesh ✱ Made in Dhaka ✱ Sizes M to XXL ✱ ",
         eyebrow: "Drop 01 / 2026", titleStart: "Winter", accent: "", titleEnd: "collection", linkLabel: "Shop the drop", link: "#category/winter-collection",
-        card1: { image: "assets/img/home/r-drop-1.webp", title: "Check jackets", link: "#category/winter-collection" },
-        card2: { image: "assets/img/home/r-drop-2.webp", title: "Full sleeve", link: "#category/full-shirt" },
+        card1: { image: "assets/img/home/r-drop-1.webp", title: "Check jackets", link: "#category/jacket" },
+        card2: { image: "assets/img/home/r-drop-2.webp", title: "Jackets", link: "#category/jacket" },
         card3: { image: "assets/img/home/r-drop-3.webp", title: "Denim", link: "#category/denim-shirt" }
       },
       arrivals: {
@@ -186,7 +190,7 @@
       tiles: {
         eyebrow: "Shop by category",
         items: [
-          { image: "assets/img/home/r-tile-1.webp", label: "Winter collection", link: "#category/winter-collection" },
+          { image: "assets/img/home/r-tile-1.webp", label: "Sweat shirt", link: "#category/sweat-shirt" },
           { image: "assets/img/home/r-tile-2.webp", label: "Full sleeve", link: "#category/full-shirt" },
           { image: "assets/img/home/r-tile-3.webp", label: "Denim & check", link: "#category/denim-shirt" }
         ]
@@ -283,8 +287,8 @@
   var catLink = function (slug, label) { return { id: "mi_" + slug, label: label, url: "#category/" + slug, children: [] }; };
   var menus = {
     header: [
-      { id: "mi_winter", label: "Winter", url: "#category/winter-collection", image: "assets/img/menu-shop.webp", children: [
-        catLink("denim-shirt", "Denim Shirt")
+      { id: "mi_winter", label: "Winter", url: "#category/winter-collection", image: "assets/img/menu-winter.webp", children: [
+        catLink("denim-shirt", "Denim Shirt"), catLink("jacket", "Jacket"), catLink("sweat-shirt", "Sweat Shirt")
       ] },
       { id: "mi_full", label: "Full sleeve", url: "#category/full-shirt", children: [] },
       { id: "mi_half", label: "Half sleeve", url: "#category/half-shirt", children: [] },

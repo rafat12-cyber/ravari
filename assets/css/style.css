@@ -1774,3 +1774,8 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
 .drop__cta, .arrivals .center .pill { padding-left: 26px; padding-right: 26px; }
 .cold__cta > span { display: inline-flex; align-items: baseline; gap: 12px; }
 .cold__cta small::after { content: "·"; margin-left: 12px; }
+/* Dropdown on the transparent hero header keeps dark text on its light panel */
+.hero--photo .nav__sub { --cap-ink: var(--ink); --cap-on: rgba(27,27,29,.07); color: var(--ink); }
+.hero--photo .nav__sub a { color: var(--ink); }
+.hero--photo .nav__sub a:hover { background: rgba(27,27,29,.07); color: var(--red); }
+@media (min-width: 961px) { .hero--photo .hero__panel { grid-template-rows: auto 1fr; } .hero--photo .nav { grid-row: 1; align-self: start; } .hero--photo .hero__copy { grid-row: 2; } }
