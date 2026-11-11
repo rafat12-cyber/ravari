@@ -202,11 +202,11 @@
         // Tabs under the heading. Category is a category slug (t-shirt, half-shirt, full-shirt, trouser,
         // polo...) or top-selling; join several slugs with commas. Clear a label to hide its tab.
         tabs: [
-          { label: "Denim", category: "denim-shirt" },
-          { label: "Full sleeve", category: "full-shirt" },
-          { label: "Panjabi", category: "panjabi" },
-          { label: "Half sleeve", category: "half-shirt" },
-          { label: "Top Selling", category: "top-selling" }
+          { label: "Jacket", category: "jacket" },
+          { label: "Sweat Shirt", category: "sweat-shirt" },
+          { label: "Denim Pant", category: "denim-pant" },
+          { label: "Top Selling", category: "top-selling" },
+          { label: "", category: "" }
         ]
       },
       // Three photo tiles with a glass label, on the dark band
