@@ -541,7 +541,7 @@
     });
     function capiTrack(c, t, b) {
       var name = CAPI_NAMES[t];
-      if (!name || !host.metaEvent) return;
+      if (!name || !host.metaEvent || b.nometa) return;
       var p = b.productId ? findProduct(c.db, str(b.productId, 40)) : null, custom = null;
       if ((t === "view" || t === "cart" || t === "wishlist") && !p) return;
       var catName = function (x) { var ids = x.categoryIds || [], cat = findCategory(ids[ids.length - 1]) || findCategory(ids[0]); return cat ? cat.name : undefined; };

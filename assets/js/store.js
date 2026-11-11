@@ -2256,8 +2256,8 @@
     var send = function (name, params, custom) { if (fb) fb(custom ? "trackCustom" : "track", name, params || {}, opt); };
     try {
       if (type === "page") {
-        // Every Pixel page view is sent from here (with an event ID). GA sends the first one itself.
-        send("PageView");
+        // The Pixel sends its own PageView when the address changes inside the site, so only the first one is sent from here (with an event ID the server copy matches)
+        if (!adPages) send("PageView");
         if (adPages++ && ga) ga("event", "page_view", { page_location: location.href, page_title: document.title });
       } else if (type === "view" && p) {
         send("ViewContent", one(p, 1));
@@ -2321,7 +2321,10 @@
     var eid = eventId();
     if (!matched) pixelMatch();
     adEvent(type, productId, info, eid);
+    // later page views are counted by the Pixel itself (different event ID), so the server skips them to avoid counting twice
+    var skipMeta = type === "page" && adPages > 1 && typeof window.fbq === "function";
     var body = { type: type, productId: productId || "", sid: sid, eid: eid };
+    if (skipMeta) body.nometa = 1;
     if (info) Object.keys(info).forEach(function (k) { body[k] = info[k]; });
     var mi = metaInfo();
     body.fbp = mi.fbp; body.fbc = mi.fbc; body.url = mi.url;
