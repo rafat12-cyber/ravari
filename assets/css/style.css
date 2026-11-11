@@ -1763,3 +1763,14 @@ h1, h2, h3, .display, .h2, .pd__name, .drawer__title, .modal__title, .hero--phot
   .tile:hover .tile__label, .drop__ph:hover .drop__tag { transform: none; }
   .card:hover, .tile:hover, .drop__ph:hover { transform: none; }
 }
+
+/* Home buttons without icons (2026-11-11) */
+.drop__tag { padding: 10px 16px; }
+.tile__label { padding: 12px 18px; }
+.cold__cta { display: inline-flex; align-items: baseline; gap: 12px; padding: 16px 26px; border-radius: 10px; background: var(--paper); color: var(--ink); position: relative; overflow: hidden; isolation: isolate; transition: background .25s, color .25s; }
+.cold__cta:hover { background: var(--red); color: #fff; }
+.cold__cta small { display: inline; color: inherit; font-weight: 600; }
+.cold__cta b { font-size: 18px; }
+.drop__cta, .arrivals .center .pill { padding-left: 26px; padding-right: 26px; }
+.cold__cta > span { display: inline-flex; align-items: baseline; gap: 12px; }
+.cold__cta small::after { content: "·"; margin-left: 12px; }
