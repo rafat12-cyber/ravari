@@ -393,7 +393,7 @@
     }).join("") +
       '<ul class="footer__contact"><li class="mono">Get in touch</li>' +
         (LAY().footer.showContact === false ? "" : (st.address ? "<li>" + esc(st.address) + "</li>" : "") +
-        (st.phone ? '<li><a href="tel:' + esc(st.phone.replace(/[^\d+]/g, "")) + '">' + esc(st.phone) + "</a></li>" : "") +
+        (st.phone ? '<li><a class="footer__tel" href="tel:' + esc(st.phone.replace(/[^\d+]/g, "")) + '">' + esc(st.phone) + "</a></li>" : "") +
         (st.email ? '<li><a href="mailto:' + esc(st.email) + '">' + esc(st.email) + "</a></li>" : "")) +
         (socials.length && LAY().footer.showSocial !== false ? '<li class="footer__social">' + socials.map(function (s) {
           var url = s[0] === "whatsapp" ? "https://wa.me/" + st.whatsapp.replace(/[^\d]/g, "") : soc[s[0]];
