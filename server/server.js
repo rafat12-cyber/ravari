@@ -562,7 +562,7 @@ function nextEmail() {
     var e = (db.emailLog || []).filter(function (x) { return x.id === job.id; })[0];
     if (e) {
       e.ok = !err;
-      e.status = err ? "Failed: " + (/535|534|Username and Password/i.test(err.message) ? "Gmail refused the login. Check the address and the 16-letter app password." : err.message) : "Sent";
+      e.status = err ? "Failed: " + (/535|534|Username and Password/i.test(err.message) ? "Gmail refused the login. Check the address and the 16-letter app password. Gmail said: " + err.message.replace(/^SMTP /, "").replace(/\s*https?:\S+/g, "").slice(0, 200) : err.message) : "Sent";
       e.sentAt = Date.now();
       save();
     }
