@@ -1418,7 +1418,7 @@
         (o.discount ? "<div><dt>Discount" + (o.coupon ? " (" + esc(o.coupon) + ")" : "") + "</dt><dd>−" + taka(o.discount) + "</dd></div>" : "") +
         "<div><dt>Delivery" + (o.shippingZone ? " · " + esc(o.shippingZone.name) : "") + "</dt><dd>" + (o.shipping ? taka(o.shipping) : "Free") + "</dd></div>" +
         '<div class="totals__grand"><dt>Total</dt><dd>' + taka(o.total) + "</dd></div></dl>" +
-      '<p class="order__addr"><span class="mono">Deliver to</span>' + esc(o.customer.name) + " · " + esc(o.customer.phone) + "<br>" + esc(o.customer.address) + (o.customer.city ? ", " + esc(o.customer.city) : "") + "</p>" +
+      '<p class="order__addr"><span class="mono">Deliver to</span>' + esc(o.customer.name) + " · " + esc(o.customer.phone) + "<br>" + esc(o.customer.address) + (o.customer.area ? ", " + esc(o.customer.area) : "") + (o.customer.city ? ", " + esc(o.customer.city) : "") + "</p>" +
     "</div>";
   }
   function myOrders() { return store.get("orders", []); }
@@ -1540,7 +1540,7 @@
     clearTimeout(captureTimer);
     captureTimer = setTimeout(function () {
       if (!form.isConnected || !cart.length) return;
-      var cu = { name: form.name.value, phone: form.phone.value, email: form.email.value, address: form.address.value, city: form.city.value };
+      var pl = placeOf(form), cu = { name: form.name.value, phone: form.phone.value, email: form.email.value, address: form.address.value, city: pl.city, area: pl.area };
       var okPhone = /^(?:\+?88)?01[3-9]\d{8}$/.test(cu.phone.replace(/[\s-]/g, "")), okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cu.email.trim());
       if (!okPhone && !okEmail) return;
       var body = { cid: cartId(), customer: cu, items: cart.map(function (l) { return { productId: l.productId, variantId: l.variantId, qty: l.qty }; }), zone: checkoutState.zone, source: trafficSource() };
@@ -1594,7 +1594,8 @@
             '<p class="checkout__hint">Add your email to get the invoice. We keep these details so we can help if your order doesn\'t go through.</p></fieldset>' +
           '<fieldset class="panel"><legend class="panel__title">Delivery</legend>' +
             field("co-address", "Full address", '<textarea id="co-address" name="address" required rows="2" autocomplete="street-address" placeholder="House, road, area">' + esc(saved.address || "") + "</textarea>") +
-            field("co-city", "District / city", '<input id="co-city" name="city" autocomplete="address-level2" placeholder="Dhaka" value="' + esc(saved.city || "") + '">') +
+            '<div class="field-row">' + field("co-city", "City", '<input id="co-city" name="city" autocomplete="address-level2" placeholder="Dhaka" value="' + esc(saved.city || "") + '">') +
+              '<span id="areaBox" hidden>' + field("co-area", "Area", '<select id="co-area" name="area" disabled><option value="">Choose the city first</option></select>') + "</span></div>" +
             '<div class="zones" role="radiogroup" aria-label="Delivery area">' + ship.zones.map(function (z) {
               return '<label class="radio"><input type="radio" name="zone" value="' + esc(z.id) + '"' + (z.id === checkoutState.zone ? " checked" : "") + "><span><b>" + esc(z.name) + " · " + taka(z.fee) + "</b>Delivery in " + esc(z.days) + "</span></label>";
             }).join("") + "</div>" +
@@ -1616,6 +1617,7 @@
       "</section>";
     drawSummary();
     var form = $("#checkoutForm");
+    setupPlace(form, saved);
     // bKash / Nagad Send Money: show the number and TrxID boxes only under the chosen one
     var payBox = function () { $$("[data-paybox]", form).forEach(function (b) { var r = $('input[name="pay"]:checked', form); b.hidden = !r || r.value !== b.dataset.paybox;
       // only the open box carries the names, so errors land under the right fields
@@ -1654,7 +1656,7 @@
       clearTimeout(captureTimer);
       var payInput = $('input[name="pay"]:checked', form);
       var body = {
-        customer: { name: form.name.value, phone: form.phone.value, email: form.email.value, address: form.address.value, city: form.city.value },
+        customer: { name: form.name.value, phone: form.phone.value, email: form.email.value, address: form.address.value, city: placeOf(form).city, area: placeOf(form).area }, place: placeOf(form).place,
         items: cart.map(function (l) { return { productId: l.productId, variantId: l.variantId, qty: l.qty }; }),
         zone: checkoutState.zone, couponCode: checkoutState.coupon ? checkoutState.coupon.code : "",
         paymentMethod: payInput ? payInput.value : "", payment: manualPayment(form, payInput), agree: form.agree.checked, note: form.note.value, source: trafficSource(), meta: metaInfo(), cartId: cartId()
@@ -1663,6 +1665,8 @@
       if (!body.customer.name.trim()) errs.name = "Enter your name.";
       if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(body.customer.phone.replace(/[\s-]/g, ""))) errs.phone = "Enter a Bangladeshi mobile number, like 01712345678.";
       if (body.customer.address.trim().length < 6) errs.address = "Enter your full delivery address.";
+      if (form.city.tagName === "SELECT" && !form.city.value) errs.city = "Choose your city.";
+      else if (form.area && !form.area.disabled && !form.area.value) errs.area = "Choose your area.";
       if (!body.agree) errs.agree = "Please accept the terms and conditions, privacy policy and refund policy.";
       if (body.payment) {
         if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(body.payment.sender.replace(/[\s-]/g, ""))) errs.paySender = "Enter the number you sent the money from.";
@@ -1691,6 +1695,50 @@
         showErrors(form, err);
       });
     });
+  }
+  // City and Area come from Pathao's own lists, so a parcel can go to the courier without picking them again in the admin.
+  // If the lists can't load (Pathao not set up, or offline), City stays a plain text box.
+  function placeOf(form) {
+    var c = form.city, a = form.area;
+    if (c.tagName !== "SELECT") return { city: c.value, area: "", place: null };
+    var co = c.options[c.selectedIndex], ao = a && !a.disabled ? a.options[a.selectedIndex] : null;
+    var city = c.value ? co.textContent : "", area = ao && a.value ? ao.textContent : "";
+    return { city: city, area: area, place: c.value && a && a.value ? { cityId: +c.value, city: city, zoneId: +a.value, zone: area } : null };
+  }
+  function setupPlace(form, saved) {
+    var opts = function (items, first) { return '<option value="">' + first + "</option>" + items.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.name) + "</option>"; }).join(""); };
+    var pickByName = function (sel, name) { var n = String(name || "").trim().toLowerCase(); if (!n) return; Array.prototype.some.call(sel.options, function (o) { if (o.value && o.textContent.trim().toLowerCase() === n) { sel.value = o.value; return true; } }); };
+    // the delivery charge follows the city: Dhaka keeps the Dhaka options, anywhere else is Outside Dhaka
+    var fee = function (cityName) {
+      var zones = (S.settings.shipping || {}).zones || [], out = zones.filter(function (z) { return /outside/i.test(z.name); })[0];
+      if (!out || !cityName) return;
+      var inDhaka = /dhaka/i.test(cityName), want = inDhaka ? (checkoutState.zone === out.id ? (zones.filter(function (z) { return z.id !== out.id; })[0] || out).id : checkoutState.zone) : out.id;
+      if (want && want !== checkoutState.zone) { var r = $('input[name="zone"][value="' + want + '"]', form); if (r) { r.checked = true; checkoutState.zone = want; drawSummary(); } }
+    };
+    api("GET", "/api/delivery/cities").then(function (r) {
+      var items = (r && r.items) || [];
+      if (!items.length || !form.isConnected) return;
+      var old = form.city, sel = document.createElement("select"), area = form.area;
+      sel.id = "co-city"; sel.name = "city"; sel.autocomplete = "address-level2";
+      sel.innerHTML = opts(items, "Choose your city");
+      pickByName(sel, old.value || saved.city);
+      old.replaceWith(sel);
+      $("#areaBox").hidden = false;
+      var loadAreas = function (keep) {
+        area.disabled = true; area.innerHTML = '<option value="">' + (sel.value ? "Loading…" : "Choose the city first") + "</option>";
+        fee(placeOf(form).city);
+        if (!sel.value) return;
+        api("GET", "/api/delivery/areas/" + sel.value).then(function (z) {
+          var list = (z && z.items) || [];
+          area.innerHTML = list.length ? opts(list, "Choose your area") : '<option value="">No areas found</option>';
+          area.disabled = !list.length;
+          if (keep) pickByName(area, keep);
+          captureCart(form);
+        }, function () { area.innerHTML = '<option value="">Couldn\'t load areas</option>'; });
+      };
+      sel.addEventListener("change", function () { loadAreas(""); });
+      if (sel.value) loadAreas(saved.area);
+    }, function () {});
   }
   var PAY_NAME = { cod: "Cash on delivery", sslcommerz: "Online payment", bkash: "bKash", nagad: "Nagad" };
   // Checkout payment choices: only the methods turned on in Admin › Payments
